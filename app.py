@@ -5,6 +5,8 @@ import os
 import json
 import random
 import database as db
+from datetime import datetime # Make sure this is at the top of app.py
+
 
 
 # --- HELPER FUNCTION TO LOAD GAME DATA ---
@@ -151,18 +153,37 @@ def fight():
                     'gems_won': GEMS_PER_WIN if victory else 0})
 
 
-@app.route('/api/set_team', methods=['POST'])
-def set_team():
+@app.route('/api/manage_team', methods=['POST'])
+def manage_team():
     if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
+
     user_id = session['user_id']
-    char_id_to_add = request.json.get('char_id')
+    data = request.json
+    char_id_to_manage = data.get('char_id')
+    action = data.get('action')  # 'add' or 'remove'
+
     team_ids = [c['db_id'] if c else None for c in db.get_player_team(user_id, character_definitions)]
-    if char_id_to_add in team_ids: return jsonify({'success': False, 'message': 'Character is already in the team.'})
-    try:
-        empty_slot = team_ids.index(None)
-        team_ids[empty_slot] = char_id_to_add
-    except ValueError:
-        team_ids[0] = char_id_to_add
+
+    if action == 'add':
+        if char_id_to_manage in team_ids:
+            return jsonify({'success': False, 'message': 'Character is already in the team.'})
+        try:
+            # Find the first empty slot (where the value is None)
+            empty_slot_index = team_ids.index(None)
+            team_ids[empty_slot_index] = char_id_to_manage
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Team is full! Remove a hero first.'})
+
+    elif action == 'remove':
+        if char_id_to_manage not in team_ids:
+            return jsonify({'success': False, 'message': 'Character is not in the team.'})
+        # Find the character and replace them with None
+        slot_to_clear = team_ids.index(char_id_to_manage)
+        team_ids[slot_to_clear] = None
+
+    else:
+        return jsonify({'success': False, 'message': 'Invalid action.'})
+
     db.set_player_team(user_id, team_ids)
     return jsonify({'success': True})
 
@@ -191,7 +212,15 @@ def handle_send_message(data):
     if session.get('logged_in'):
         message = data.get('message', '').strip()
         if 0 < len(message) <= 200:
-            response_data = {'username': session.get('username'), 'message': message}
+            username = session.get('username')
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            # Log the message to a file
+            with open("chat_log.txt", "a") as log_file:
+                log_file.write(f"[{timestamp}] {username}: {message}\n")
+
+            # Prepare data to send to clients
+            response_data = {'username': username, 'message': message}
             emit('receive_message', response_data, broadcast=True)
 
 
