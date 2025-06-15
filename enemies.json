@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Void Wisp",
+    "image_file": "enemy_wisp.png",
+    "base_hp": 80,
+    "base_atk": 10
+  },
+  {
+    "name": "Shadow Creeper",
+    "image_file": "enemy_creeper.png",
+    "base_hp": 150,
+    "base_atk": 20
+  },
+  {
+    "name": "Chaos Golem",
+    "image_file": "enemy_golem.png",
+    "base_hp": 300,
+    "base_atk": 35
+  },
+  {
+    "name": "Rift Behemoth",
+    "image_file": "enemy_behemoth.png",
+    "base_hp": 500,
+    "base_atk": 50
+  }
+]

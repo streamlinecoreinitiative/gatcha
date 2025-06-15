@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Anya, the Loyal Squire",
+    "rarity": "Common",
+    "base_hp": 90,
+    "base_atk": 18,
+    "image_file": "squire_anya.png",
+    "description": "A young knight-in-training, full of courage but lacking experience. Her loyalty is her greatest strength."
+  },
+  {
+    "name": "Elara, the Forest Scout",
+    "rarity": "Common",
+    "base_hp": 75,
+    "base_atk": 22,
+    "image_file": "scout_elara.png",
+    "description": "A sharp-eyed archer who knows the forests like the back of her hand. She is swift and precise."
+  },
+  {
+    "name": "Seraphina, the Sun Priestess",
+    "rarity": "Rare",
+    "base_hp": 140,
+    "base_atk": 28,
+    "image_file": "priestess_seraphina.png",
+    "description": "A gentle cleric who channels the sun's warmth to heal allies and sear foes. Her presence on the battlefield is a beacon of hope."
+  },
+  {
+    "name": "Kaelen, the Spellblade",
+    "rarity": "Rare",
+    "base_hp": 110,
+    "base_atk": 35,
+    "image_file": "spellblade_kaelen.png",
+    "description": "A nimble warrior who infuses her blade with raw arcane energy. She strikes with deadly speed and power."
+  },
+  {
+    "name": "Isolde, the Iron Paladin",
+    "rarity": "Rare",
+    "base_hp": 160,
+    "base_atk": 25,
+    "image_file": "paladin_isolde.png",
+    "description": "A veteran paladin clad in impenetrable armor. She acts as an unshakeable shield for her comrades."
+  },
+  {
+    "name": "Lunaria, the Void Empress",
+    "rarity": "SSR",
+    "base_hp": 220,
+    "base_atk": 55,
+    "image_file": "empress_lunaria.png",
+    "description": "A legendary sorceress who once conquered a dimension of her own. She wields forbidden magic with terrifying might."
+  },
+  {
+    "name": "Freyja, the Valkyrie Ascendant",
+    "rarity": "SSR",
+    "base_hp": 180,
+    "base_atk": 65,
+    "image_file": "valkyrie_freyja.png",
+    "description": "A warrior queen from a realm of gods. Her spear is said to be able to pierce the heavens themselves."
+  }
+]
