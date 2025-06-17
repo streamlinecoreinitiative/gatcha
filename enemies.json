@@ -1,26 +1,15 @@
 [
-  {
-    "name": "Void Wisp",
-    "image_file": "enemy_wisp.png",
-    "base_hp": 80,
-    "base_atk": 10
-  },
-  {
-    "name": "Shadow Creeper",
-    "image_file": "enemy_creeper.png",
-    "base_hp": 150,
-    "base_atk": 20
-  },
-  {
-    "name": "Chaos Golem",
-    "image_file": "enemy_golem.png",
-    "base_hp": 300,
-    "base_atk": 35
-  },
-  {
-    "name": "Rift Behemoth",
-    "image_file": "enemy_behemoth.png",
-    "base_hp": 500,
-    "base_atk": 50
-  }
+  { "name": "Goblin Scout", "image_file": "goblin_scout.png", "base_hp": 50, "base_atk": 8, "crit_chance": 5, "crit_damage": 1.5, "rarity": "Common" },
+  { "name": "Dire Wolf", "image_file": "dire_wolf.png", "base_hp": 70, "base_atk": 12, "crit_chance": 10, "crit_damage": 1.6, "rarity": "Common" },
+  { "name": "Orc Grunt", "image_file": "orc_grunt.png", "base_hp": 120, "base_atk": 15, "crit_chance": 3, "crit_damage": 1.5, "rarity": "Common" },
+  { "name": "Harpy", "image_file": "harpy.png", "base_hp": 90, "base_atk": 18, "crit_chance": 12, "crit_damage": 1.7, "rarity": "Common" },
+
+  { "name": "Ogre Brute", "image_file": "ogre_brute.png", "base_hp": 250, "base_atk": 25, "crit_chance": 8, "crit_damage": 1.6, "rarity": "Uncommon" },
+  { "name": "Void Wisp", "image_file": "enemy_wisp.png", "base_hp": 150, "base_atk": 30, "crit_chance": 5, "crit_damage": 2.0, "rarity": "Uncommon" },
+  { "name": "Shadow Creeper", "image_file": "enemy_creeper.png", "base_hp": 200, "base_atk": 28, "crit_chance": 15, "crit_damage": 1.8, "rarity": "Uncommon" },
+
+  { "name": "Chaos Golem", "image_file": "enemy_golem.png", "base_hp": 400, "base_atk": 40, "crit_chance": 10, "crit_damage": 1.7, "rarity": "Rare" },
+  { "name": "Rift Behemoth", "image_file": "enemy_behemoth.png", "base_hp": 600, "base_atk": 50, "crit_chance": 12, "crit_damage": 2.0, "rarity": "Rare" },
+
+  { "name": "Void Dragon", "image_file": "void_dragon.png", "base_hp": 1000, "base_atk": 80, "crit_chance": 20, "crit_damage": 2.5, "rarity": "Epic" }
 ]

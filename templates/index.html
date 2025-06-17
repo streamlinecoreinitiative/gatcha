@@ -37,7 +37,7 @@
             </div>
         </div>
 
-<!-- MAIN CONTENT AREA: Views will be dynamically displayed here -->
+        <!-- MAIN CONTENT AREA: Views will be dynamically displayed here -->
         <div id="main-content">
             <!-- Home View -->
             <div id="home-view" class="view active">
@@ -45,6 +45,11 @@
                 <div id="team-display" class="team-container"></div>
             </div>
 
+            <!-- V3: NEW Online Users View -->
+            <div id="online-view" class="view">
+                 <h2>Players Online</h2>
+                 <div id="online-list-container" class="online-list"></div>
+            </div>
             <!-- Collection View -->
             <div id="collection-view" class="view">
                 <h2>Your Hero Collection</h2>
@@ -88,8 +93,16 @@
             <button class="nav-button" data-view="collection-view">Collection</button>
             <button class="nav-button" data-view="summon-view">Summon</button>
             <button class="nav-button" data-view="campaign-view">Campaign</button>
+            <button class="nav-button" data-view="online-view">Online</button>
             <button class="nav-button" data-view="lore-view">Lore</button>
         </div>
+
+        <!-- V2 COMBAT LOG: CORRECT PLACEMENT -->
+        <!-- It is inside #game-screen but OUTSIDE #main-content -->
+        <div id="combat-log-container">
+            <!-- The combat log will be injected here by JavaScript -->
+        </div>
+
     </div>
 
     <!-- CHAT FEATURE -->
