@@ -1,18 +1,18 @@
 [
-  { "name": "Anya, Loyal Squire", "rarity": "Common", "base_hp": 90, "base_atk": 18, "crit_chance": 5, "crit_damage": 1.5, "image_file": "squire_anya.png" },
-  { "name": "Elara, Forest Scout", "rarity": "Common", "base_hp": 75, "base_atk": 22, "crit_chance": 10, "crit_damage": 1.6, "image_file": "scout_elara.png" },
-  { "name": "Fen, the Brawler", "rarity": "Common", "base_hp": 110, "base_atk": 15, "crit_chance": 3, "crit_damage": 1.5, "image_file": "brawler_fen.png" },
-  { "name": "Roric, Hedge Knight", "rarity": "Common", "base_hp": 100, "base_atk": 17, "crit_chance": 5, "crit_damage": 1.5, "image_file": "hedge_knight_roric.png" },
-  { "name": "Lila, Novice Mage", "rarity": "Common", "base_hp": 70, "base_atk": 25, "crit_chance": 7, "crit_damage": 1.7, "image_file": "mage_lila.png" },
+  { "name": "Anya, Loyal Squire", "rarity": "Common", "element": "Water", "base_hp": 90, "base_atk": 18, "crit_chance": 5, "crit_damage": 1.5, "image_file": "squire_anya.png" },
+  { "name": "Elara, Forest Scout", "rarity": "Common", "element": "Grass", "base_hp": 75, "base_atk": 22, "crit_chance": 10, "crit_damage": 1.6, "image_file": "scout_elara.png" },
+  { "name": "Fen, the Brawler", "rarity": "Common", "element": "Fire", "base_hp": 110, "base_atk": 15, "crit_chance": 3, "crit_damage": 1.5, "image_file": "brawler_fen.png" },
+  { "name": "Roric, Hedge Knight", "rarity": "Common", "element": "Water", "base_hp": 100, "base_atk": 17, "crit_chance": 5, "crit_damage": 1.5, "image_file": "hedge_knight_roric.png" },
+  { "name": "Lila, Novice Mage", "rarity": "Common", "element": "Fire", "base_hp": 70, "base_atk": 25, "crit_chance": 7, "crit_damage": 1.7, "image_file": "mage_lila.png" },
 
-  { "name": "Seraphina, Sun Priestess", "rarity": "Rare", "base_hp": 140, "base_atk": 28, "crit_chance": 5, "crit_damage": 1.8, "image_file": "priestess_seraphina.png" },
-  { "name": "Kaelen, the Spellblade", "rarity": "Rare", "base_hp": 110, "base_atk": 35, "crit_chance": 12, "crit_damage": 1.7, "image_file": "spellblade_kaelen.png" },
-  { "name": "Isolde, the Iron Paladin", "rarity": "Rare", "base_hp": 160, "base_atk": 25, "crit_chance": 8, "crit_damage": 1.6, "image_file": "paladin_isolde.png" },
-  { "name": "Gideon, Master of Axes", "rarity": "Rare", "base_hp": 120, "base_atk": 38, "crit_chance": 15, "crit_damage": 1.9, "image_file": "axe_master_gideon.png" },
-  { "name": "Silas, Shadow Agent", "rarity": "Rare", "base_hp": 100, "base_atk": 40, "crit_chance": 20, "crit_damage": 2.0, "image_file": "agent_silas.png" },
+  { "name": "Seraphina, Sun Priestess", "rarity": "Rare", "element": "Water", "base_hp": 140, "base_atk": 28, "crit_chance": 5, "crit_damage": 1.8, "image_file": "priestess_seraphina.png" },
+  { "name": "Kaelen, the Spellblade", "rarity": "Rare", "element": "Fire", "base_hp": 110, "base_atk": 35, "crit_chance": 12, "crit_damage": 1.7, "image_file": "spellblade_kaelen.png" },
+  { "name": "Isolde, the Iron Paladin", "rarity": "Rare", "element": "Water", "base_hp": 160, "base_atk": 25, "crit_chance": 8, "crit_damage": 1.6, "image_file": "paladin_isolde.png" },
+  { "name": "Gideon, Master of Axes", "rarity": "Rare", "element": "Fire", "base_hp": 120, "base_atk": 38, "crit_chance": 15, "crit_damage": 1.9, "image_file": "axe_master_gideon.png" },
+  { "name": "Silas, Shadow Agent", "rarity": "Rare", "element": "Grass", "base_hp": 100, "base_atk": 40, "crit_chance": 20, "crit_damage": 2.0, "image_file": "agent_silas.png" },
 
-  { "name": "Lunaria, Void Empress", "rarity": "SSR", "base_hp": 220, "base_atk": 55, "crit_chance": 15, "crit_damage": 2.0, "image_file": "empress_lunaria.png" },
-  { "name": "Freyja, Valkyrie Ascendant", "rarity": "SSR", "base_hp": 180, "base_atk": 65, "crit_chance": 25, "crit_damage": 2.2, "image_file": "valkyrie_freyja.png" },
-  { "name": "Valerius, Dragon Prince", "rarity": "SSR", "base_hp": 250, "base_atk": 50, "crit_chance": 10, "crit_damage": 2.5, "image_file": "dragon_prince_valerius.png" },
-  { "name": "Morgana, Rift Witch", "rarity": "SSR", "base_hp": 200, "base_atk": 70, "crit_chance": 18, "crit_damage": 2.1, "image_file": "rift_witch_morgana.png" }
+  { "name": "Lunaria, Void Empress", "rarity": "SSR", "element": "Water", "base_hp": 220, "base_atk": 55, "crit_chance": 15, "crit_damage": 2.0, "image_file": "empress_lunaria.png" },
+  { "name": "Freyja, Valkyrie Ascendant", "rarity": "SSR", "element": "Grass", "base_hp": 180, "base_atk": 65, "crit_chance": 25, "crit_damage": 2.2, "image_file": "valkyrie_freyja.png" },
+  { "name": "Valerius, Dragon Prince", "rarity": "SSR", "element": "Fire", "base_hp": 250, "base_atk": 50, "crit_chance": 10, "crit_damage": 2.5, "image_file": "dragon_prince_valerius.png" },
+  { "name": "Morgana, Rift Witch", "rarity": "SSR", "element": "Grass", "base_hp": 200, "base_atk": 70, "crit_chance": 18, "crit_damage": 2.1, "image_file": "rift_witch_morgana.png" }
 ]

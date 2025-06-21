@@ -1,15 +1,15 @@
 [
-  { "name": "Goblin Scout", "image_file": "goblin_scout.png", "base_hp": 50, "base_atk": 8, "crit_chance": 5, "crit_damage": 1.5, "rarity": "Common" },
-  { "name": "Dire Wolf", "image_file": "dire_wolf.png", "base_hp": 70, "base_atk": 12, "crit_chance": 10, "crit_damage": 1.6, "rarity": "Common" },
-  { "name": "Orc Grunt", "image_file": "orc_grunt.png", "base_hp": 120, "base_atk": 15, "crit_chance": 3, "crit_damage": 1.5, "rarity": "Common" },
-  { "name": "Harpy", "image_file": "harpy.png", "base_hp": 90, "base_atk": 18, "crit_chance": 12, "crit_damage": 1.7, "rarity": "Common" },
+  { "name": "Goblin Scout", "rarity": "Common", "element": "Grass", "base_hp": 50, "base_atk": 8, "crit_chance": 5, "crit_damage": 1.5, "image_file": "goblin_scout.png" },
+  { "name": "Dire Wolf", "rarity": "Common", "element": "Grass", "base_hp": 70, "base_atk": 12, "crit_chance": 10, "crit_damage": 1.6, "image_file": "dire_wolf.png" },
+  { "name": "Orc Grunt", "rarity": "Common", "element": "Fire", "base_hp": 120, "base_atk": 15, "crit_chance": 3, "crit_damage": 1.5, "image_file": "orc_grunt.png" },
+  { "name": "Harpy", "rarity": "Common", "element": "Grass", "base_hp": 90, "base_atk": 18, "crit_chance": 12, "crit_damage": 1.7, "image_file": "harpy.png" },
 
-  { "name": "Ogre Brute", "image_file": "ogre_brute.png", "base_hp": 250, "base_atk": 25, "crit_chance": 8, "crit_damage": 1.6, "rarity": "Uncommon" },
-  { "name": "Void Wisp", "image_file": "enemy_wisp.png", "base_hp": 150, "base_atk": 30, "crit_chance": 5, "crit_damage": 2.0, "rarity": "Uncommon" },
-  { "name": "Shadow Creeper", "image_file": "enemy_creeper.png", "base_hp": 200, "base_atk": 28, "crit_chance": 15, "crit_damage": 1.8, "rarity": "Uncommon" },
+  { "name": "Ogre Brute", "rarity": "Uncommon", "element": "Fire", "base_hp": 250, "base_atk": 25, "crit_chance": 8, "crit_damage": 1.6, "image_file": "ogre_brute.png" },
+  { "name": "Void Wisp", "rarity": "Uncommon", "element": "Water", "base_hp": 150, "base_atk": 30, "crit_chance": 5, "crit_damage": 2.0, "image_file": "enemy_wisp.png" },
+  { "name": "Shadow Creeper", "rarity": "Uncommon", "element": "Grass", "base_hp": 200, "base_atk": 28, "crit_chance": 15, "crit_damage": 1.8, "image_file": "enemy_creeper.png" },
 
-  { "name": "Chaos Golem", "image_file": "enemy_golem.png", "base_hp": 400, "base_atk": 40, "crit_chance": 10, "crit_damage": 1.7, "rarity": "Rare" },
-  { "name": "Rift Behemoth", "image_file": "enemy_behemoth.png", "base_hp": 600, "base_atk": 50, "crit_chance": 12, "crit_damage": 2.0, "rarity": "Rare" },
+  { "name": "Chaos Golem", "rarity": "Rare", "element": "Fire", "base_hp": 400, "base_atk": 40, "crit_chance": 10, "crit_damage": 1.7, "image_file": "enemy_golem.png" },
+  { "name": "Rift Behemoth", "rarity": "Rare", "element": "Fire", "base_hp": 600, "base_atk": 50, "crit_chance": 12, "crit_damage": 2.0, "image_file": "enemy_behemoth.png" },
 
-  { "name": "Void Dragon", "image_file": "void_dragon.png", "base_hp": 1000, "base_atk": 80, "crit_chance": 20, "crit_damage": 2.5, "rarity": "Epic" }
+  { "name": "Void Dragon", "rarity": "Epic", "element": "Water", "base_hp": 1000, "base_atk": 80, "crit_chance": 20, "crit_damage": 2.5, "image_file": "void_dragon.png" }
 ]

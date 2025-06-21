@@ -1,7 +1,7 @@
-// static/js/app.js (V3.6 - FINAL, VERIFIED, AND CORRECTED)
+// static/js/app.js (V3.7 - Elemental Affinity Fixes)
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded. V3.6 Initializing...");
+    console.log("DOM fully loaded. V3.7 Initializing with Elemental Fixes...");
 
     // --- GLOBAL STATE & REFERENCES ---
     let gameState = {};
@@ -71,7 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
             slot.className = 'team-slot';
             if (member) {
                 const rarityClass = member.rarity.toLowerCase().replace(' ', '-');
-                slot.innerHTML = `<div class="card-rarity rarity-${rarityClass}">[${member.rarity}]</div><img src="/static/images/${member.image_file}" alt="${member.name}"><h4>${member.name}</h4><p>ATK: ${member.base_atk} | HP: ${member.base_hp}</p><p>Crit: ${member.crit_chance}% | Crit DMG: ${member.crit_damage}x</p>`;
+                // --- FIX #1: Added the element display to the team card ---
+                const element = member.element || 'None';
+                slot.innerHTML = `
+                    <div class="card-header">
+        <div class="card-rarity rarity-${rarityClass}">[${member.rarity}]</div>
+        <div class="card-element element-${element.toLowerCase()}">${element}</div>
+    </div>
+    <img src="/static/images/characters/${member.image_file}" alt="${member.name}">
+                    <h4>${member.name}</h4>
+                    <p>ATK: ${member.base_atk} | HP: ${member.base_hp}</p>
+                    <p>Crit: ${member.crit_chance}% | Crit DMG: ${member.crit_damage}x</p>`;
             } else {
                 slot.innerHTML = `<img src="/static/images/ui/placeholder_char.png" alt="Empty"><h4>Empty Slot</h4>`;
             }
@@ -93,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const heroInstance = heroGroup[0];
             const charDef = masterCharacterList.find(c => c.name === heroInstance.character_name);
             if (!charDef) continue;
+
             const card = document.createElement('div');
             card.className = 'collection-card';
             const imageName = charDef.image_file;
@@ -100,7 +111,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[heroInstance.rarity] || 999;
             const canMerge = heroGroup.length >= mergeCost;
             const rarityClass = heroInstance.rarity.toLowerCase().replace(' ', '-');
-            card.innerHTML = `<div class="card-rarity rarity-${rarityClass}">[${heroInstance.rarity}] (x${heroGroup.length})</div><img src="/static/images/characters/${imageName}" alt="${heroInstance.character_name}"><h4>${heroInstance.character_name}</h4><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button></div>`;
+
+            // --- FIX #2: Correctly defined the 'element' variable before using it ---
+            const element = charDef.element || 'None';
+
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="card-rarity rarity-${rarityClass}">[${heroInstance.rarity}] (x${heroGroup.length})</div>
+                <div class="card-element element-${element.toLowerCase()}">${element}</div>
+                </div>
+                <img src="/static/images/characters/${imageName}" alt="${heroInstance.character_name}">
+                <h4>${heroInstance.character_name}</h4>
+                <div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div>
+                <div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div>
+                <div class="button-row">
+                    <button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button>
+                    <button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button>
+                </div>`;
             collectionContainer.appendChild(card);
         }
     }
@@ -166,25 +193,30 @@ document.addEventListener('DOMContentLoaded', () => {
         alert((await response.json()).message);
     });
     logoutButton.addEventListener('click', handleLogout);
-summonButton.addEventListener('click', async () => {
-    const response = await fetch('/api/summon', { method: 'POST' });
-    const result = await response.json();
-    if (result.success) {
-        const character = result.character;
-        // CRITICAL FIX: Use the 'image_file' directly from the returned character object
-        summonResultContainer.innerHTML = `
-            <div class="team-slot">
-                <div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div>
-                <img src="/static/images/characters/${character.image_file}" alt="${character.name}">
-                <h4>${character.name}</h4>
-                <p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p>
-                <p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p>
-            </div>`;
-        await fetchPlayerDataAndUpdate();
-    } else {
-        alert(`Summon Failed: ${result.message}`);
-    }
-});
+
+    summonButton.addEventListener('click', async () => {
+        const response = await fetch('/api/summon', { method: 'POST' });
+        const result = await response.json();
+        if (result.success) {
+            const character = result.character;
+            // --- FIX #3: Added the element display to the summon result card ---
+            const element = character.element || 'None';
+            summonResultContainer.innerHTML = `
+    <div class="team-slot">
+        <div class="card-header">
+            <div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div>
+            <div class="card-element element-${element.toLowerCase()}">${element}</div>
+        </div>
+        <img src="/static/images/characters/${character.image_file}" alt="${character.name}">
+                    <h4>${character.name}</h4>
+                    <p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p>
+                    <p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p>
+                </div>`;
+            await fetchPlayerDataAndUpdate();
+        } else {
+            alert(`Summon Failed: ${result.message}`);
+        }
+    });
 
     function sendMessage() {
         if (chatInput.value.trim() !== '') {
@@ -209,7 +241,6 @@ summonButton.addEventListener('click', async () => {
                     if (entry.type === 'start') { imageHTML = `<img src="/static/images/${entry.enemy_image}" class="log-entry-image">`; }
                     else if (entry.type === 'player_attack') { imageHTML = `<img src="/static/images/ui/gem_icon.png" class="log-entry-image">`; }
                     else if (entry.type === 'enemy_attack') {
-                        // THIS IS THE CORRECTED LINE
                         imageHTML = `<img src="/static/images/${result.log[0].enemy_image}" class="log-entry-image">`;
                     }
 

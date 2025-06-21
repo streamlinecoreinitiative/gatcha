@@ -481,3 +481,53 @@ body {
     color: #ff5555;
     font-weight: bold;
 }
+
+/* --- Elemental Affinity Styles --- */
+.card-header {
+    display: flex; /* Arranges children in a row */
+    justify-content: space-between; /* Pushes children to opposite ends */
+    align-items: center; /* Vertically aligns them in the middle */
+    padding: 5px; /* Adds some space around the header */
+    box-sizing: border-box; /* Ensures padding is included in the element's total width/height */
+}
+
+/* We simplify the card-element since it's now a flex item */
+.card-element {
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    border-radius: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    /* NO MORE position: absolute, top, right, or z-index! */
+}
+
+/* Just a bit of styling for the rarity text to make it look good */
+.card-rarity {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ddd;
+    padding-left: 5px; /* Give it some space from the card edge */
+}
+
+
+/* Specific colors for each element (these stay the same) */
+.element-fire {
+    background-color: #E62E2D; /* Vibrant Red */
+    border: 1px solid #a11f1f;
+}
+
+.element-grass {
+    background-color: #33A532; /* Leafy Green */
+    border: 1px solid #237522;
+}
+
+.element-water {
+    background-color: #2D95E6; /* Clear Blue */
+    border: 1px solid #1f68a1;
+}
+
+/* The position:relative on the card is no longer strictly necessary for this, but it's good practice to keep it for other potential overlays. */
+.collection-card, .team-slot {
+    position: relative;
+}

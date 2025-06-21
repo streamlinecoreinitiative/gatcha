@@ -151,6 +151,23 @@ def fight():
 
     enemy_def = random.choice(possible_enemies if possible_enemies else enemy_definitions)
 
+    # --- NEW ELEMENTAL ADVANTAGE LOGIC ---
+    # We'll calculate an average element for the team.
+    # A more advanced system might check each character, but this is simplest.
+    team_elements = [c.get('element') for c in team]
+    enemy_element = enemy_def.get('element')
+
+    # Define the advantage rules
+    advantage = {'Fire': 'Grass', 'Grass': 'Water', 'Water': 'Fire'}
+
+    # Calculate a damage bonus based on the number of advantageous characters
+    advantageous_heroes = sum(1 for el in team_elements if advantage.get(el) == enemy_element)
+    disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
+
+    # Each advantageous hero gives a 25% boost, each disadvantageous gives a 25% penalty
+    team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
+    # --- END OF NEW LOGIC ---
+
     team_hp = sum(c['base_hp'] * STAT_MULTIPLIER.get(c['rarity'], 1.0) for c in team)
     team_atk = sum(c['base_atk'] * STAT_MULTIPLIER.get(c['rarity'], 1.0) for c in team)
     team_crit_chance = max((c.get('crit_chance', 0) for c in team), default=0)
@@ -162,14 +179,15 @@ def fight():
     enemy_crit_damage = enemy_def.get('crit_damage', 1.5)
     enemy_image = f"enemies/{enemy_def.get('image_file', 'placeholder_enemy.png')}"
 
-    combat_log = [{'type': 'start', 'message': f"Floor {stage_num}: Your team faces {enemy_def['name']}!",
+    combat_log = [{'type': 'start', 'message': f"Floor {stage_num}: Your team faces a {enemy_element} {enemy_def['name']}!", # <-- Update message
                    'enemy_image': enemy_image}]
 
     while team_hp > 0 and enemy_hp > 0:
-        damage = team_atk * random.uniform(0.8, 1.2);
+
+        damage = team_atk * random.uniform(0.8, 1.2) * team_elemental_multiplier # <-- APPLY MULTIPLIER
         is_crit = random.random() * 100 < team_crit_chance
         if is_crit: damage *= team_crit_damage
-        enemy_hp -= damage;
+        enemy_hp -= damage
         combat_log.append(
             {'type': 'player_attack', 'crit': is_crit, 'damage': int(damage), 'enemy_hp': int(max(0, enemy_hp))})
         if enemy_hp <= 0: break
