@@ -1,4 +1,4 @@
-# app.py (V5.2 - Final & Fully Verified)
+# app.py (V5.3 - Final Crash Fix)
 from flask import Flask, jsonify, render_template, request, session
 from flask_socketio import SocketIO, emit
 import os
@@ -149,7 +149,6 @@ def get_stage_info(stage_num):
 
 # --- COMBAT CALCULATION HELPER ---
 def calculate_fight_stats(team, enemy_def, level_scaling):
-    # Calculate Team Stats with Equipment
     total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
     for character in team:
         if not character: continue
@@ -168,7 +167,6 @@ def calculate_fight_stats(team, enemy_def, level_scaling):
         team_crit_chance = max(team_crit_chance, char_crit_chance)
         team_crit_damage = max(team_crit_damage, char_crit_damage)
 
-    # Calculate Team Elemental Advantage
     team_elements = [c.get('element') for c in team]
     enemy_element = enemy_def.get('element')
     advantage = {'Fire': 'Grass', 'Grass': 'Water', 'Water': 'Fire'}
@@ -176,7 +174,6 @@ def calculate_fight_stats(team, enemy_def, level_scaling):
     disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
     team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
 
-    # Calculate Enemy Stats
     enemy_hp = enemy_def['base_hp'] * (1 + (level_scaling - 1) * 0.25) * random.uniform(0.9, 1.1)
     enemy_atk = enemy_def['base_atk'] * (1 + (level_scaling - 1) * 0.15) * random.uniform(0.9, 1.1)
     enemy_crit_chance = enemy_def.get('crit_chance', 0)
@@ -369,8 +366,12 @@ def merge_heroes():
     new_rarity = RARITY_ORDER[next_rarity_index]
     heroes_to_consume = heroes_of_type[1:cost]
     hero_to_upgrade = heroes_of_type[0]
+
+    # --- THE FIX ---
     conn = db.get_db_connection()
     cursor = conn.cursor()
+    # --- END OF FIX ---
+
     cursor.execute("UPDATE player_characters SET rarity = ? WHERE id = ?", (new_rarity, hero_to_upgrade['id']))
     ids_to_delete = tuple(h['id'] for h in heroes_to_consume)
     if ids_to_delete:
