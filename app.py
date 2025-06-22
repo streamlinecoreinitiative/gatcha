@@ -1,4 +1,4 @@
-# app.py (V5.1 - Full & Verified)
+# app.py (V5.2 - Final & Fully Verified)
 from flask import Flask, jsonify, render_template, request, session
 from flask_socketio import SocketIO, emit
 import os
@@ -46,14 +46,16 @@ def get_enemy_for_stage(stage_num):
     possible_enemies = []
     max_rarity_index = stage_num // 10
     for e in enemy_definitions:
-        try:
-            rarity_index = RARITY_ORDER.index(e.get('rarity', 'Common'))
+        if e.get('rarity') in RARITY_ORDER:
+            rarity_index = RARITY_ORDER.index(e.get('rarity'))
             if rarity_index <= max_rarity_index:
                 possible_enemies.append(e)
-        except ValueError:
-            pass
-    enemy_def = random.choice(possible_enemies if possible_enemies else enemy_definitions)
-    random.seed(datetime.now())
+    if not possible_enemies:
+        print(f"Warning: No valid enemies found for stage {stage_num}, falling back.")
+        enemy_def = random.choice(enemy_definitions)
+    else:
+        enemy_def = random.choice(possible_enemies)
+    random.seed()
     return enemy_def
 
 
@@ -69,8 +71,10 @@ def get_game_data(): return jsonify({'characters': character_definitions})
 @app.route('/api/lore')
 def get_lore():
     try:
-        with open(LORE_FILE, "r", encoding="utf-8") as f: return jsonify({'success': True, 'data': f.read()})
-    except FileNotFoundError: return jsonify({'success': False, 'message': 'Lore file not found.'})
+        with open(LORE_FILE, "r", encoding="utf-8") as f:
+            return jsonify({'success': True, 'data': f.read()})
+    except FileNotFoundError:
+        return jsonify({'success': False, 'message': 'Lore file not found.'})
 
 
 @app.route('/api/register', methods=['POST'])
@@ -89,7 +93,8 @@ def login():
         session['username'] = data.get('username')
         session['user_id'] = user_id
         return jsonify({'success': True})
-    else: return jsonify({'success': False, 'message': 'Invalid username or password.'})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid username or password.'})
 
 
 @app.route('/api/logout', methods=['POST'])
@@ -142,18 +147,9 @@ def get_stage_info(stage_num):
     return jsonify({'success': True, 'enemy': enemy_info})
 
 
-# --- PILLAR 1: CAMPAIGN ---
-@app.route('/api/fight', methods=['POST'])
-def fight():
-    if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
-    user_id = session['user_id']
-    stage_num = request.json.get('stage')
-    team = db.get_player_team(user_id, character_definitions)
-    team = [c for c in team if c]
-    if not team: return jsonify({'success': False, 'message': 'Your team is empty!'})
-    enemy_def = get_enemy_for_stage(stage_num)
-
-    # --- UPDATED COMBAT LOGIC ---
+# --- COMBAT CALCULATION HELPER ---
+def calculate_fight_stats(team, enemy_def, level_scaling):
+    # Calculate Team Stats with Equipment
     total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
     for character in team:
         if not character: continue
@@ -162,7 +158,7 @@ def fight():
         char_crit_chance = character.get('crit_chance', 0)
         char_crit_damage = character.get('crit_damage', 1.5)
         for item in character.get('equipped', []):
-            item_stats = equipment_stats_map.get(item.get('name'), {})
+            item_stats = equipment_stats_map.get(item['equipment_name'], {})
             char_hp += item_stats.get('hp', 0)
             char_atk += item_stats.get('atk', 0)
             char_crit_chance += item_stats.get('crit_chance', 0)
@@ -171,8 +167,8 @@ def fight():
         total_team_atk += char_atk
         team_crit_chance = max(team_crit_chance, char_crit_chance)
         team_crit_damage = max(team_crit_damage, char_crit_damage)
-    team_hp, team_atk = total_team_hp, total_team_atk
 
+    # Calculate Team Elemental Advantage
     team_elements = [c.get('element') for c in team]
     enemy_element = enemy_def.get('element')
     advantage = {'Fire': 'Grass', 'Grass': 'Water', 'Water': 'Fire'}
@@ -180,37 +176,66 @@ def fight():
     disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
     team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
 
-    enemy_hp = enemy_def['base_hp'] * (1 + (stage_num - 1) * 0.25) * random.uniform(0.9, 1.1)
-    enemy_atk = enemy_def['base_atk'] * (1 + (stage_num - 1) * 0.15) * random.uniform(0.9, 1.1)
+    # Calculate Enemy Stats
+    enemy_hp = enemy_def['base_hp'] * (1 + (level_scaling - 1) * 0.25) * random.uniform(0.9, 1.1)
+    enemy_atk = enemy_def['base_atk'] * (1 + (level_scaling - 1) * 0.15) * random.uniform(0.9, 1.1)
     enemy_crit_chance = enemy_def.get('crit_chance', 0)
     enemy_crit_damage = enemy_def.get('crit_damage', 1.5)
+
+    return {
+        "team_hp": total_team_hp, "team_atk": total_team_atk, "team_crit_chance": team_crit_chance,
+        "team_crit_damage": team_crit_damage, "team_elemental_multiplier": team_elemental_multiplier,
+        "enemy_hp": enemy_hp, "enemy_atk": enemy_atk, "enemy_crit_chance": enemy_crit_chance,
+        "enemy_crit_damage": enemy_crit_damage, "enemy_element": enemy_element
+    }
+
+
+# --- PILLAR 1: CAMPAIGN ---
+@app.route('/api/fight', methods=['POST'])
+def fight():
+    if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    user_id, stage_num = session['user_id'], request.json.get('stage')
+    team = db.get_player_team(user_id, character_definitions)
+    if not any(team): return jsonify({'success': False, 'message': 'Your team is empty!'})
+    enemy_def = get_enemy_for_stage(stage_num)
+
+    stats = calculate_fight_stats(team, enemy_def, stage_num)
+    team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
+
     enemy_image = f"enemies/{enemy_def.get('image_file', 'placeholder_enemy.png')}"
-    combat_log = [{'type': 'start', 'message': f"Floor {stage_num}: Your team faces a {enemy_element} {enemy_def['name']}!", 'enemy_image': enemy_image}]
+    combat_log = [{'type': 'start',
+                   'message': f"Floor {stage_num}: Your team faces a {stats['enemy_element']} {enemy_def['name']}!",
+                   'enemy_image': enemy_image}]
 
     while team_hp > 0 and enemy_hp > 0:
-        damage = team_atk * random.uniform(0.8, 1.2) * team_elemental_multiplier
-        if random.random() * 100 < team_crit_chance: damage *= team_crit_damage
-        enemy_hp -= damage
-        combat_log.append({'type': 'player_attack', 'crit': random.random() * 100 < team_crit_chance, 'damage': int(damage), 'enemy_hp': int(max(0, enemy_hp))})
+        player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+        is_player_crit = random.random() * 100 < stats['team_crit_chance']
+        if is_player_crit: player_damage *= stats['team_crit_damage']
+        enemy_hp -= player_damage
+        combat_log.append({'type': 'player_attack', 'crit': is_player_crit, 'damage': int(player_damage),
+                           'enemy_hp': int(max(0, enemy_hp))})
         if enemy_hp <= 0: break
-        damage = enemy_atk * random.uniform(0.8, 1.2)
-        if random.random() * 100 < enemy_crit_chance: damage *= enemy_crit_damage
-        team_hp -= damage
-        combat_log.append({'type': 'enemy_attack', 'crit': random.random() * 100 < enemy_crit_chance, 'damage': int(damage), 'team_hp': int(max(0, team_hp))})
+
+        enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
+        is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
+        if is_enemy_crit: enemy_damage *= stats['enemy_crit_damage']
+        team_hp -= enemy_damage
+        combat_log.append({'type': 'enemy_attack', 'crit': is_enemy_crit, 'damage': int(enemy_damage),
+                           'team_hp': int(max(0, team_hp))})
 
     victory = team_hp > 0
     gems_won = 0
     if victory:
         combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
         player_data = db.get_player_data(user_id)
-        is_first_clear = (stage_num == player_data['current_stage'])
-        if is_first_clear:
+        if stage_num == player_data['current_stage']:
             gems_won = 25 + (stage_num // 5) * 5
             db.save_player_data(user_id, player_data['gems'] + gems_won, player_data['current_stage'] + 1)
         else:
             gems_won = 5
             db.save_player_data(user_id, player_data['gems'] + gems_won, player_data['current_stage'])
-    else: combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
+    else:
+        combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
     return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': gems_won, 'looted_item': None})
 
 
@@ -220,55 +245,33 @@ def fight_dungeon():
     if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
     user_id = session['user_id']
     team = db.get_player_team(user_id, character_definitions)
-    team = [c for c in team if c]
-    if not team: return jsonify({'success': False, 'message': 'Your team is empty!'})
+    if not any(team): return jsonify({'success': False, 'message': 'Your team is empty!'})
     enemy_def = random.choice(enemy_definitions)
     stage_level_scaling = db.get_player_data(user_id)['current_stage']
 
-    # --- UPDATED COMBAT LOGIC ---
-    total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
-    for character in team:
-        if not character: continue
-        char_hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
-        char_atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
-        char_crit_chance = character.get('crit_chance', 0)
-        char_crit_damage = character.get('crit_damage', 1.5)
-        for item in character.get('equipped', []):
-            item_stats = equipment_stats_map.get(item.get('name'), {})
-            char_hp += item_stats.get('hp', 0)
-            char_atk += item_stats.get('atk', 0)
-            char_crit_chance += item_stats.get('crit_chance', 0)
-            char_crit_damage += item_stats.get('crit_damage', 0)
-        total_team_hp += char_hp
-        total_team_atk += char_atk
-        team_crit_chance = max(team_crit_chance, char_crit_chance)
-        team_crit_damage = max(team_crit_damage, char_crit_damage)
-    team_hp, team_atk = total_team_hp, total_team_atk
+    stats = calculate_fight_stats(team, enemy_def, stage_level_scaling)
+    team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
 
-    team_elements = [c.get('element') for c in team]
-    enemy_element = enemy_def.get('element')
-    advantage = {'Fire': 'Grass', 'Grass': 'Water', 'Water': 'Fire'}
-    advantageous_heroes = sum(1 for el in team_elements if advantage.get(el) == enemy_element)
-    disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
-    team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
-
-    enemy_hp = enemy_def['base_hp'] * (1 + (stage_level_scaling - 1) * 0.25) * random.uniform(0.9, 1.1)
-    enemy_atk = enemy_def['base_atk'] * (1 + (stage_level_scaling - 1) * 0.15) * random.uniform(0.9, 1.1)
-    enemy_crit_chance = enemy_def.get('crit_chance', 0)
-    enemy_crit_damage = enemy_def.get('crit_damage', 1.5)
     enemy_image = f"enemies/{enemy_def.get('image_file', 'placeholder_enemy.png')}"
-    combat_log = [{'type': 'start', 'message': f"Dungeon: Your team faces a {enemy_element} {enemy_def['name']}!", 'enemy_image': enemy_image}]
+    combat_log = [
+        {'type': 'start', 'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy_def['name']}!",
+         'enemy_image': enemy_image}]
 
     while team_hp > 0 and enemy_hp > 0:
-        damage = team_atk * random.uniform(0.8, 1.2) * team_elemental_multiplier
-        if random.random() * 100 < team_crit_chance: damage *= team_crit_damage
-        enemy_hp -= damage
-        combat_log.append({'type': 'player_attack', 'crit': random.random() * 100 < team_crit_chance, 'damage': int(damage), 'enemy_hp': int(max(0, enemy_hp))})
+        player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+        is_player_crit = random.random() * 100 < stats['team_crit_chance']
+        if is_player_crit: player_damage *= stats['team_crit_damage']
+        enemy_hp -= player_damage
+        combat_log.append({'type': 'player_attack', 'crit': is_player_crit, 'damage': int(player_damage),
+                           'enemy_hp': int(max(0, enemy_hp))})
         if enemy_hp <= 0: break
-        damage = enemy_atk * random.uniform(0.8, 1.2)
-        if random.random() * 100 < enemy_crit_chance: damage *= enemy_crit_damage
-        team_hp -= damage
-        combat_log.append({'type': 'enemy_attack', 'crit': random.random() * 100 < enemy_crit_chance, 'damage': int(damage), 'team_hp': int(max(0, team_hp))})
+
+        enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
+        is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
+        if is_enemy_crit: enemy_damage *= stats['enemy_crit_damage']
+        team_hp -= enemy_damage
+        combat_log.append({'type': 'enemy_attack', 'crit': is_enemy_crit, 'damage': int(enemy_damage),
+                           'team_hp': int(max(0, team_hp))})
 
     victory = team_hp > 0
     looted_item = None
@@ -282,7 +285,8 @@ def fight_dungeon():
                          (user_id, looted_item['name'], looted_item['rarity']))
             conn.commit()
             conn.close()
-    else: combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
+    else:
+        combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
     return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'looted_item': looted_item})
 
 
@@ -296,28 +300,29 @@ def get_player_equipment():
     conn.close()
     return jsonify({'success': True, 'equipment': [dict(item) for item in items]})
 
+
 @app.route('/api/equip_item', methods=['POST'])
 def equip_item():
     if not session.get('logged_in'): return jsonify({'success': False}), 401
-    user_id = session['user_id']
-    data = request.json
-    equipment_id = data.get('equipment_id')
-    character_id = data.get('character_id')
+    user_id, data = session['user_id'], request.json
+    equipment_id, character_id = data.get('equipment_id'), data.get('character_id')
     conn = db.get_db_connection()
-    conn.execute('UPDATE player_equipment SET is_equipped_on = NULL WHERE is_equipped_on = ? AND user_id = ?', (character_id, user_id))
+    conn.execute('UPDATE player_equipment SET is_equipped_on = NULL WHERE is_equipped_on = ? AND user_id = ?',
+                 (character_id, user_id))
     conn.execute('UPDATE player_equipment SET is_equipped_on = ? WHERE id = ? AND user_id = ?',
                  (character_id, equipment_id, user_id))
     conn.commit()
     conn.close()
     return jsonify({'success': True})
 
+
 @app.route('/api/unequip_item', methods=['POST'])
 def unequip_item():
     if not session.get('logged_in'): return jsonify({'success': False}), 401
-    user_id = session['user_id']
-    equipment_id = request.json.get('equipment_id')
+    user_id, equipment_id = session['user_id'], request.json.get('equipment_id')
     conn = db.get_db_connection()
-    conn.execute('UPDATE player_equipment SET is_equipped_on = NULL WHERE id = ? AND user_id = ?', (equipment_id, user_id))
+    conn.execute('UPDATE player_equipment SET is_equipped_on = NULL WHERE id = ? AND user_id = ?',
+                 (equipment_id, user_id))
     conn.commit()
     conn.close()
     return jsonify({'success': True})
@@ -327,23 +332,22 @@ def unequip_item():
 @app.route('/api/manage_team', methods=['POST'])
 def manage_team():
     if not session.get('logged_in'): return jsonify({'success': False}), 401
-    user_id = session['user_id']
-    data = request.json
-    char_db_id = data.get('char_id')
-    action = data.get('action')
+    user_id, data = session['user_id'], request.json
+    char_db_id, action = data.get('char_id'), data.get('action')
     team_ids = [c['db_id'] if c else None for c in db.get_player_team(user_id, character_definitions)]
     if action == 'add':
         if char_db_id in team_ids: return jsonify({'success': False, 'message': 'Already in team.'})
         try:
-            empty_slot_index = team_ids.index(None)
-            team_ids[empty_slot_index] = char_db_id
-        except ValueError: return jsonify({'success': False, 'message': 'Team is full!'})
+            team_ids[team_ids.index(None)] = char_db_id
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Team is full!'})
     elif action == 'remove':
         try:
-            slot_to_clear = team_ids.index(char_db_id)
-            team_ids[slot_to_clear] = None
-        except ValueError: return jsonify({'success': False, 'message': 'Not in team.'})
-    else: return jsonify({'success': False, 'message': 'Invalid action.'})
+            team_ids[team_ids.index(char_db_id)] = None
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Not in team.'})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid action.'})
     db.set_player_team(user_id, team_ids)
     return jsonify({'success': True})
 
@@ -359,8 +363,8 @@ def merge_heroes():
     current_rarity = heroes_of_type[0]['rarity']
     if current_rarity not in MERGE_COST: return jsonify({'success': False, 'message': 'This hero is at max rarity!'})
     cost = MERGE_COST[current_rarity]
-    if len(heroes_of_type) < cost: return jsonify({'success': False, 'message': f'Not enough copies. Need {cost}, have {len(heroes_of_type)}.'})
-
+    if len(heroes_of_type) < cost: return jsonify(
+        {'success': False, 'message': f'Not enough copies. Need {cost}, have {len(heroes_of_type)}.'})
     next_rarity_index = RARITY_ORDER.index(current_rarity) + 1
     new_rarity = RARITY_ORDER[next_rarity_index]
     heroes_to_consume = heroes_of_type[1:cost]
@@ -370,8 +374,11 @@ def merge_heroes():
     cursor.execute("UPDATE player_characters SET rarity = ? WHERE id = ?", (new_rarity, hero_to_upgrade['id']))
     ids_to_delete = tuple(h['id'] for h in heroes_to_consume)
     if ids_to_delete:
-        cursor.execute(f"DELETE FROM player_characters WHERE id IN ({','.join('?' * len(ids_to_delete))})", ids_to_delete)
-        cursor.execute(f"UPDATE player_team SET character_db_id = NULL WHERE character_db_id IN ({','.join('?' * len(ids_to_delete))})", ids_to_delete)
+        cursor.execute(f"DELETE FROM player_characters WHERE id IN ({','.join('?' * len(ids_to_delete))})",
+                       ids_to_delete)
+        cursor.execute(
+            f"UPDATE player_team SET character_db_id = NULL WHERE character_db_id IN ({','.join('?' * len(ids_to_delete))})",
+            ids_to_delete)
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'message': f'{char_name} upgraded to {new_rarity}!'})
@@ -391,8 +398,7 @@ def handle_send_message(data):
     if session.get('logged_in'):
         message = data.get('message', '').strip()
         if 0 < len(message) <= 200:
-            username = session.get('username')
-            emit('receive_message', {'username': username, 'message': message}, broadcast=True)
+            emit('receive_message', {'username': session.get('username'), 'message': message}, broadcast=True)
 
 
 @socketio.on('disconnect')
