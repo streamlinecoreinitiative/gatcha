@@ -11,3 +11,106 @@ Your destiny is a vertical one. You must ascend the Spire of Chaos, floor by eve
 The climb is eternal. The enemy is infinite. Your courage must be too.
 
 Gather your heroines. The first floor awaits.
+
+_____________________
+
+CHANGES: 21 JUNE: 2025
+
+Changelog: From Simple Game to Gacha Core
+Today, we transformed the game from a basic proof-of-concept into a full-fledged gacha game with a compelling and potentially endless core loop.
+
+V2.0: The Strategic Foundation - Elemental Affinities
+The first and most critical step to adding strategy.
+
+New Mechanic: Implemented the core Fire > Grass > Water > Fire elemental system.
+
+Data Overhaul: Added an "element" property to every character and enemy in the game's data files.
+
+Combat Upgrade: The backend fight logic was upgraded to calculate and apply a damage bonus when using an advantageous element.
+
+UI Feedback: All hero cards in the Collection, Team, and Summon screens were updated to display their element, giving players crucial information.
+
+V3.0: The Visual Upgrade - The Battle Arena
+We moved combat from a simple text pop-up to an engaging visual experience.
+
+New Battle Screen: Replaced the old combat log with a dedicated, full-screen Battle Arena.
+
+Visual Health Bars: Implemented dynamic HP bars for both the player's team and the enemy, which update in real-time.
+
+Dynamic FX: Added visual effects to make combat feel impactful, including:
+
+Floating damage numbers that appear over the target.
+
+Distinct, larger numbers for critical hits.
+
+A "screen shake" effect when a side is attacked.
+
+Cinematic Flow: Created a turn-by-turn battle director in JavaScript that plays out the fight with delays, making it feel like a mini-movie instead of an instant report.
+
+V4.0: The Endless Loop - The Two-Pillar System
+This was the most significant architectural change, creating true replayability.
+
+New Design Philosophy: Separated the game into two pillars: Progression (Campaign) and Grinding (Dungeons).
+
+Campaign Overhaul (Pillar 1):
+
+Enemies in the Campaign are now deterministic (Stage 5 always has the same enemy), making them solvable puzzles.
+
+Rewards were split: a large, one-time reward for the first clear, and heavily nerfed rewards for repeats. This makes the campaign feel epic but a poor place to grind.
+
+Dungeons Added (Pillar 2):
+
+Created a new "Dungeons" section, the primary place for grinding.
+
+Dungeon enemies are random and scale with the player's campaign progress, providing endless variety.
+
+Pre-Battle Intel: Implemented a pop-up modal that shows players the enemy they will face in a campaign stage, allowing them to strategize before committing to a fight.
+
+V5.0: The Payoff - Equipment & Management
+This feature gives meaning to the grind by providing tangible rewards.
+
+Loot System: Dungeons now have a high chance to drop equipment upon victory.
+
+Equipment Has Power: The backend combat logic was upgraded again to calculate and apply all stat bonuses from a hero's equipped items.
+
+The Armory: A new "Equipment" screen was added for players to view their entire collection of looted gear.
+
+Hero Detail & Equip Modal: Implemented the final piece of the puzzle: a pop-up modal where players can select a hero and equip/unequip items from their inventory.
+
+Key Bug Fixes & Refinements
+Event Listeners: Resolved a critical JavaScript bug where event listeners were being attached multiple times, causing buttons to fire twice or not at all. This was fixed by restructuring the code to only attach listeners once.
+
+Database Schema: Fixed a fatal OperationalError by adding the slot_num column to the player_team table, ensuring the database structure matched the Python code's expectations.
+
+JavaScript Errors: Squashed numerous ReferenceError and SyntaxError issues that were preventing the game from running.
+
+CSS Layout: Fixed various layout bugs, such as overlapping UI elements, to create a cleaner and more professional user interface.
+
+Player Guide: Mastering the Elements!
+Here is a simple guide you could show to new players to explain the elemental system.
+
+Mastering the Elements: A Guide to Combat!
+Welcome, hero! The world of Aethelgard is filled with powerful foes, but with strategy, you can overcome any challenge. The key to victory lies in understanding Elemental Affinities!
+
+The Rule of Three
+Every hero and enemy has one of three elements, each strong against one and weak against another, just like Rock-Paper-Scissors.
+
+🔥 Fire is strong against 🌿 Grass (Fire burns Grass)
+🌿 Grass is strong against 💧 Water (Grass soaks up Water)
+💧 Water is strong against 🔥 Fire (Water douses Fire)
+
+Why It Matters
+💥 Deal MORE Damage: When your team's element is strong against the enemy's, you will deal a massive damage bonus!
+
+🧠 Strategic Victory: The strongest team isn't always the one with the highest rarity! A well-chosen team of Rare heroes with the right elemental advantage can easily defeat a team of SSRs who are at a disadvantage.
+
+How to Win
+Follow these steps to become a master strategist:
+
+Scout the Enemy: Before entering a Campaign stage, click the "Fight" button. This will open the Intel Screen, showing you the enemy's name, stats, and most importantly, their Element.
+
+Build Your Counter-Team: See a tough 🔥 Fire boss? Click "Change Team" or go to your Collection and build a team full of your best 💧 Water heroes.
+
+Conquer! Enter the battle and watch as your smart thinking allows you to tear through the enemy's defenses for a decisive victory!
+
+Pro-Tip: For predictable Campaign bosses, a specialized, single-element team is best. For random Dungeons, a balanced team with one of each element is a safe and powerful choice

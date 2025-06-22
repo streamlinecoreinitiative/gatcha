@@ -1,0 +1,38 @@
+[
+    {
+        "name": "Broken Sword",
+        "type": "Weapon",
+        "rarity": "Common",
+        "stat_bonuses": { "atk": 10 }
+    },
+    {
+        "name": "Leather Vest",
+        "type": "Armor",
+        "rarity": "Common",
+        "stat_bonuses": { "hp": 50 }
+    },
+    {
+        "name": "Iron Longsword",
+        "type": "Weapon",
+        "rarity": "Rare",
+        "stat_bonuses": { "atk": 35 }
+    },
+    {
+        "name": "Steel Platebody",
+        "type": "Armor",
+        "rarity": "Rare",
+        "stat_bonuses": { "hp": 120 }
+    },
+    {
+        "name": "Excalibur",
+        "type": "Weapon",
+        "rarity": "Legendary",
+        "stat_bonuses": { "atk": 80, "crit_chance": 5 }
+    },
+    {
+        "name": "Aegis Shield",
+        "type": "Armor",
+        "rarity": "Legendary",
+        "stat_bonuses": { "hp": 250, "crit_damage": 0.25 }
+    }
+]

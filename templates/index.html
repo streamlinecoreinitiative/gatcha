@@ -68,6 +68,13 @@
                 </div>
             </div>
 
+            <div id="equipment-view" class="view">
+    <h2>Your Armory</h2>
+    <div id="equipment-container" class="collection-grid">
+        <!-- Equipment will be dynamically inserted here -->
+    </div>
+</div>
+
             <!-- Campaign View -->
             <div id="campaign-view" class="view">
                 <div class="campaign-container">
@@ -80,29 +87,76 @@
                 </div>
             </div>
 
+                <div id="dungeons-view" class="view">
+        <h2>Resource Dungeons</h2>
+        <p>Farm these repeatable dungeons for valuable loot. Difficulty scales with your campaign progress.</p>
+        <div class="dungeon-list">
+            <div class="dungeon-item">
+                <h3>The Armory</h3>
+                <p>A high chance to drop random equipment.</p>
+                <button id="enter-armory-btn" class="dungeon-fight-button">Enter Dungeon</button>
+            </div>
+            <!-- You could add more dungeons here later! -->
+        </div>
+    </div>
+
             <!-- Lore View (Simple implementation) -->
             <div id="lore-view" class="view">
                  <h2>The Lore of Aethelgard</h2>
                  <div id="lore-text-container" class="lore-box"></div>
             </div>
+
+
         </div>
 
         <!-- BOTTOM NAVIGATION BAR -->
         <div id="nav-bar">
             <button class="nav-button" data-view="home-view">Home</button>
             <button class="nav-button" data-view="collection-view">Collection</button>
+            <button class="nav-button" data-view="equipment-view">Equipment</button>
             <button class="nav-button" data-view="summon-view">Summon</button>
             <button class="nav-button" data-view="campaign-view">Campaign</button>
+            <button class="nav-button" data-view="dungeons-view">Dungeons</button>
             <button class="nav-button" data-view="online-view">Online</button>
-            <button class="nav-button" data-view="lore-view">Lore</button>
+            <button class="nav-button" data-view="lore-view">Change Log</button>
+
         </div>
 
-        <!-- V2 COMBAT LOG: CORRECT PLACEMENT -->
-        <!-- It is inside #game-screen but OUTSIDE #main-content -->
-        <div id="combat-log-container">
-            <!-- The combat log will be injected here by JavaScript -->
+    </div>
+    <!-- ======================================================= -->
+    <!-- ==== NEW BATTLE SCREEN - ADD THIS ENTIRE DIV BLOCK ==== -->
+    <!-- ======================================================= -->
+    <div id="battle-screen" class="screen">
+        <div id="battle-arena">
+            <!-- Player's Team Display -->
+            <div id="battle-player-side">
+                <h2>Your Team</h2>
+                <div id="battle-player-team" class="team-container">
+                    <!-- Player heroes will be injected here by JS -->
+                </div>
+                <div class="hp-bar-outer">
+                    <div id="player-hp-bar" class="hp-bar-inner"></div>
+                    <span id="player-hp-text" class="hp-text"></span>
+                </div>
+            </div>
+
+            <!-- Enemy Display -->
+            <div id="battle-enemy-side">
+                <div id="battle-enemy-display">
+                    <!-- Enemy info will be injected here by JS -->
+                </div>
+                <div class="hp-bar-outer">
+                    <div id="enemy-hp-bar" class="hp-bar-inner"></div>
+                    <span id="enemy-hp-text" class="hp-text"></span>
+                </div>
+            </div>
         </div>
 
+        <!-- The new, improved battle log -->
+        <div id="battle-log-area">
+            <div id="battle-log-entries"></div>
+            <button id="battle-return-button" style="display: none;">Return to Campaign</button>
+        </div>
     </div>
 
     <!-- CHAT FEATURE -->
@@ -117,5 +171,32 @@
 
     <!-- Link to our JavaScript file -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <!-- ======================================================= -->
+    <!-- ==== NEW PRE-BATTLE MODAL - ADD THIS ENTIRE BLOCK ===== -->
+    <!-- ======================================================= -->
+    <div id="intel-modal-overlay" class="modal-overlay">
+        <div id="intel-modal-content" class="modal-content">
+            <h2>Stage Intel</h2>
+            <div id="intel-enemy-info">
+                <!-- Enemy details will be injected here -->
+            </div>
+            <div class="modal-buttons">
+                <button id="intel-change-team-btn">Change Team</button>
+                <button id="intel-start-fight-btn">FIGHT!</button>
+                <button id="intel-close-btn">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+<div id="hero-detail-overlay" class="modal-overlay">
+    <div id="hero-detail-content" class="modal-content">
+        <!-- Content injected by JS -->
+    </div>
+</div>
+
+
 </body>
 </html>
