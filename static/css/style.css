@@ -1056,3 +1056,83 @@ button:disabled, .fantasy-button:disabled {
     padding: 8px 30px; /* Adjust button padding */
     font-size: 16px;
 }
+
+/* in static/css/style.css */
+
+/* --- LOGIN SCREEN VIDEO --- */
+.video-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 600px; /* Max width of the video */
+    margin-top: 40px; /* Space between login form and video */
+
+    /* This is the magic for responsive videos */
+    padding-top: 56.25%; /* 16:9 Aspect Ratio (divide 9 by 16 = 0.5625) */
+
+    border: 2px solid #555;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* in static/css/style.css */
+
+/* --- MESSAGE OF THE DAY (MOTD) --- */
+.motd-box {
+    margin: 40px auto 20px auto; /* Centered with space */
+    padding: 25px;
+    max-width: 800px;
+
+    background-color: rgba(0, 0, 0, 0.4);
+    background-image: url('https://www.transparenttextures.com/patterns/old-paper-fabric.png'); /* Parchment texture */
+    border: 2px solid #a1887f; /* A brownish border */
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+.motd-box h3 {
+    text-align: center;
+    font-size: 28px;
+    color: #f1c40f; /* Golden title */
+    margin-bottom: 20px;
+}
+
+.motd-box p {
+    font-size: 18px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.motd-box ul {
+    list-style-type: none; /* Remove default bullet points */
+    padding: 0;
+}
+
+.motd-box li {
+    background-color: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    border-left: 4px solid #e67e22; /* An orange accent line */
+}
+
+/* Style for links inside the box */
+.motd-box a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: bold;
+}
+.motd-box a:hover {
+    text-decoration: underline;
+}

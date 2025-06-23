@@ -27,6 +27,25 @@
                     <button id="login-button">Login</button>
                     <button id="register-button">Register</button>
                 </div>
+
+        <!-- === NEW VIDEO PLACEHOLDER === -->
+        <div class="video-container">
+            <!--
+                To use this, go to your YouTube video, click "Share", then "Embed".
+                Copy the 'src' part of the iframe code and paste it below.
+                For example: src="https://www.youtube.com/embed/your_video_id_here"
+            -->
+<iframe width="560" height="315"
+    src="https://www.youtube.com/embed/qGBos0uMfOo?autoplay=1&loop=1&playlist=qGBos0uMfOo&mute=1"
+    title="Aethelgard Chronicles"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen>
+</iframe>
+        </div>
+        <!-- ============================== -->
+
             </div>
         </div>
     </div>
@@ -52,6 +71,21 @@
             <div id="home-view" class="view active">
                 <h2>Your Active Team</h2>
                 <div id="team-display" class="team-container"></div>
+
+                    <!-- === NEW MESSAGE OF THE DAY SECTION === -->
+    <div id="motd-container" class="motd-box">
+        <h3>A Message from the Rift</h3>
+        <p>
+            Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.
+        </p>
+        <ul>
+            <li>Found a bug? <a href="https://github.com/your_username/your_repo/issues" target="_blank">Report it here!</a></li>
+            <li>Top Summoner: <span id="top-player-name">Loading...</span> (Floor <span id="top-player-stage">?</span>)</li>
+        </ul>
+    </div>
+    <!-- ===================================== -->
+
+
             </div>
 
             <!-- V3: NEW Online Users View -->
