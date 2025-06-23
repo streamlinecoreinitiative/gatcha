@@ -36,6 +36,28 @@ const chatInput = document.getElementById('chat-input');
 const chatSendButton = document.getElementById('chat-send-button');
 const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
+const TOWER_LORE = [
+    {
+        floor: 1,
+        title: "The Spire of Chaos",
+        text: "A festering wound in reality itself, its floors stretching into a maddening, infinite eternity."
+    },
+    {
+        floor: 10,
+        title: "The Void-Touched Halls",
+        text: "From its endless corridors, the Void-touched pour forth, each floor commanded by a more twisted guardian."
+    },
+    {
+        floor: 25,
+        title: "The Star-Forged Hope",
+        text: "Only the legendary Star-forged Maidens, summoned by your hand, can withstand the Spire's corrupting energy."
+    },
+    {
+        floor: 40,
+        title: "The Impossible Pinnacle",
+        text: "Your destiny is a vertical one. You must climb higher than any have before to seal the rift for good."
+    }
+];
 
 // =========================================================================
 // ==== ATTACH EVENT LISTENERS (RUNS ONLY ONCE) ====
@@ -359,7 +381,21 @@ function updateCampaignDisplay() {
     stageListContainer.innerHTML = '';
     const currentStage = gameState.current_stage || 1;
     let currentStageElement = null;
-
+    // --- NEW DYNAMIC LORE LOGIC ---
+    const header = document.querySelector('#campaign-view .view-header');
+    if (header) {
+        // Find the highest-level lore the player has unlocked
+        let currentLore = TOWER_LORE[0]; // Default to the first entry
+        for (const lore of TOWER_LORE) {
+            if (currentStage >= lore.floor) {
+                currentLore = lore;
+            }
+        }
+        // Update the header with the unlocked lore
+        header.querySelector('h2').textContent = currentLore.title;
+        header.querySelector('p').textContent = currentLore.text;
+    }
+    // --- END OF LORE LOGIC ---
     for (let i = 1; i <= 50; i++) {
         const stageItem = document.createElement('div');
         stageItem.className = 'stage-item';

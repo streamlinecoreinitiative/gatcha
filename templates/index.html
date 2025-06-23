@@ -84,17 +84,25 @@
     </div>
 </div>
 
-            <!-- Campaign View -->
-            <div id="campaign-view" class="view">
-                <div class="campaign-container">
-                    <div id="stage-list" class="stage-list-container">
-                        <!-- Stages will be dynamically inserted here -->
-                    </div>
-                    <div class="tower-art-container">
-                        <img src="{{ url_for('static', filename='images/ui/tower_art.png') }}" alt="The Spire">
-                    </div>
-                </div>
-            </div>
+<!-- NEW HTML -->
+<div id="campaign-view" class="view">
+
+    <!-- === NEW HEADER SECTION === -->
+    <div class="view-header">
+        <h2>The Spire of Chaos</h2>
+        <p>A festering wound in reality itself, its floors stretching into a maddening, infinite eternity.</p>
+    </div>
+    <!-- ========================== -->
+
+    <div class="campaign-container">
+        <div id="stage-list" class="stage-list-container">
+            <!-- Stages will be dynamically inserted here -->
+        </div>
+        <div class="tower-art-container">
+            <img src="{{ url_for('static', filename='images/ui/tower_art.png') }}" alt="The Spire">
+        </div>
+    </div>
+</div>
 
 <!-- NEW & IMPROVED DUNGEONS VIEW -->
 <div id="dungeons-view" class="view">

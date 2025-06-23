@@ -966,3 +966,25 @@ button:disabled, .fantasy-button:disabled {
     /* Uncommon can be a step above Common */
     color: #2ecc71; /* A nice green */
 }
+
+/* --- UNIVERSAL VIEW HEADER STYLE --- */
+.view-header {
+    text-align: center;
+    padding: 20px;
+    margin: 0 auto 20px auto;
+    max-width: 900px;
+}
+
+.view-header h2 {
+    font-size: 36px;
+    color: #e74c3c; /* A strong, ominous red */
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px #000;
+}
+
+.view-header p {
+    font-size: 18px;
+    color: #bdc3c7; /* A lighter grey for the subtitle */
+    font-style: italic;
+    line-height: 1.5;
+}
