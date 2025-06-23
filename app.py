@@ -26,7 +26,7 @@ db.init_db()
 BASE_DIR = os.path.dirname(__file__)
 character_definitions = load_all_definitions(os.path.join(BASE_DIR, "characters.json"))
 enemy_definitions = load_all_definitions(os.path.join(BASE_DIR, "enemies.json"))
-equipment_definitions = load_all_definitions(os.path.join(BASE_DIR, "equipment.json"))
+equipment_definitions = load_all_definitions(os.path.join(BASE_DIR, "static", "equipment.json"))
 LORE_FILE = os.path.join(BASE_DIR, "lore.txt")
 if not character_definitions or not enemy_definitions or not equipment_definitions: exit("Could not load game data.")
 

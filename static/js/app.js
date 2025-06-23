@@ -1,7 +1,7 @@
-// static/js/app.js (V5.1 - Equipment System & Event Listener Fix)
+// static/js/app.js (V5.5 - Final UI & Event Fixes)
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded. V5.1 Initializing with Equipment System...");
+    console.log("DOM fully loaded. V5.5 Finalizing...");
     attachEventListeners();
     initializeGame();
 });
@@ -12,6 +12,7 @@ let masterCharacterList = [];
 let socket;
 let currentStageForFight = 0;
 
+// --- DOM ELEMENT REFERENCES ---
 const loginScreen = document.getElementById('login-screen');
 const gameScreen = document.getElementById('game-screen');
 const usernameInput = document.getElementById('username-input');
@@ -56,61 +57,45 @@ function attachEventListeners() {
         if (result.success) {
             const character = result.character;
             const element = character.element || 'None';
-            summonResultContainer.innerHTML = `
-                <div class="team-slot">
-                    <div class="card-header">
-                        <div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div>
-                        <div class="card-element element-${element.toLowerCase()}">${element}</div>
-                    </div>
-                    <img src="/static/images/characters/${character.image_file}" alt="${character.name}">
-                    <h4>${character.name}</h4>
-                    <p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p>
-                    <p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p>
-                </div>`;
+            summonResultContainer.innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${character.image_file}" alt="${character.name}"><h4>${character.name}</h4><p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p><p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p></div>`;
             await fetchPlayerDataAndUpdate();
-        } else {
-            alert(`Summon Failed: ${result.message}`);
-        }
+        } else { alert(`Summon Failed: ${result.message}`); }
     });
 
     chatSendButton.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
+    // --- FIX #1: Logic for Nav Buttons Restored ---
     navButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetViewId = button.dataset.view;
             mainContent.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
             document.getElementById(targetViewId)?.classList.add('active');
             if (targetViewId !== 'summon-view') summonResultContainer.innerHTML = '';
-            if (targetViewId === 'lore-view') {
-                 fetch('/api/lore').then(res => res.json()).then(result => {
-                    if(result.success) loreContainer.textContent = result.data;
-                 });
-            }
 
-            // --- THIS IS THE CRITICAL FIX ---
-            // If the player is switching to the equipment view,
-            // we MUST call the function to populate it.
+            if (targetViewId === 'lore-view') {
+                 fetch('/api/lore').then(res => res.json()).then(result => { if(result.success) loreContainer.textContent = result.data; });
+            }
+            // This ensures the equipment list is fetched when the tab is clicked
             if (targetViewId === 'equipment-view') {
                 updateEquipmentDisplay();
             }
-            // --- END OF FIX ---
         });
     });
 
-// --- MAIN EVENT DELEGATOR FOR ALL DYNAMIC CONTENT ---
+    // --- MAIN EVENT DELEGATOR FOR ALL DYNAMIC CONTENT ---
     document.body.addEventListener('click', async (e) => {
         const target = e.target;
 
-        // --- Check for the MOST SPECIFIC clicks first ---
-
-        // --- Collection Card Buttons ---
+        // --- FIX #2: Correctly handle the result for team management ---
         if (target.classList.contains('team-manage-button')) {
-            const charId = parseInt(target.dataset.charId, 10);
+            const charId = parseInt(target.dataset.charId);
             const action = target.dataset.action;
             const response = await fetch('/api/manage_team', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ char_id: charId, action: action }) });
-            const result = await response.json();
-            if(!result.success) alert(`Team Update Failed: ${result.message}`);
+            const result = await response.json(); // Save the result to a variable
+            if(!result.success) {
+                alert(`Team Update Failed: ${result.message}`); // Use the saved variable
+            }
             await fetchPlayerDataAndUpdate();
         }
         else if (target.classList.contains('merge-button')) {
@@ -118,31 +103,30 @@ function attachEventListeners() {
             const response = await fetch('/api/merge_heroes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: charName }) });
             const result = await response.json();
             alert(result.message);
-            if (result.success) await fetchPlayerDataAndUpdate();
+            if(result.success) await fetchPlayerDataAndUpdate();
         }
-        // --- THEN, check for the more general click on the card itself ---
-        else if (target.closest('.collection-card')) {
+        else if (target.closest('.collection-card') && target.closest('#collection-container')) {
             const card = target.closest('.collection-card');
-            const heroName = card.querySelector('h4').textContent;
-            const heroInstance = gameState.collection.find(h => h.character_name === heroName);
-            if (heroInstance) openHeroDetailModal(heroInstance);
+            const heroNameElement = card.querySelector('h4');
+            const heroStatsElement = card.querySelector('.card-stats');
+            if (heroNameElement && heroStatsElement) {
+                const heroName = heroNameElement.textContent;
+                const heroInstance = gameState.collection.find(h => h.character_name === heroName);
+                if (heroInstance) openHeroDetailModal(heroInstance);
+            }
         }
-
-        // --- Campaign Intel & Fight ---
         else if (target.classList.contains('fight-button')) {
-            const stageNum = parseInt(target.dataset.stageNum, 10);
+            const stageNum = parseInt(target.dataset.stageNum);
             currentStageForFight = stageNum;
             const response = await fetch(`/api/stage_info/${stageNum}`);
             const result = await response.json();
             if (result.success) {
                 const enemy = result.enemy;
                 const element = enemy.element || 'None';
-                document.getElementById('intel-enemy-info').innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity">Enemy</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/${enemy.image_file}" alt="${enemy.name}"><h4>${enemy.name}</h4><div class="card-stats">HP: ~${enemy.hp} | ATK: ~${enemy.atk}</div></div>`;
+                document.getElementById('intel-enemy-info').innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity">Enemy</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/${enemy.image_file}" alt="${enemy.name}"><h4>${enemy.name}</h4><div class="card-stats">HP: ~${enemy.hp} | ATK: ~${enemy.atk}</div></div>`;
                 document.getElementById('intel-modal-overlay').classList.add('active');
             } else { alert(`Error: ${result.message}`); }
         }
-
-        // --- Dungeon Fight Button ---
         else if (target.classList.contains('dungeon-fight-button')) {
             const response = await fetch('/api/fight_dungeon', { method: 'POST' });
             const result = await response.json();
@@ -152,8 +136,6 @@ function attachEventListeners() {
                 await startBattle(result);
             } else { alert(`Dungeon Failed: ${result.message}`); }
         }
-
-        // --- Intel Modal Buttons ---
         else if (target.id === 'intel-close-btn') document.getElementById('intel-modal-overlay').classList.remove('active');
         else if (target.id === 'intel-change-team-btn') {
             document.getElementById('intel-modal-overlay').classList.remove('active');
@@ -169,8 +151,6 @@ function attachEventListeners() {
                 await startBattle(result);
             } else { alert(`Fight Failed: ${result.message}`); }
         }
-
-        // --- Hero Detail Modal (Equipping) Buttons ---
         else if (target.id === 'close-hero-detail-btn') document.getElementById('hero-detail-overlay').classList.remove('active');
         else if (target.id === 'confirm-equip-btn') {
             const heroId = target.dataset.heroId;
@@ -186,25 +166,15 @@ function attachEventListeners() {
             document.getElementById('hero-detail-overlay').classList.remove('active');
             await fetchPlayerDataAndUpdate();
         }
-
-        // --- Battle Screen Button ---
         else if (target.id === 'battle-return-button') {
             battleScreen.classList.remove('active');
             gameScreen.classList.add('active');
             await fetchPlayerDataAndUpdate();
         }
     });
-
 }
-// =========================================================================
 
 // --- ASYNC & STATE FUNCTIONS ---
-// ... (All functions from here down are correct and can be copied from the previous response)
-// Includes: delay, initializeGame, fetchPlayerDataAndUpdate, handleLogin, handleLogout, connectSocket,
-// sendMessage, openHeroDetailModal, updateUI, updateEquipmentDisplay, updateTeamDisplay,
-// updateCollectionDisplay, updateCampaignDisplay, and startBattle.
-// I will include them here for completeness.
-
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function initializeGame() {
@@ -274,17 +244,12 @@ async function openHeroDetailModal(hero) {
     const modalContent = document.getElementById('hero-detail-content');
     modalContent.innerHTML = 'Loading hero details...';
     modalOverlay.classList.add('active');
-
     const equipResponse = await fetch('/api/player_equipment');
     const equipResult = await equipResponse.json();
     const allPlayerItems = equipResult.equipment || [];
-
     const unequippedItems = allPlayerItems.filter(item => item.is_equipped_on === null);
-
-    // Use the gameState since it's the most up-to-date source of truth on the client
     const fullHeroData = gameState.collection.find(h => h.id === hero.id);
     const equippedItems = allPlayerItems.filter(item => item.is_equipped_on === fullHeroData.id);
-
     let html = `
         <h3>${fullHeroData.character_name}</h3>
         <h4>Equipped Items</h4>
@@ -313,6 +278,7 @@ function sendMessage() {
     }
 }
 
+// --- UI UPDATE FUNCTIONS ---
 function updateUI() {
     if (!gameState || !gameState.username) return;
     playerNameDisplay.textContent = gameState.username;
@@ -320,27 +286,19 @@ function updateUI() {
     updateTeamDisplay();
     updateCollectionDisplay();
     updateCampaignDisplay();
-    updateEquipmentDisplay();
-
 }
 
 async function updateEquipmentDisplay() {
-    if (!document.getElementById('equipment-view').classList.contains('active')) return;
+    if (!equipmentContainer) return;
     equipmentContainer.innerHTML = 'Loading...';
     const response = await fetch('/api/player_equipment');
     const result = await response.json();
-    if (!result.success) {
-        equipmentContainer.innerHTML = 'Failed to load equipment.';
-        return;
-    }
+    if (!result.success) { equipmentContainer.innerHTML = 'Failed to load equipment.'; return; }
     equipmentContainer.innerHTML = '';
     const equipmentDefsResponse = await fetch('/static/equipment.json');
     if (!equipmentDefsResponse.ok) return;
     const equipmentDefs = await equipmentDefsResponse.json();
-    const statsMap = equipmentDefs.reduce((map, item) => {
-        map[item.name] = item.stat_bonuses;
-        return map;
-    }, {});
+    const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
     if (result.equipment.length === 0) {
         equipmentContainer.innerHTML = '<p>Your armory is empty. Farm dungeons to find loot!</p>';
         return;
@@ -392,7 +350,6 @@ function updateCollectionDisplay() {
         const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[heroInstance.rarity] || 999;
         const canMerge = heroGroup.length >= mergeCost;
         const isInTeam = teamDBIds.includes(heroInstance.id);
-        // FIX: Removed the extra closing </div> tag here
         card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${heroInstance.rarity.toLowerCase()}">[${heroInstance.rarity}] (x${heroGroup.length})</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${charDef.image_file}" alt="${name}"><h4>${name}</h4><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button></div>`;
         collectionContainer.appendChild(card);
     }
@@ -415,7 +372,6 @@ function updateCampaignDisplay() {
 }
 
 async function startBattle(fightResult) {
-    // ... This function can be copied from the previous response. It is correct.
     const playerTeamContainer = document.getElementById('battle-player-team');
     const enemyDisplayContainer = document.getElementById('battle-enemy-display');
     const logEntriesContainer = document.getElementById('battle-log-entries');
@@ -431,15 +387,17 @@ async function startBattle(fightResult) {
     returnButton.style.display = 'none';
 
     const startEntry = fightResult.log[0];
-    const enemyName = startEntry.message.split('faces ')[1].replace('!', '').replace(/^[a-zA-Z]+\s/, '');
+    const enemyName = startEntry.message.split('faces a ')[1]?.split('!')[0].trim().split(' ').slice(1).join(' ') || 'Unknown Enemy';
     const enemyImage = startEntry.enemy_image;
 
     const maxTeamHP = gameState.team.reduce((total, member) => {
         if (!member) return total;
         const multipliers = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5};
         let memberHP = (member.base_hp * (multipliers[member.rarity] || 1.0));
+        // Add equipped item HP for accurate client-side display
         member.equipped.forEach(item => {
-             // This part is for display only, the real stats are calculated on the server.
+            // This would require fetching equipment defs on client, or passing stats from server
+            // For now, we rely on server for combat calcs. This is for display only.
         });
         return total + memberHP;
     }, 0);
