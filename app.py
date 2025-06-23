@@ -1,4 +1,4 @@
-# app.py (V5.3 - Final Crash Fix)
+# app.py (V5.4 - Hardened Stat Calculation)
 from flask import Flask, jsonify, render_template, request, session
 from flask_socketio import SocketIO, emit
 import os
@@ -26,7 +26,7 @@ db.init_db()
 BASE_DIR = os.path.dirname(__file__)
 character_definitions = load_all_definitions(os.path.join(BASE_DIR, "characters.json"))
 enemy_definitions = load_all_definitions(os.path.join(BASE_DIR, "enemies.json"))
-equipment_definitions = load_all_definitions(os.path.join(BASE_DIR, "static", "equipment.json"))
+equipment_definitions = load_all_definitions(os.path.join(BASE_DIR, "static", "equipment.json"))  # Corrected path
 LORE_FILE = os.path.join(BASE_DIR, "lore.txt")
 if not character_definitions or not enemy_definitions or not equipment_definitions: exit("Could not load game data.")
 
@@ -57,6 +57,50 @@ def get_enemy_for_stage(stage_num):
         enemy_def = random.choice(possible_enemies)
     random.seed()
     return enemy_def
+
+
+# --- THIS IS THE CORRECTED HELPER FUNCTION ---
+def calculate_fight_stats(team, enemy_def, level_scaling):
+    total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
+    for character in team:
+        if not character: continue
+        char_hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
+        char_atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
+        char_crit_chance = character.get('crit_chance', 0)
+        char_crit_damage = character.get('crit_damage', 1.5)
+
+        for item in character.get('equipped', []):
+            item_name = item.get('equipment_name')
+            if item_name:
+                item_stats = equipment_stats_map.get(item_name, {})
+                char_hp += item_stats.get('hp', 0)
+                char_atk += item_stats.get('atk', 0)
+                char_crit_chance += item_stats.get('crit_chance', 0)
+                char_crit_damage += item_stats.get('crit_damage', 0)
+
+        total_team_hp += char_hp
+        total_team_atk += char_atk
+        team_crit_chance = max(team_crit_chance, char_crit_chance)
+        team_crit_damage = max(team_crit_damage, char_crit_damage)
+
+    team_elements = [c.get('element') for c in team]
+    enemy_element = enemy_def.get('element')
+    advantage = {'Fire': 'Grass', 'Grass': 'Water', 'Water': 'Fire'}
+    advantageous_heroes = sum(1 for el in team_elements if advantage.get(el) == enemy_element)
+    disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
+    team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
+
+    enemy_hp = enemy_def['base_hp'] * (1 + (level_scaling - 1) * 0.25) * random.uniform(0.9, 1.1)
+    enemy_atk = enemy_def['base_atk'] * (1 + (level_scaling - 1) * 0.15) * random.uniform(0.9, 1.1)
+    enemy_crit_chance = enemy_def.get('crit_chance', 0)
+    enemy_crit_damage = enemy_def.get('crit_damage', 1.5)
+
+    return {
+        "team_hp": total_team_hp, "team_atk": total_team_atk, "team_crit_chance": team_crit_chance,
+        "team_crit_damage": team_crit_damage, "team_elemental_multiplier": team_elemental_multiplier,
+        "enemy_hp": enemy_hp, "enemy_atk": enemy_atk, "enemy_crit_chance": enemy_crit_chance,
+        "enemy_crit_damage": enemy_crit_damage, "enemy_element": enemy_element
+    }
 
 
 # --- CORE ROUTES ---
@@ -145,46 +189,6 @@ def get_stage_info(stage_num):
         'hp': int(enemy_hp), 'atk': int(enemy_atk)
     }
     return jsonify({'success': True, 'enemy': enemy_info})
-
-
-# --- COMBAT CALCULATION HELPER ---
-def calculate_fight_stats(team, enemy_def, level_scaling):
-    total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
-    for character in team:
-        if not character: continue
-        char_hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
-        char_atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
-        char_crit_chance = character.get('crit_chance', 0)
-        char_crit_damage = character.get('crit_damage', 1.5)
-        for item in character.get('equipped', []):
-            item_stats = equipment_stats_map.get(item['equipment_name'], {})
-            char_hp += item_stats.get('hp', 0)
-            char_atk += item_stats.get('atk', 0)
-            char_crit_chance += item_stats.get('crit_chance', 0)
-            char_crit_damage += item_stats.get('crit_damage', 0)
-        total_team_hp += char_hp
-        total_team_atk += char_atk
-        team_crit_chance = max(team_crit_chance, char_crit_chance)
-        team_crit_damage = max(team_crit_damage, char_crit_damage)
-
-    team_elements = [c.get('element') for c in team]
-    enemy_element = enemy_def.get('element')
-    advantage = {'Fire': 'Grass', 'Grass': 'Water', 'Water': 'Fire'}
-    advantageous_heroes = sum(1 for el in team_elements if advantage.get(el) == enemy_element)
-    disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
-    team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
-
-    enemy_hp = enemy_def['base_hp'] * (1 + (level_scaling - 1) * 0.25) * random.uniform(0.9, 1.1)
-    enemy_atk = enemy_def['base_atk'] * (1 + (level_scaling - 1) * 0.15) * random.uniform(0.9, 1.1)
-    enemy_crit_chance = enemy_def.get('crit_chance', 0)
-    enemy_crit_damage = enemy_def.get('crit_damage', 1.5)
-
-    return {
-        "team_hp": total_team_hp, "team_atk": total_team_atk, "team_crit_chance": team_crit_chance,
-        "team_crit_damage": team_crit_damage, "team_elemental_multiplier": team_elemental_multiplier,
-        "enemy_hp": enemy_hp, "enemy_atk": enemy_atk, "enemy_crit_chance": enemy_crit_chance,
-        "enemy_crit_damage": enemy_crit_damage, "enemy_element": enemy_element
-    }
 
 
 # --- PILLAR 1: CAMPAIGN ---
@@ -366,12 +370,8 @@ def merge_heroes():
     new_rarity = RARITY_ORDER[next_rarity_index]
     heroes_to_consume = heroes_of_type[1:cost]
     hero_to_upgrade = heroes_of_type[0]
-
-    # --- THE FIX ---
     conn = db.get_db_connection()
     cursor = conn.cursor()
-    # --- END OF FIX ---
-
     cursor.execute("UPDATE player_characters SET rarity = ? WHERE id = ?", (new_rarity, hero_to_upgrade['id']))
     ids_to_delete = tuple(h['id'] for h in heroes_to_consume)
     if ids_to_delete:
