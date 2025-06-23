@@ -378,10 +378,8 @@ function updateCollectionDisplay() {
 }
 
 function updateCampaignDisplay() {
-    stageListContainer.innerHTML = '';
+    // --- LORE HEADER LOGIC ---
     const currentStage = gameState.current_stage || 1;
-    let currentStageElement = null;
-    // --- NEW DYNAMIC LORE LOGIC ---
     const header = document.querySelector('#campaign-view .view-header');
     if (header) {
         // Find the highest-level lore the player has unlocked
@@ -396,70 +394,57 @@ function updateCampaignDisplay() {
         header.querySelector('p').textContent = currentLore.text;
     }
     // --- END OF LORE LOGIC ---
-    for (let i = 1; i <= 50; i++) {
+
+    const stageListContainer = document.getElementById('stage-list');
+    stageListContainer.innerHTML = ''; // Clear previous stages
+
+    // Helper function to create a single stage item
+    const createStageItem = (stageNum, status) => {
         const stageItem = document.createElement('div');
         stageItem.className = 'stage-item';
 
         let iconPath = '/static/images/ui/stage_node_locked.png';
-        let contentHTML = '';
+        let titleHTML = `<h3>Tower Floor ${stageNum}</h3>`;
+        let descriptionHTML = '';
+        let buttonHTML = '';
 
-        if (i < currentStage - 1) {
-            // Case 1: Old, cleared stages
+        if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
-            contentHTML = `
-                <div class="stage-details">
-                    <h4>Tower Floor ${i}</h4>
-                    <span class="stage-status-completed">Completed</span>
-                </div>
-            `;
-        } else if (i === currentStage - 1 && i > 0) {
-            // Case 2: The last beaten stage (farmable)
-            iconPath = '/static/images/ui/stage_node_cleared.png';
-
-            // --- THIS IS THE FIX ---
-            contentHTML = `
-                <div class="stage-details">
-                    <h4>Tower Floor ${i}</h4>
-                    <span class="stage-reward repeat">
-                        <img src="/static/images/ui/gem_icon.png" alt="Gems">
-                        Run again: 5
-                    </span>
-                </div>
-                <button class="fight-button" data-stage-num="${i}">Fight Again</button>
-            `;
-            // --- END OF FIX ---
-
-        } else if (i === currentStage) {
-            // Case 3: The current, new challenge
+            const gemsForRepeat = 5;
+            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/gem_icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
+            buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
+        } else if (status === 'current') {
             iconPath = '/static/images/ui/stage_node_current.png';
-            const gemsForFirstClear = 25 + (Math.floor((i - 1) / 5) * 5);
-            contentHTML = `
-                <div class="stage-details">
-                    <h4>Tower Floor ${i}</h4>
-                    <span class="stage-reward">
-                        <img src="/static/images/ui/gem_icon.png" alt="Gems">
-                        First Clear: ${gemsForFirstClear}
-                    </span>
-                </div>
-                <button class="fight-button" data-stage-num="${i}">Fight</button>
-            `;
-            currentStageElement = stageItem;
-        } else {
-            // Case 4: Locked stages
-            contentHTML = `
-                <div class="stage-details">
-                    <h4>Tower Floor ${i}</h4>
-                </div>
-            `;
+            const gemsForFirstClear = 25 + (Math.floor((stageNum - 1) / 5) * 5);
+            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/gem_icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
+            buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;
         }
 
-        stageItem.innerHTML = `<img src="${iconPath}" alt="Status">${contentHTML}`;
+        // This new HTML structure matches the Armory layout
+        stageItem.innerHTML = `
+            <div class="stage-icon">
+                <img src="${iconPath}" alt="Status">
+            </div>
+            <div class="stage-content">
+                ${titleHTML}
+                ${descriptionHTML}
+                <div class="stage-button-container">
+                    ${buttonHTML}
+                </div>
+            </div>
+        `;
         stageListContainer.appendChild(stageItem);
+    };
+
+    // Only create the stages that matter.
+
+    // Create the "Fight Again" stage if the player is past stage 1
+    if (currentStage > 1) {
+        createStageItem(currentStage - 1, 'farmable');
     }
 
-    if (currentStageElement) {
-        currentStageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    // Always create the current stage
+    createStageItem(currentStage, 'current');
 }
 
 async function startBattle(fightResult) {

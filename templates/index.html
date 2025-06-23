@@ -85,22 +85,32 @@
 </div>
 
 <!-- NEW HTML -->
+<!-- NEW & IMPROVED CAMPAIGN VIEW -->
 <div id="campaign-view" class="view">
 
-    <!-- === NEW HEADER SECTION === -->
-    <div class="view-header">
+    <!-- The header remains the same, which is great for consistency -->
+    <div class="view-header" id="tower-lore-header">
         <h2>The Spire of Chaos</h2>
-        <p>A festering wound in reality itself, its floors stretching into a maddening, infinite eternity.</p>
+        <p>A festering wound in reality itself...</p>
     </div>
-    <!-- ========================== -->
 
-    <div class="campaign-container">
-        <div id="stage-list" class="stage-list-container">
-            <!-- Stages will be dynamically inserted here -->
+    <!-- We reuse the 'dungeon-container' class for consistent styling -->
+    <div class="dungeon-container">
+
+        <!-- Column 1: The Stage List -->
+        <!-- We give it the 'dungeon-details-container' class to inherit its styling -->
+        <div class="dungeon-details-container" id="stage-list-wrapper">
+             <div id="stage-list" class="stage-list-container">
+                <!-- Stages will be dynamically inserted here by JavaScript -->
+            </div>
         </div>
-        <div class="tower-art-container">
+
+        <!-- Column 2: The Tower Image -->
+        <!-- We give it the 'dungeon-image-container' class to inherit its styling -->
+        <div class="dungeon-image-container" id="tower-art-wrapper">
             <img src="{{ url_for('static', filename='images/ui/tower_art.png') }}" alt="The Spire">
         </div>
+
     </div>
 </div>
 
