@@ -357,15 +357,29 @@ function updateCollectionDisplay() {
 
 function updateCampaignDisplay() {
     stageListContainer.innerHTML = '';
-    const maxStage = gameState.current_stage || 1;
+    const currentStage = gameState.current_stage || 1;
+
     for (let i = 1; i <= 50; i++) {
         const stageItem = document.createElement('div');
         stageItem.className = 'stage-item';
-        let iconPath, fightButtonHTML = '';
-        if (i < maxStage) iconPath = '/static/images/ui/stage_node_cleared.png';
-        else if (i === maxStage) iconPath = '/static/images/ui/stage_node_current.png';
-        else iconPath = '/static/images/ui/stage_node_locked.png';
-        if (i <= maxStage) fightButtonHTML = `<button class="fight-button" data-stage-num="${i}">Fight</button>`;
+
+        let iconPath = '/static/images/ui/stage_node_locked.png';
+        let fightButtonHTML = '';
+
+        // Determine the icon path first
+        if (i < currentStage) {
+            iconPath = '/static/images/ui/stage_node_cleared.png';
+        } else if (i === currentStage) {
+            iconPath = '/static/images/ui/stage_node_current.png';
+        }
+
+        // --- THIS IS THE NEW LOGIC FOR THE BUTTON ---
+        // Show the fight button if the stage is the CURRENT one,
+        // OR if it's the one immediately before it (and not stage 0).
+        if (i === currentStage || (i === currentStage - 1 && i > 0)) {
+            fightButtonHTML = `<button class="fight-button" data-stage-num="${i}">Fight</button>`;
+        }
+
         stageItem.innerHTML = `<img src="${iconPath}" alt="Status"><h4>Tower Floor ${i}</h4>${fightButtonHTML}`;
         stageListContainer.appendChild(stageItem);
     }
