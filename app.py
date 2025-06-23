@@ -60,30 +60,53 @@ def get_enemy_for_stage(stage_num):
 
 
 # --- THIS IS THE CORRECTED HELPER FUNCTION ---
+# in app.py
+
 def calculate_fight_stats(team, enemy_def, level_scaling):
     total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
     for character in team:
         if not character: continue
-        char_hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
-        char_atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
-        char_crit_chance = character.get('crit_chance', 0)
-        char_crit_damage = character.get('crit_damage', 1.5)
 
-        for item in character.get('equipped', []):
-            item_name = item.get('equipment_name')
-            if item_name:
-                item_stats = equipment_stats_map.get(item_name, {})
-                char_hp += item_stats.get('hp', 0)
-                char_atk += item_stats.get('atk', 0)
-                char_crit_chance += item_stats.get('crit_chance', 0)
-                char_crit_damage += item_stats.get('crit_damage', 0)
+        try:
+            # Start with base stats
+            char_hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
+            char_atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
+            char_crit_chance = character.get('crit_chance', 0)
+            char_crit_damage = character.get('crit_damage', 1.5)
 
-        total_team_hp += char_hp
-        total_team_atk += char_atk
-        team_crit_chance = max(team_crit_chance, char_crit_chance)
-        team_crit_damage = max(team_crit_damage, char_crit_damage)
+            # --- BULLETPROOF EQUIPMENT STAT CALCULATION ---
+            # Use .get() on the character dict itself in case 'equipped' key is missing
+            for item in character.get('equipped', []):
+                # Check if item is a dictionary before proceeding
+                if isinstance(item, dict):
+                    item_name = item.get('equipment_name')
+                    if item_name and item_name in equipment_stats_map:
+                        item_stats = equipment_stats_map[item_name]
+                        char_hp += item_stats.get('hp', 0)
+                        char_atk += item_stats.get('atk', 0)
+                        char_crit_chance += item_stats.get('crit_chance', 0)
+                        char_crit_damage += item_stats.get('crit_damage', 0)
+                    elif item_name:
+                        # Log if an item exists in the DB but not in the JSON map
+                        print(f"Warning: Item '{item_name}' found on character but not in equipment_stats_map.")
+                else:
+                    # Log if the item data is not in the expected format
+                    print(f"Warning: Malformed item data found on character: {item}")
+            # --- END OF BULLETPROOFING ---
 
-    team_elements = [c.get('element') for c in team]
+            total_team_hp += char_hp
+            total_team_atk += char_atk
+            team_crit_chance = max(team_crit_chance, char_crit_chance)
+            team_crit_damage = max(team_crit_damage, char_crit_damage)
+
+        except (KeyError, TypeError) as e:
+            # This is a master safety net. If a character's data is corrupted,
+            # log the error and skip them instead of crashing the server.
+            print(f"FATAL: Could not calculate stats for a character. Error: {e}. Data: {character}")
+            continue
+
+    # --- The rest of the function remains the same ---
+    team_elements = [c.get('element') for c in team if c]
     enemy_element = enemy_def.get('element')
     advantage = {'Fire': 'Grass', 'Grass': 'Water', 'Water': 'Fire'}
     advantageous_heroes = sum(1 for el in team_elements if advantage.get(el) == enemy_element)
