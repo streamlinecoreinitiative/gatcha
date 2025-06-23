@@ -6,12 +6,62 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #1c1c1e;
-    color: #f0f0f0;
-    overflow: hidden; /* Prevent scrolling of the whole page */
-    background-image: url('../images/ui/ui_background.png');
-    background-size: cover;
+    /* The new font is applied here! */
+    font-family: 'MedievalSharp', cursive;
+
+    /* A darker, more thematic background color */
+    background-color: #1a1a2e;
+
+    /* A subtle background texture makes it feel less flat */
+    background-image: url('../images/ui/ui_background.png'),
+                      url('https://www.transparenttextures.com/patterns/dark-leather.png');
+    background-size: cover, auto;
+    background-position: center center;
+    background-repeat: no-repeat, repeat;
+    background-attachment: fixed;
+
+    /* Softer text color that's easier on the eyes */
+    color: #e0e0e0;
+
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow-x: hidden;
+
+    /* This makes all text look sharper and less pixelated */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* --- UNIVERSAL FANTASY BUTTON STYLE --- */
+button, .fantasy-button {
+    font-family: 'MedievalSharp', cursive; /* Use our game font! */
+    font-size: 16px;
+    color: #e0e0e0; /* Off-white text */
+
+    background-color: #4a4a58; /* A dark, stony grey-blue */
+    background-image: url('https://www.transparenttextures.com/patterns/rocky-wall.png'); /* Subtle rock texture */
+
+    border: 2px solid #a0a0b0; /* A lighter grey for a metallic look */
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+
+    transition: all 0.2s ease-in-out; /* Smooth transition for hover effects */
+}
+
+button:hover, .fantasy-button:hover {
+    background-color: #5a5a68; /* Slightly lighter on hover */
+    border-color: #ffffff; /* Brighter border on hover */
+    color: #ffffff;
+}
+
+button:disabled, .fantasy-button:disabled {
+    background-color: #333;
+    background-image: none; /* No texture on disabled buttons */
+    border-color: #555;
+    color: #777;
+    cursor: not-allowed;
 }
 
 /* Screen Management */
@@ -75,10 +125,17 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #111;
     padding: 0 20px;
     height: 60px;
-    border-bottom: 2px solid #444;
+
+    /* --- THE FIX --- */
+    /* Use the same dark color and texture as our buttons */
+    background-color: #383844; /* A slightly different shade of dark grey-blue */
+    background-image: url('https://www.transparenttextures.com/patterns/rocky-wall.png');
+
+    /* A more prominent, inset border to give it depth */
+    border-bottom: 3px solid #1a1a2e;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Add a drop shadow for depth */
 }
 #player-info, #currency-info {
     display: flex;
@@ -141,10 +198,16 @@ body {
 .nav-button {
     flex-grow: 1;
     cursor: pointer;
-    border: none;
+    border: none; /* Keep borderless for a clean nav bar look */
     background-color: transparent;
-    color: #f0f0f0;
-    font-size: 16px;
+    color: #e0e0e0; /* Use the same softer white */
+    font-size: 20px; /* Make it a bit bigger and more prominent */
+
+    /* --- THE FIX --- */
+    font-family: 'MedievalSharp', cursive;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Add the text shadow for consistency */
+
+    transition: all 0.2s ease-in-out; /* Add smooth transitions */
 }
 .nav-button:hover {
     background-color: #333;
@@ -259,13 +322,27 @@ body {
     font-size: 24px;
     cursor: pointer;
 }
+
 .summon-result-box {
-    margin-top: 30px;
+    margin-top: 20px;
     padding: 20px;
-    border: 1px solid #777;
-    background-color: rgba(0,0,0,0.3);
-    min-height: 200px;
-    display: inline-block; /* Make it fit the content */
+    min-height: 220px; /* Give it a fixed height */
+    width: 200px;      /* Give it a fixed width */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* --- THIS IS THE FIX --- */
+    /* Make it invisible by default */
+    background-color: transparent;
+    border: none;
+}
+
+/* We also style the card that appears inside it for a better look */
+.summon-result-box .team-slot {
+    background-color: rgba(44, 62, 80, 0.8); /* Semi-transparent dark blue */
+    border: 1px solid #7f8c8d;
+    box-shadow: 0 0 15px rgba(52, 152, 219, 0.5); /* Add a cool glow */
 }
 
 
@@ -534,7 +611,7 @@ body {
 
 /* static/css/style.css */
 
-/* --- NEW BATTLE SCREEN STYLES --- */
+/* --- BATTLE SCREEN STYLES (CLEANED UP) --- */
 
 #battle-screen {
     flex-direction: column;
@@ -545,39 +622,58 @@ body {
 #battle-arena {
     display: flex;
     justify-content: space-around;
-    align-items: flex-start;
+    align-items: center; /* Vertically centers the two main blocks */
     width: 100%;
     flex-grow: 1;
+    gap: 20px; /* Adds space between the player and enemy frames */
 }
 
+/* This is the single, correct rule for both side containers */
 #battle-player-side, #battle-enemy-side {
     width: 45%;
+    min-height: 400px; /* Give them a consistent height */
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative; /* For damage numbers */
+    justify-content: flex-start; /* Aligns content (title, cards) to the top */
+    position: relative;
+    gap: 15px; /* Space between title, cards, and health bar */
+
+    /* The framing style */
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid #555;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+#battle-arena h2 {
+    color: #f1c40f;
+    font-size: 28px;
+    margin-bottom: 5px; /* Adds a bit of space below the title */
+    flex-shrink: 0; /* Prevents title from shrinking */
 }
 
 #battle-enemy-display .team-slot {
-    transform: scale(1.2); /* Make the enemy a bit bigger */
-    border-color: #e62e2d;
+    transform: scale(1.1);
+    border: 2px solid #c0392b;
+    box-shadow: 0 0 10px #c0392b;
 }
 
 /* --- Health Bar Styles --- */
 .hp-bar-outer {
-    width: 80%;
+    width: 90%; /* Make it slightly wider */
     height: 30px;
-    background-color: #333;
+    background-color: #222;
     border: 2px solid #555;
     border-radius: 15px;
-    margin-top: 20px;
     position: relative;
     overflow: hidden;
+    /* Removed margin-top as the flex 'gap' now handles spacing */
 }
 
 .hp-bar-inner {
     height: 100%;
-    background: linear-gradient(to bottom, #4CAF50, #45a049); /* Green gradient */
+    background: linear-gradient(to bottom, #4CAF50, #45a049);
     border-radius: 12px;
     transition: width 0.5s ease-in-out;
 }
@@ -595,11 +691,12 @@ body {
 /* --- Battle Log Area --- */
 #battle-log-area {
     width: 80%;
+    max-width: 900px; /* Give it a max width on large screens */
     height: 150px;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.6);
     border: 1px solid #444;
     border-radius: 8px;
-    margin-top: 20px;
+    margin: 20px auto 0 auto; /* Center it horizontally */
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -612,13 +709,14 @@ body {
     font-family: monospace;
     font-size: 14px;
     display: flex;
-    flex-direction: column-reverse; /* Shows newest message at the bottom */
+    flex-direction: column-reverse;
 }
 
 #battle-return-button {
     margin-top: 10px;
     padding: 10px;
     cursor: pointer;
+    align-self: center; /* Center the button */
 }
 
 /* --- VISUAL EFFECTS --- */
@@ -711,3 +809,160 @@ body {
 .log-message.rarity-common { color: #ecf0f1; }
 .log-message.rarity-rare { color: #3498db; }
 .log-message.rarity-legendary { color: #f1c40f; }
+
+/* --- CAMPAIGN LIST V3 STYLES --- */
+
+.stage-item .stage-details {
+    flex-grow: 1;
+    margin-right: 15px; /* Add space between text and button */
+}
+
+/* Style for the "Completed" text on old stages */
+.stage-status-completed {
+    font-style: italic;
+    color: #95a5a6; /* A muted grey color */
+    font-size: 16px;
+    display: block; /* Puts it on its own line */
+    margin-top: 5px;
+}
+
+/* Style for the gem reward display */
+.stage-reward {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between icon and text */
+    margin-top: 5px;
+    font-size: 14px;
+    color: #f1c40f; /* A nice golden color */
+    font-weight: bold;
+}
+
+.stage-reward img {
+    width: 20px; /* Adjust icon size */
+    height: 20px;
+    /* This overrides the default .stage-item img styles */
+    margin-right: 0;
+}
+
+.user-icon {
+    height: 100%;
+    max-height: 2.5em; /* optional limit so it's not too huge */
+    aspect-ratio: 1 / 1;
+    margin-right: 8px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+/* --- DUNGEONS/EXPEDITIONS VIEW V2 --- */
+
+#dungeons-view .view-description {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 30px auto;
+    font-size: 18px;
+    color: #bdc3c7;
+}
+
+.dungeon-container {
+    display: flex;
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid #555;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 0 auto;
+    max-width: 1200px;
+    gap: 30px; /* Space between the image and the details */
+    align-items: center; /* Vertically align the content */
+}
+
+/* Column 1: Image */
+.dungeon-image-container {
+    flex-basis: 40%; /* The image column takes up 40% of the space */
+    border-radius: 8px;
+    overflow: hidden; /* Ensures the image respects the border-radius */
+}
+.dungeon-image-container img {
+    width: 100%;
+    height: auto;
+    display: block; /* Removes any bottom spacing on the image */
+}
+
+/* Column 2: Details */
+.dungeon-details-container {
+    flex-basis: 60%; /* The text column takes up 60% of the space */
+    display: flex;
+    flex-direction: column;
+}
+.dungeon-details-container h3 {
+    font-size: 32px;
+    color: #e67e22; /* A fiery orange color */
+}
+.dungeon-description {
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 15px 0;
+}
+.dungeon-rewards {
+    margin: 20px 0;
+}
+.reward-icon-box {
+    background-color: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 5px;
+    text-align: center;
+}
+.dungeon-fight-button {
+    align-self: flex-start; /* Align button to the left */
+    padding: 15px 40px;
+    font-size: 20px;
+    background-color: #c0392b;
+    border: 1px solid #e74c3c;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* in static/css/style.css */
+/* in static/css/style.css */
+
+/* --- UNIFIED RARITY COLOR CODING --- */
+
+/* This targets the rarity text inside any card header for heroes and items */
+
+.card-header .rarity-common {
+    color: #bdc3c7; /* Silver/Grey */
+}
+
+.card-header .rarity-rare {
+    color: #3498db; /* Blue */
+}
+
+.card-header .rarity-ssr {
+    color: #f1c40f; /* Gold */
+}
+
+.card-header .rarity-ur {
+    color: #9b59b6; /* Purple */
+}
+
+.card-header .rarity-lr {
+    color: #e74c3c; /* Red */
+}
+
+/* --- NEW RULES FOR EQUIPMENT --- */
+/* We can reuse the same colors or define new ones. Let's reuse for consistency. */
+
+.card-header .rarity-legendary {
+    /* Legendary can share the same color as UR or LR for a 'mythic' feel */
+    color: #9b59b6; /* Royal Purple */
+}
+
+.card-header .rarity-epic {
+    /* Epic can be a step below Legendary */
+    color: #e67e22; /* A strong orange */
+}
+
+.card-header .rarity-uncommon {
+    /* Uncommon can be a step above Common */
+    color: #2ecc71; /* A nice green */
+}

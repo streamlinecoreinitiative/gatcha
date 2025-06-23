@@ -358,30 +358,71 @@ function updateCollectionDisplay() {
 function updateCampaignDisplay() {
     stageListContainer.innerHTML = '';
     const currentStage = gameState.current_stage || 1;
+    let currentStageElement = null;
 
     for (let i = 1; i <= 50; i++) {
         const stageItem = document.createElement('div');
         stageItem.className = 'stage-item';
 
         let iconPath = '/static/images/ui/stage_node_locked.png';
-        let fightButtonHTML = '';
+        let contentHTML = '';
 
-        // Determine the icon path first
-        if (i < currentStage) {
+        if (i < currentStage - 1) {
+            // Case 1: Old, cleared stages
             iconPath = '/static/images/ui/stage_node_cleared.png';
+            contentHTML = `
+                <div class="stage-details">
+                    <h4>Tower Floor ${i}</h4>
+                    <span class="stage-status-completed">Completed</span>
+                </div>
+            `;
+        } else if (i === currentStage - 1 && i > 0) {
+            // Case 2: The last beaten stage (farmable)
+            iconPath = '/static/images/ui/stage_node_cleared.png';
+
+            // --- THIS IS THE FIX ---
+            contentHTML = `
+                <div class="stage-details">
+                    <h4>Tower Floor ${i}</h4>
+                    <span class="stage-reward repeat">
+                        <img src="/static/images/ui/gem_icon.png" alt="Gems">
+                        Run again: 5
+                    </span>
+                </div>
+                <button class="fight-button" data-stage-num="${i}">Fight Again</button>
+            `;
+            // --- END OF FIX ---
+
         } else if (i === currentStage) {
+            // Case 3: The current, new challenge
             iconPath = '/static/images/ui/stage_node_current.png';
+            const gemsForFirstClear = 25 + (Math.floor((i - 1) / 5) * 5);
+            contentHTML = `
+                <div class="stage-details">
+                    <h4>Tower Floor ${i}</h4>
+                    <span class="stage-reward">
+                        <img src="/static/images/ui/gem_icon.png" alt="Gems">
+                        First Clear: ${gemsForFirstClear}
+                    </span>
+                </div>
+                <button class="fight-button" data-stage-num="${i}">Fight</button>
+            `;
+            currentStageElement = stageItem;
+        } else {
+            // Case 4: Locked stages
+            contentHTML = `
+                <div class="stage-details">
+                    <h4>Tower Floor ${i}</h4>
+                </div>
+            `;
         }
 
-        // --- THIS IS THE NEW LOGIC FOR THE BUTTON ---
-        // Show the fight button if the stage is the CURRENT one,
-        // OR if it's the one immediately before it (and not stage 0).
-        if (i === currentStage || (i === currentStage - 1 && i > 0)) {
-            fightButtonHTML = `<button class="fight-button" data-stage-num="${i}">Fight</button>`;
-        }
-
-        stageItem.innerHTML = `<img src="${iconPath}" alt="Status"><h4>Tower Floor ${i}</h4>${fightButtonHTML}`;
+        stageItem.innerHTML = `<img src="${iconPath}" alt="Status">${contentHTML}`;
         stageListContainer.appendChild(stageItem);
+    }
+
+    if (currentStageElement) {
+        currentStageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
 
@@ -401,6 +442,7 @@ async function startBattle(fightResult) {
     returnButton.style.display = 'none';
 
     const startEntry = fightResult.log[0];
+    // This parsing is fine for getting the name for the enemy card title.
     const enemyName = startEntry.message.split('faces a ')[1]?.split('!')[0].trim().split(' ').slice(1).join(' ') || 'Unknown Enemy';
     const enemyImage = startEntry.enemy_image;
 
@@ -408,10 +450,8 @@ async function startBattle(fightResult) {
         if (!member) return total;
         const multipliers = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5};
         let memberHP = (member.base_hp * (multipliers[member.rarity] || 1.0));
-        // Add equipped item HP for accurate client-side display
         member.equipped.forEach(item => {
-            // This would require fetching equipment defs on client, or passing stats from server
-            // For now, we rely on server for combat calcs. This is for display only.
+            // This part is for display only, the real stats are calculated on the server.
         });
         return total + memberHP;
     }, 0);
@@ -451,13 +491,19 @@ async function startBattle(fightResult) {
 
     updateHealthBar(playerHpBar, playerHpText, maxTeamHP, maxTeamHP);
     updateHealthBar(enemyHpBar, enemyHpText, maxEnemyHP, maxEnemyHP);
+
+    // Use the message directly from the first log entry
     addLogMessage(startEntry.message);
     await delay(1000);
 
+    // Loop through the rest of the log entries
     for (const entry of fightResult.log.slice(1)) {
         switch (entry.type) {
             case 'player_attack':
-                addLogMessage(`Your team attacks for ${entry.damage} damage!`, 'player');
+                // --- THIS IS THE FIX ---
+                // We create a new message that combines the server data for clarity.
+                // Your backend doesn't send a full message for attacks, so we build it here.
+                addLogMessage(`Your team ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Enemy HP: ${entry.enemy_hp}`, 'player');
                 document.getElementById('battle-enemy-side').classList.add('attack-effect');
                 showDamageNumber(document.getElementById('battle-enemy-side'), entry.damage, entry.crit);
                 updateHealthBar(enemyHpBar, enemyHpText, entry.enemy_hp, maxEnemyHP);
@@ -465,7 +511,9 @@ async function startBattle(fightResult) {
                 document.getElementById('battle-enemy-side').classList.remove('attack-effect');
                 break;
             case 'enemy_attack':
-                addLogMessage(`The enemy retaliates for ${entry.damage} damage!`, 'enemy');
+                // --- THIS IS THE FIX ---
+                // We do the same for the enemy attack.
+                addLogMessage(`Enemy ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Your Team HP: ${entry.team_hp}`, 'enemy');
                 document.getElementById('battle-player-side').classList.add('attack-effect');
                 showDamageNumber(document.getElementById('battle-player-side'), entry.damage, entry.crit);
                 updateHealthBar(playerHpBar, playerHpText, entry.team_hp, maxTeamHP);
@@ -473,6 +521,7 @@ async function startBattle(fightResult) {
                 document.getElementById('battle-player-side').classList.remove('attack-effect');
                 break;
             case 'end':
+                // The 'end' entry from the server already has a good message.
                 addLogMessage(entry.message, fightResult.victory ? 'victory' : 'defeat');
                 if (fightResult.victory && fightResult.gems_won > 0) addLogMessage(`You earned ${fightResult.gems_won} gems!`);
                 if (fightResult.looted_item) {

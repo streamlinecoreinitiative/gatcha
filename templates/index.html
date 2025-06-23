@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Aethelgard Chronicles - Web Edition</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/ui/game_icon.png') }}">
+
+
+        <!-- === PASTE THESE 3 LINES HERE === -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+    <!-- ================================ -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
@@ -28,6 +36,7 @@
         <!-- TOP BAR: Player Info -->
         <div id="top-bar">
             <div id="player-info">
+                <img src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon">
                 <span id="player-name"></span>
                 <button id="logout-button">Logout</button>
             </div>
@@ -87,18 +96,33 @@
                 </div>
             </div>
 
-                <div id="dungeons-view" class="view">
-        <h2>Resource Dungeons</h2>
-        <p>Farm these repeatable dungeons for valuable loot. Difficulty scales with your campaign progress.</p>
-        <div class="dungeon-list">
-            <div class="dungeon-item">
-                <h3>The Armory</h3>
-                <p>A high chance to drop random equipment.</p>
-                <button id="enter-armory-btn" class="dungeon-fight-button">Enter Dungeon</button>
+<!-- NEW & IMPROVED DUNGEONS VIEW -->
+<div id="dungeons-view" class="view">
+    <h2>Expeditions</h2>
+    <p class="view-description">Embark on a dangerous hunt for powerful rewards. The difficulty of the foe scales with your Tower progress.</p>
+
+    <div class="dungeon-container">
+        <!-- Column 1: Image -->
+        <div class="dungeon-image-container">
+            <img src="{{ url_for('static', filename='images/ui/dungeon_armory.png') }}" alt="The Armory">
+        </div>
+
+        <!-- Column 2: Details -->
+        <div class="dungeon-details-container">
+            <h3>The Armory</h3>
+            <p class="dungeon-description">
+                Venture into the molten heart of a forgotten forge, now guarded by chaotic constructs. Defeat the guardian for a high chance to loot powerful equipment.
+            </p>
+            <div class="dungeon-rewards">
+                <strong>Possible Rewards:</strong>
+                <div class="reward-icon-box">
+                    <span>Common, Rare, & Legendary Equipment</span>
+                </div>
             </div>
-            <!-- You could add more dungeons here later! -->
+            <button id="enter-armory-btn" class="dungeon-fight-button">Enter The Armory</button>
         </div>
     </div>
+</div>
 
             <!-- Lore View (Simple implementation) -->
             <div id="lore-view" class="view">
@@ -112,11 +136,11 @@
         <!-- BOTTOM NAVIGATION BAR -->
         <div id="nav-bar">
             <button class="nav-button" data-view="home-view">Home</button>
-            <button class="nav-button" data-view="collection-view">Collection</button>
+            <button class="nav-button" data-view="collection-view">Heroes</button>
             <button class="nav-button" data-view="equipment-view">Equipment</button>
             <button class="nav-button" data-view="summon-view">Summon</button>
-            <button class="nav-button" data-view="campaign-view">Campaign</button>
-            <button class="nav-button" data-view="dungeons-view">Dungeons</button>
+            <button class="nav-button" data-view="campaign-view">The Tower</button>
+            <button class="nav-button" data-view="dungeons-view">The Armory</button>
             <button class="nav-button" data-view="online-view">Online</button>
             <button class="nav-button" data-view="lore-view">Change Log</button>
 
@@ -142,6 +166,7 @@
 
             <!-- Enemy Display -->
             <div id="battle-enemy-side">
+                <h2>Enemy Team</h2>  <!-- ADD THIS LINE -->
                 <div id="battle-enemy-display">
                     <!-- Enemy info will be injected here by JS -->
                 </div>
