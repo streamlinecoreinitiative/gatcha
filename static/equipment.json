@@ -34,5 +34,12 @@
         "type": "Armor",
         "rarity": "Legendary",
         "stat_bonuses": { "hp": 250, "crit_damage": 0.25 }
-    }
+    },
+    { "name": "Hunter's Bow", "type": "Weapon", "rarity": "Uncommon", "stat_bonuses": { "atk": 20, "crit_chance": 2 }, "image_file": "hunters_bow.png" },
+    { "name": "Reinforced Buckler", "type": "Shield", "rarity": "Uncommon", "stat_bonuses": { "hp": 80 }, "image_file": "reinforced_buckler.png" },
+    { "name": "Dwarven Battleaxe", "type": "Weapon", "rarity": "Rare", "stat_bonuses": { "atk": 45, "crit_damage": 0.1 }, "image_file": "dwarven_battleaxe.png" },
+    { "name": "Arcane Robe", "type": "Armor", "rarity": "Rare", "stat_bonuses": { "hp": 150, "crit_chance": 3 }, "image_file": "arcane_robe.png" },
+    { "name": "Phoenix Blade", "type": "Weapon", "rarity": "Epic", "stat_bonuses": { "atk": 90, "crit_chance": 10, "crit_damage": 0.3 }, "image_file": "phoenix_blade.png" },
+    { "name": "Dragon Scale Armor", "type": "Armor", "rarity": "Epic", "stat_bonuses": { "hp": 300, "crit_damage": 0.2 }, "image_file": "dragon_scale_armor.png" }
+
 ]
