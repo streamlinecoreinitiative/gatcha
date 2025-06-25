@@ -832,6 +832,9 @@ button:disabled, .fantasy-button:disabled {
 .log-message.rarity-common { color: #ecf0f1; }
 .log-message.rarity-rare { color: #3498db; }
 .log-message.rarity-legendary { color: #f1c40f; }
+.log-message.element-fire { color: #E62E2D; }
+.log-message.element-water { color: #2D95E6; }
+.log-message.element-grass { color: #33A532; }
 
 /* --- CAMPAIGN LIST V3 STYLES --- */
 

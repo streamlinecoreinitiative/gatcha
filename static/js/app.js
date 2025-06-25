@@ -334,6 +334,7 @@ function updateUI() {
     updateTeamDisplay();
     updateCollectionDisplay();
     updateCampaignDisplay();
+    updateTopPlayer();
 }
 
 async function updateEquipmentDisplay() {
@@ -375,6 +376,18 @@ async function updateAllUsers() {
         div.textContent = `${u.username} - Dungeon Runs: ${u.dungeon_runs}`;
         allUsersContainer.appendChild(div);
     });
+}
+
+async function updateTopPlayer() {
+    const nameEl = document.getElementById('top-player-name');
+    const stageEl = document.getElementById('top-player-stage');
+    if (!nameEl || !stageEl) return;
+    const response = await fetch('/api/top_player');
+    const result = await response.json();
+    if (result.success && result.player) {
+        nameEl.textContent = result.player.username;
+        stageEl.textContent = result.player.current_stage;
+    }
 }
 
 function updateTeamDisplay() {
@@ -542,10 +555,11 @@ async function startBattle(fightResult) {
         bar.style.width = `${percentage}%`;
         text.textContent = `${Math.ceil(current)} / ${Math.ceil(max)}`;
     };
-    const addLogMessage = (message, type = 'info') => {
+    const addLogMessage = (message, type = 'info', element) => {
         const p = document.createElement('p');
         p.textContent = message;
         p.className = `log-message ${type}`;
+        if (element) p.classList.add(`element-${element.toLowerCase()}`);
         logEntriesContainer.prepend(p);
     };
     const showDamageNumber = (targetSide, damage, isCrit, element) => {
@@ -572,7 +586,7 @@ async function startBattle(fightResult) {
                 // --- THIS IS THE FIX ---
                 // We create a new message that combines the server data for clarity.
                 // Your backend doesn't send a full message for attacks, so we build it here.
-                addLogMessage(`Your team ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Enemy HP: ${entry.enemy_hp}`, 'player');
+                addLogMessage(`${entry.attacker} ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Enemy HP: ${entry.enemy_hp}`, 'player', entry.element);
                 document.getElementById('battle-enemy-side').classList.add('attack-effect');
                 showDamageNumber(document.getElementById('battle-enemy-side'), entry.damage, entry.crit, entry.element);
                 updateHealthBar(enemyHpBar, enemyHpText, entry.enemy_hp, maxEnemyHP);
