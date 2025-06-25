@@ -22,8 +22,10 @@ const registerButton = document.getElementById('register-button');
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const logoutButton = document.getElementById('logout-button');
+const bugButton = document.getElementById('report-bug-button');
 const mainContent = document.getElementById('main-content');
 const teamDisplayContainer = document.getElementById('team-display');
+const dungeonRunCount = document.getElementById('dungeon-run-count');
 const collectionContainer = document.getElementById('collection-container');
 const summonButton = document.getElementById('perform-summon-button');
 const summonResultContainer = document.getElementById('summon-result');
@@ -72,6 +74,11 @@ function attachEventListeners() {
     });
 
     logoutButton.addEventListener('click', handleLogout);
+    if (bugButton) {
+        bugButton.addEventListener('click', () => {
+            window.open('https://github.com/your_username/your_repo/issues', '_blank');
+        });
+    }
 
     summonButton.addEventListener('click', async () => {
         const response = await fetch('/api/summon', { method: 'POST' });
@@ -305,6 +312,7 @@ function updateUI() {
     if (!gameState || !gameState.username) return;
     playerNameDisplay.textContent = gameState.username;
     gemCountDisplay.textContent = gameState.gems;
+    if (dungeonRunCount) dungeonRunCount.textContent = gameState.dungeon_runs;
     updateTeamDisplay();
     updateCollectionDisplay();
     updateCampaignDisplay();
@@ -373,6 +381,12 @@ function updateCollectionDisplay() {
         const canMerge = heroGroup.length >= mergeCost;
         const isInTeam = teamDBIds.includes(heroInstance.id);
         card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${heroInstance.rarity.toLowerCase()}">[${heroInstance.rarity}] (x${heroGroup.length})</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${charDef.image_file}" alt="${name}"><h4>${name}</h4><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button></div>`;
+        if (isInTeam) {
+            const indicator = document.createElement('div');
+            indicator.className = 'in-team-indicator';
+            indicator.textContent = '★';
+            card.appendChild(indicator);
+        }
         collectionContainer.appendChild(card);
     }
 }

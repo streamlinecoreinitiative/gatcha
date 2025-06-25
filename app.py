@@ -113,8 +113,8 @@ def calculate_fight_stats(team, enemy_def, level_scaling):
     disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
     team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
 
-    enemy_hp = enemy_def['base_hp'] * (1 + (level_scaling - 1) * 0.25) * random.uniform(0.9, 1.1)
-    enemy_atk = enemy_def['base_atk'] * (1 + (level_scaling - 1) * 0.15) * random.uniform(0.9, 1.1)
+    enemy_hp = enemy_def['base_hp'] * (1 + (level_scaling - 1) * 0.25)
+    enemy_atk = enemy_def['base_atk'] * (1 + (level_scaling - 1) * 0.15)
     enemy_crit_chance = enemy_def.get('crit_chance', 0)
     enemy_crit_damage = enemy_def.get('crit_damage', 1.5)
 
@@ -177,8 +177,12 @@ def get_player_data():
     player_data = db.get_player_data(user_id)
     player_team = db.get_player_team(user_id, character_definitions)
     full_data = {
-        'username': session.get('username'), 'gems': player_data['gems'], 'current_stage': player_data['current_stage'],
-        'team': player_team, 'collection': player_data['collection']
+        'username': session.get('username'),
+        'gems': player_data['gems'],
+        'current_stage': player_data['current_stage'],
+        'dungeon_runs': player_data.get('dungeon_runs', 0),
+        'team': player_team,
+        'collection': player_data['collection']
     }
     return jsonify({'success': True, 'data': full_data})
 
@@ -311,6 +315,8 @@ def fight_dungeon():
             conn.close()
     else:
         combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
+
+    db.increment_dungeon_runs(user_id)
     return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'looted_item': looted_item})
 
 
