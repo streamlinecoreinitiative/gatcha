@@ -230,6 +230,26 @@ button:disabled, .fantasy-button:disabled {
     display: flex;
     flex-direction: column;
 }
+#chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    border-bottom: 1px solid #444;
+}
+#chat-toggle-btn {
+    background: none;
+    border: none;
+    color: #e0e0e0;
+    cursor: pointer;
+}
+#chat-container.collapsed {
+    height: 40px;
+}
+#chat-container.collapsed #chat-messages,
+#chat-container.collapsed #chat-input-area {
+    display: none;
+}
 #chat-container h3 {
     text-align: center;
     padding: 10px;
@@ -747,6 +767,9 @@ button:disabled, .fantasy-button:disabled {
     font-size: 36px;
     transform: scale(1.2);
 }
+.damage-number.element-fire { color: #E62E2D; }
+.damage-number.element-water { color: #2D95E6; }
+.damage-number.element-grass { color: #33A532; }
 
 @keyframes float-up-fade {
     from {
@@ -1145,4 +1168,18 @@ button:disabled, .fantasy-button:disabled {
 #hero-image-overlay img {
     width: 300px;
     height: auto;
+}
+
+/* Equipment / hero detail modal enhancements */
+#hero-detail-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#hero-detail-content img.hero-detail-portrait {
+    width: 150px;
+    margin-bottom: 10px;
+}
+#hero-detail-content .equipped-slots {
+    margin: 10px 0;
 }
