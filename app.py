@@ -42,16 +42,13 @@ STAT_MULTIPLIER = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5}
 
 # --- HELPER FUNCTIONS ---
 def get_enemy_for_stage(stage_num):
+    """Return an enemy scaled to the stage number."""
     random.seed(stage_num)
-    possible_enemies = []
-    max_rarity_index = min(stage_num // 10, len(RARITY_ORDER) - 1)
-    for e in enemy_definitions:
-        if e.get('rarity') in RARITY_ORDER:
-            rarity_index = RARITY_ORDER.index(e.get('rarity'))
-            if rarity_index == max_rarity_index:
-                possible_enemies.append(e)
+    tier_index = min(stage_num // 5, len(RARITY_ORDER) - 1)
+    target_rarity = RARITY_ORDER[tier_index]
+    possible_enemies = [e for e in enemy_definitions if e.get('rarity') == target_rarity]
     if not possible_enemies:
-        print(f"Warning: No valid enemies found for stage {stage_num}, falling back.")
+        print(f"Warning: No enemies of rarity {target_rarity} for stage {stage_num}")
         enemy_def = random.choice(enemy_definitions)
     else:
         enemy_def = random.choice(possible_enemies)
@@ -113,8 +110,8 @@ def calculate_fight_stats(team, enemy_def, level_scaling):
     disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
     team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
 
-    enemy_hp = enemy_def['base_hp'] * (1 + (level_scaling - 1) * 0.25)
-    enemy_atk = enemy_def['base_atk'] * (1 + (level_scaling - 1) * 0.15)
+    enemy_hp = enemy_def['base_hp'] * (1 + level_scaling * 0.5)
+    enemy_atk = enemy_def['base_atk'] * (1 + level_scaling * 0.3)
     enemy_crit_chance = enemy_def.get('crit_chance', 0)
     enemy_crit_damage = enemy_def.get('crit_damage', 1.5)
 
@@ -214,8 +211,8 @@ def summon():
 def get_stage_info(stage_num):
     if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
     enemy_def = get_enemy_for_stage(stage_num)
-    enemy_hp = enemy_def['base_hp'] * (1 + (stage_num - 1) * 0.25)
-    enemy_atk = enemy_def['base_atk'] * (1 + (stage_num - 1) * 0.15)
+    enemy_hp = enemy_def['base_hp'] * (1 + stage_num * 0.5)
+    enemy_atk = enemy_def['base_atk'] * (1 + stage_num * 0.3)
     enemy_info = {
         'name': enemy_def['name'], 'element': enemy_def.get('element', 'None'),
         'image_file': f"enemies/{enemy_def.get('image_file', 'placeholder_enemy.png')}",
@@ -241,13 +238,16 @@ def fight():
                    'message': f"Floor {stage_num}: Your team faces a {stats['enemy_element']} {enemy_def['name']}!",
                    'enemy_image': enemy_image}]
 
+    available_attackers = [c for c in team if c]
     while team_hp > 0 and enemy_hp > 0:
+        attacker = random.choice(available_attackers)
         player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
         is_player_crit = random.random() * 100 < stats['team_crit_chance']
-        if is_player_crit: player_damage *= stats['team_crit_damage']
+        if is_player_crit:
+            player_damage *= stats['team_crit_damage']
         enemy_hp -= player_damage
         combat_log.append({'type': 'player_attack', 'crit': is_player_crit, 'damage': int(player_damage),
-                           'enemy_hp': int(max(0, enemy_hp))})
+                           'enemy_hp': int(max(0, enemy_hp)), 'element': attacker.get('element', 'None')})
         if enemy_hp <= 0: break
 
         enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
@@ -291,13 +291,16 @@ def fight_dungeon():
         {'type': 'start', 'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy_def['name']}!",
          'enemy_image': enemy_image}]
 
+    available_attackers = [c for c in team if c]
     while team_hp > 0 and enemy_hp > 0:
+        attacker = random.choice(available_attackers)
         player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
         is_player_crit = random.random() * 100 < stats['team_crit_chance']
-        if is_player_crit: player_damage *= stats['team_crit_damage']
+        if is_player_crit:
+            player_damage *= stats['team_crit_damage']
         enemy_hp -= player_damage
         combat_log.append({'type': 'player_attack', 'crit': is_player_crit, 'damage': int(player_damage),
-                           'enemy_hp': int(max(0, enemy_hp))})
+                           'enemy_hp': int(max(0, enemy_hp)), 'element': attacker.get('element', 'None')})
         if enemy_hp <= 0: break
 
         enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)

@@ -37,6 +37,8 @@ const navButtons = document.querySelectorAll('.nav-button');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const chatSendButton = document.getElementById('chat-send-button');
+const chatContainer = document.getElementById('chat-container');
+const chatToggleBtn = document.getElementById('chat-toggle-btn');
 const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
 const heroImageOverlay = document.getElementById('hero-image-overlay');
@@ -96,6 +98,12 @@ function attachEventListeners() {
 
     chatSendButton.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    if (chatToggleBtn) {
+        chatToggleBtn.addEventListener('click', () => {
+            chatContainer.classList.toggle('collapsed');
+            chatToggleBtn.textContent = chatContainer.classList.contains('collapsed') ? '▴' : '▾';
+        });
+    }
 
     // --- FIX #1: Logic for Nav Buttons Restored ---
     navButtons.forEach(button => {
@@ -286,8 +294,10 @@ async function openHeroDetailModal(hero) {
     const allPlayerItems = equipResult.equipment || [];
     const unequippedItems = allPlayerItems.filter(item => item.is_equipped_on === null);
     const fullHeroData = gameState.collection.find(h => h.id === hero.id);
+    const charDef = masterCharacterList.find(c => c.name === fullHeroData.character_name) || {};
     const equippedItems = allPlayerItems.filter(item => item.is_equipped_on === fullHeroData.id);
     let html = `
+        <img class="hero-detail-portrait" src="/static/images/characters/${charDef.image_file || 'placeholder_char.png'}" alt="${fullHeroData.character_name}">
         <h3>${fullHeroData.character_name}</h3>
         <h4>Equipped Items</h4>
         <div class="equipped-slots">
@@ -375,7 +385,7 @@ function updateTeamDisplay() {
         slot.className = 'team-slot';
         if (member) {
             const element = member.element || 'None';
-            slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name}</h4><p>ATK: ${member.base_atk} | HP: ${member.base_hp}</p><p>Crit: ${member.crit_chance}% | Crit DMG: ${member.crit_damage}x</p>`;
+            slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name}</h4><p>ATK: ${member.base_atk} | HP: ${member.base_hp}</p><p>Crit: ${member.crit_chance}% | Crit DMG: ${member.crit_damage}x</p>`;
         } else {
             slot.innerHTML = `<img src="/static/images/ui/placeholder_char.png" alt="Empty"><h4>Empty Slot</h4>`;
         }
@@ -521,7 +531,7 @@ async function startBattle(fightResult) {
         const slot = document.createElement('div');
         slot.className = 'team-slot';
         const element = member.element || 'None';
-        slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name.split(',')[0]}</h4>`;
+        slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name.split(',')[0]}</h4>`;
         playerTeamContainer.appendChild(slot);
     });
 
@@ -538,9 +548,10 @@ async function startBattle(fightResult) {
         p.className = `log-message ${type}`;
         logEntriesContainer.prepend(p);
     };
-    const showDamageNumber = (targetSide, damage, isCrit) => {
+    const showDamageNumber = (targetSide, damage, isCrit, element) => {
         const damageEl = document.createElement('div');
         damageEl.className = 'damage-number';
+        if (element) damageEl.classList.add(`element-${element.toLowerCase()}`);
         if (isCrit) damageEl.classList.add('crit');
         damageEl.textContent = damage;
         targetSide.appendChild(damageEl);
@@ -563,7 +574,7 @@ async function startBattle(fightResult) {
                 // Your backend doesn't send a full message for attacks, so we build it here.
                 addLogMessage(`Your team ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Enemy HP: ${entry.enemy_hp}`, 'player');
                 document.getElementById('battle-enemy-side').classList.add('attack-effect');
-                showDamageNumber(document.getElementById('battle-enemy-side'), entry.damage, entry.crit);
+                showDamageNumber(document.getElementById('battle-enemy-side'), entry.damage, entry.crit, entry.element);
                 updateHealthBar(enemyHpBar, enemyHpText, entry.enemy_hp, maxEnemyHP);
                 await delay(750);
                 document.getElementById('battle-enemy-side').classList.remove('attack-effect');
