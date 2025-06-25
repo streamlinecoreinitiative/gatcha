@@ -23,6 +23,7 @@ def init_db():
             user_id INTEGER PRIMARY KEY,
             gems INTEGER NOT NULL DEFAULT 100,
             current_stage INTEGER NOT NULL DEFAULT 1,
+            dungeon_runs INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
@@ -98,6 +99,12 @@ def get_player_data(user_id):
 def save_player_data(user_id, gems, current_stage):
     conn = get_db_connection()
     conn.execute("UPDATE player_data SET gems = ?, current_stage = ? WHERE user_id = ?", (gems, current_stage, user_id))
+    conn.commit()
+    conn.close()
+
+def increment_dungeon_runs(user_id):
+    conn = get_db_connection()
+    conn.execute("UPDATE player_data SET dungeon_runs = dungeon_runs + 1 WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
 
