@@ -148,3 +148,9 @@ def set_player_team(user_id, team_ids):
                      (char_id, user_id, slot_num))
     conn.commit()
     conn.close()
+
+def get_all_users_with_runs():
+    conn = get_db_connection()
+    rows = conn.execute('SELECT users.username, player_data.dungeon_runs FROM users JOIN player_data ON users.id = player_data.user_id').fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
