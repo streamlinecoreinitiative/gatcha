@@ -32,12 +32,15 @@ const summonResultContainer = document.getElementById('summon-result');
 const stageListContainer = document.getElementById('stage-list');
 const loreContainer = document.getElementById('lore-text-container');
 const onlineListContainer = document.getElementById('online-list-container');
+const allUsersContainer = document.getElementById('all-users-container');
 const navButtons = document.querySelectorAll('.nav-button');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const chatSendButton = document.getElementById('chat-send-button');
 const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
+const heroImageOverlay = document.getElementById('hero-image-overlay');
+const heroImageLarge = document.getElementById('hero-image-large');
 const TOWER_LORE = [
     {
         floor: 1,
@@ -109,6 +112,9 @@ function attachEventListeners() {
             if (targetViewId === 'equipment-view') {
                 updateEquipmentDisplay();
             }
+            if (targetViewId === 'online-view') {
+                updateAllUsers();
+            }
         });
     });
 
@@ -134,15 +140,14 @@ function attachEventListeners() {
             alert(result.message);
             if(result.success) await fetchPlayerDataAndUpdate();
         }
-        else if (target.closest('.collection-card') && target.closest('#collection-container')) {
-            const card = target.closest('.collection-card');
-            const heroNameElement = card.querySelector('h4');
-            const heroStatsElement = card.querySelector('.card-stats');
-            if (heroNameElement && heroStatsElement) {
-                const heroName = heroNameElement.textContent;
-                const heroInstance = gameState.collection.find(h => h.character_name === heroName);
-                if (heroInstance) openHeroDetailModal(heroInstance);
-            }
+        else if (target.classList.contains('equip-button')) {
+            const heroId = parseInt(target.dataset.heroId);
+            const heroInstance = gameState.collection.find(h => h.id === heroId);
+            if (heroInstance) openHeroDetailModal(heroInstance);
+        }
+        else if (target.classList.contains('hero-portrait')) {
+            heroImageLarge.src = target.src;
+            heroImageOverlay.classList.add('active');
         }
         else if (target.classList.contains('fight-button')) {
             const stageNum = parseInt(target.dataset.stageNum);
@@ -194,6 +199,9 @@ function attachEventListeners() {
             await fetch('/api/unequip_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ equipment_id: parseInt(equipmentId) }) });
             document.getElementById('hero-detail-overlay').classList.remove('active');
             await fetchPlayerDataAndUpdate();
+        }
+        else if (target.id === 'close-hero-image-btn') {
+            heroImageOverlay.classList.remove('active');
         }
         else if (target.id === 'battle-return-button') {
             battleScreen.classList.remove('active');
@@ -344,6 +352,21 @@ async function updateEquipmentDisplay() {
     });
 }
 
+async function updateAllUsers() {
+    if (!allUsersContainer) return;
+    allUsersContainer.innerHTML = 'Loading...';
+    const response = await fetch('/api/all_users');
+    const result = await response.json();
+    if (!result.success) { allUsersContainer.innerHTML = 'Failed to load users.'; return; }
+    allUsersContainer.innerHTML = '<h3>All Players:</h3>';
+    result.users.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'online-list-item';
+        div.textContent = `${u.username} - Dungeon Runs: ${u.dungeon_runs}`;
+        allUsersContainer.appendChild(div);
+    });
+}
+
 function updateTeamDisplay() {
     teamDisplayContainer.innerHTML = '';
     for (let i = 0; i < 3; i++) {
@@ -380,7 +403,7 @@ function updateCollectionDisplay() {
         const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[heroInstance.rarity] || 999;
         const canMerge = heroGroup.length >= mergeCost;
         const isInTeam = teamDBIds.includes(heroInstance.id);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${heroInstance.rarity.toLowerCase()}">[${heroInstance.rarity}] (x${heroGroup.length})</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${charDef.image_file}" alt="${name}"><h4>${name}</h4><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button></div>`;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${heroInstance.rarity.toLowerCase()}">[${heroInstance.rarity}] (x${heroGroup.length})</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${name}"><h4>${name}</h4><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${heroInstance.id}">Equip</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';

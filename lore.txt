@@ -114,3 +114,9 @@ Build Your Counter-Team: See a tough 🔥 Fire boss? Click "Change Team" or go t
 Conquer! Enter the battle and watch as your smart thinking allows you to tear through the enemy's defenses for a decisive victory!
 
 Pro-Tip: For predictable Campaign bosses, a specialized, single-element team is best. For random Dungeons, a balanced team with one of each element is a safe and powerful choice
+
+Recent Updates:
+- Dungeon run count now appears inside the Home message box.
+- Heroes have an Equip button, while clicking their portrait shows a larger image.
+- Enemies scale correctly with floor level so higher stages are truly challenging.
+- The Online screen lists all registered players with their total dungeon runs.

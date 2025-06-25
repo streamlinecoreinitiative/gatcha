@@ -1136,3 +1136,13 @@ button:disabled, .fantasy-button:disabled {
 .motd-box a:hover {
     text-decoration: underline;
 }
+
+.hero-portrait {
+    cursor: pointer;
+}
+
+/* Large hero portrait modal */
+#hero-image-overlay img {
+    width: 300px;
+    height: auto;
+}

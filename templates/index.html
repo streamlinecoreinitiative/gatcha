@@ -72,7 +72,6 @@
             <div id="home-view" class="view active">
                 <h2>Your Active Team</h2>
                 <div id="team-display" class="team-container"></div>
-                <p id="dungeon-run-info">Dungeon Runs: <span id="dungeon-run-count">0</span></p>
 
                     <!-- === NEW MESSAGE OF THE DAY SECTION === -->
     <div id="motd-container" class="motd-box">
@@ -84,6 +83,7 @@
             <li>Found a bug? <a href="https://github.com/your_username/your_repo/issues" target="_blank">Report it here!</a></li>
             <li>Top Summoner: <span id="top-player-name">Loading...</span> (Floor <span id="top-player-stage">?</span>)</li>
         </ul>
+        <p id="dungeon-run-info">Dungeon Runs: <span id="dungeon-run-count">0</span></p>
     </div>
     <!-- ===================================== -->
 
@@ -94,6 +94,7 @@
             <div id="online-view" class="view">
                  <h2>Players Online</h2>
                  <div id="online-list-container" class="online-list"></div>
+                 <div id="all-users-container" class="online-list"></div>
             </div>
             <!-- Collection View -->
             <div id="collection-view" class="view">
@@ -273,6 +274,13 @@
 <div id="hero-detail-overlay" class="modal-overlay">
     <div id="hero-detail-content" class="modal-content">
         <!-- Content injected by JS -->
+    </div>
+</div>
+
+<div id="hero-image-overlay" class="modal-overlay">
+    <div class="modal-content">
+        <img id="hero-image-large" src="" alt="Hero" style="max-width:300px; height:auto;">
+        <button id="close-hero-image-btn">Close</button>
     </div>
 </div>
 

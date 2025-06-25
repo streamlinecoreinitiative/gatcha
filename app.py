@@ -44,11 +44,11 @@ STAT_MULTIPLIER = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5}
 def get_enemy_for_stage(stage_num):
     random.seed(stage_num)
     possible_enemies = []
-    max_rarity_index = stage_num // 10
+    max_rarity_index = min(stage_num // 10, len(RARITY_ORDER) - 1)
     for e in enemy_definitions:
         if e.get('rarity') in RARITY_ORDER:
             rarity_index = RARITY_ORDER.index(e.get('rarity'))
-            if rarity_index <= max_rarity_index:
+            if rarity_index == max_rarity_index:
                 possible_enemies.append(e)
     if not possible_enemies:
         print(f"Warning: No valid enemies found for stage {stage_num}, falling back.")
@@ -185,6 +185,12 @@ def get_player_data():
         'collection': player_data['collection']
     }
     return jsonify({'success': True, 'data': full_data})
+
+
+@app.route('/api/all_users')
+def all_users():
+    users = db.get_all_users_with_runs()
+    return jsonify({'success': True, 'users': users})
 
 
 @app.route('/api/summon', methods=['POST'])
