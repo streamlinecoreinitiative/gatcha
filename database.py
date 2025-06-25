@@ -154,3 +154,9 @@ def get_all_users_with_runs():
     rows = conn.execute('SELECT users.username, player_data.dungeon_runs FROM users JOIN player_data ON users.id = player_data.user_id').fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def get_top_player():
+    conn = get_db_connection()
+    row = conn.execute('SELECT users.username, player_data.current_stage FROM users JOIN player_data ON users.id = player_data.user_id ORDER BY player_data.current_stage DESC LIMIT 1').fetchone()
+    conn.close()
+    return dict(row) if row else None
