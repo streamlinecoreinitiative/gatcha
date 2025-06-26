@@ -23,6 +23,12 @@ app.config['SECRET_KEY'] = os.urandom(24)
 socketio = SocketIO(app)
 db.init_db()
 
+
+@app.errorhandler(500)
+def internal_error(error):
+    print('Unhandled server error:', error)
+    return jsonify({'success': False, 'message': 'Internal server error.'}), 500
+
 # --- DATA LOADING & CONFIG ---
 BASE_DIR = os.path.dirname(__file__)
 character_definitions = load_all_definitions(os.path.join(BASE_DIR, "characters.json"))
@@ -263,68 +269,83 @@ def get_stage_info(stage_num):
 @app.route('/api/fight', methods=['POST'])
 def fight():
     if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
-    user_id, stage_num = session['user_id'], request.json.get('stage')
-    team = db.get_player_team(user_id, character_definitions)
-    if not any(team): return jsonify({'success': False, 'message': 'Your team is empty!'})
-    enemy = get_enemy_for_stage(stage_num)
-
-    stats = calculate_fight_stats(team, enemy)
-    team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
-
-    enemy_image = enemy['image']
-    combat_log = [{'type': 'start',
-                   'message': f"Floor {stage_num}: Your team faces a {stats['enemy_element']} {enemy['name']}!",
-                   'enemy_image': enemy_image}]
-
-    available_attackers = [c for c in team if c]
-    while team_hp > 0 and enemy_hp > 0:
-        attacker = random.choice(available_attackers)
-        player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
-        is_player_crit = random.random() * 100 < stats['team_crit_chance']
-        if is_player_crit:
-            player_damage *= stats['team_crit_damage']
-        enemy_hp -= player_damage
-        combat_log.append({
-            'type': 'player_attack',
-            'crit': is_player_crit,
-            'damage': int(player_damage),
-            'enemy_hp': int(max(0, enemy_hp)),
-            'element': attacker.get('element', 'None'),
-            'attacker': attacker.get('name', 'Hero')
-        })
-        if enemy_hp <= 0: break
-
-        enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
-        is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
-        if is_enemy_crit: enemy_damage *= stats['enemy_crit_damage']
-        team_hp -= enemy_damage
-        combat_log.append({'type': 'enemy_attack', 'crit': is_enemy_crit, 'damage': int(enemy_damage),
-                           'team_hp': int(max(0, team_hp))})
-
-    victory = team_hp > 0
-    gems_won = 0
-    gold_won = 0
-    if victory:
-        combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
+    user_id = session['user_id']
+    data = request.get_json(silent=True) or {}
+    try:
+        stage_num = int(data.get('stage', 1))
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Invalid stage value.'}), 400
+    try:
+        team = db.get_player_team(user_id, character_definitions)
+        if not any(team):
+            return jsonify({'success': False, 'message': 'Your team is empty!'})
         player_data = db.get_player_data(user_id)
-        if stage_num == player_data['current_stage']:
-            gems_won = 25 + (stage_num // 5) * 5
-            gold_won = 100 * stage_num
-            db.save_player_data(user_id,
-                                gems=player_data['gems'] + gems_won,
-                                gold=player_data['gold'] + gold_won,
-                                current_stage=player_data['current_stage'] + 1)
+        if not player_data:
+            return jsonify({'success': False, 'message': 'Player data not found.'}), 500
+        enemy = get_enemy_for_stage(stage_num)
+
+        stats = calculate_fight_stats(team, enemy)
+        team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
+
+        enemy_image = enemy['image']
+        combat_log = [{'type': 'start',
+                       'message': f"Floor {stage_num}: Your team faces a {stats['enemy_element']} {enemy['name']}!",
+                       'enemy_image': enemy_image}]
+
+        available_attackers = [c for c in team if c]
+        while team_hp > 0 and enemy_hp > 0:
+            attacker = random.choice(available_attackers)
+            player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+            is_player_crit = random.random() * 100 < stats['team_crit_chance']
+            if is_player_crit:
+                player_damage *= stats['team_crit_damage']
+            enemy_hp -= player_damage
+            combat_log.append({
+                'type': 'player_attack',
+                'crit': is_player_crit,
+                'damage': int(player_damage),
+                'enemy_hp': int(max(0, enemy_hp)),
+                'element': attacker.get('element', 'None'),
+                'attacker': attacker.get('name', 'Hero')
+            })
+            if enemy_hp <= 0:
+                break
+
+            enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
+            is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
+            if is_enemy_crit:
+                enemy_damage *= stats['enemy_crit_damage']
+            team_hp -= enemy_damage
+            combat_log.append({'type': 'enemy_attack', 'crit': is_enemy_crit, 'damage': int(enemy_damage),
+                               'team_hp': int(max(0, team_hp))})
+
+        victory = team_hp > 0
+        gems_won = 0
+        gold_won = 0
+        if victory:
+            combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
+            player_data = db.get_player_data(user_id)
+            if stage_num == player_data['current_stage']:
+                gems_won = 25 + (stage_num // 5) * 5
+                gold_won = 100 * stage_num
+                db.save_player_data(user_id,
+                                    gems=player_data['gems'] + gems_won,
+                                    gold=player_data['gold'] + gold_won,
+                                    current_stage=player_data['current_stage'] + 1)
+            else:
+                gems_won = 15
+                gold_won = 50 * stage_num
+                db.save_player_data(user_id,
+                                    gems=player_data['gems'] + gems_won,
+                                    gold=player_data['gold'] + gold_won,
+                                    current_stage=player_data['current_stage'])
         else:
-            gems_won = 15
-            gold_won = 50 * stage_num
-            db.save_player_data(user_id,
-                                gems=player_data['gems'] + gems_won,
-                                gold=player_data['gold'] + gold_won,
-                                current_stage=player_data['current_stage'])
-    else:
-        combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
-    refresh_online_progress(user_id)
-    return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': gems_won, 'gold_won': gold_won, 'looted_item': None})
+            combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
+        refresh_online_progress(user_id)
+        return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': gems_won, 'gold_won': gold_won, 'looted_item': None})
+    except Exception as e:
+        print('Error during fight:', e)
+        return jsonify({'success': False, 'message': 'Server error during fight.'}), 500
 
 
 # --- PILLAR 2: DUNGEONS ---
@@ -336,74 +357,83 @@ def fight_dungeon():
     team = db.get_player_team(user_id, character_definitions)
     if not any(team):
         return jsonify({'success': False, 'message': 'Your team is empty!'})
+    player_data = db.get_player_data(user_id)
+    if not player_data:
+        return jsonify({'success': False, 'message': 'Player data not found.'}), 500
 
-    ARMORY_FIXED_LEVEL = 40
-    concept = random.choice(enemy_definitions)
-    dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
-    enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
-    enemy_level = enemy['level']
+    try:
+        ARMORY_FIXED_LEVEL = 40
+        concept = random.choice(enemy_definitions)
+        dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
+        enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
+        enemy_level = enemy['level']
 
-    stats = calculate_fight_stats(team, enemy)
-    team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
+        stats = calculate_fight_stats(team, enemy)
+        team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
 
-    enemy_image = enemy['image']
-    combat_log = [
-        {'type': 'start', 'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy['name']}!",
-         'enemy_image': enemy_image}]
+        enemy_image = enemy['image']
+        combat_log = [
+            {'type': 'start', 'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy['name']}!",
+             'enemy_image': enemy_image}]
 
-    available_attackers = [c for c in team if c]
-    while team_hp > 0 and enemy_hp > 0:
-        attacker = random.choice(available_attackers)
-        player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
-        is_player_crit = random.random() * 100 < stats['team_crit_chance']
-        if is_player_crit:
-            player_damage *= stats['team_crit_damage']
-        enemy_hp -= player_damage
-        combat_log.append({
-            'type': 'player_attack',
-            'crit': is_player_crit,
-            'damage': int(player_damage),
-            'enemy_hp': int(max(0, enemy_hp)),
-            'element': attacker.get('element', 'None'),
-            'attacker': attacker.get('name', 'Hero')
-        })
-        if enemy_hp <= 0: break
+        available_attackers = [c for c in team if c]
+        while team_hp > 0 and enemy_hp > 0:
+            attacker = random.choice(available_attackers)
+            player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+            is_player_crit = random.random() * 100 < stats['team_crit_chance']
+            if is_player_crit:
+                player_damage *= stats['team_crit_damage']
+            enemy_hp -= player_damage
+            combat_log.append({
+                'type': 'player_attack',
+                'crit': is_player_crit,
+                'damage': int(player_damage),
+                'enemy_hp': int(max(0, enemy_hp)),
+                'element': attacker.get('element', 'None'),
+                'attacker': attacker.get('name', 'Hero')
+            })
+            if enemy_hp <= 0:
+                break
 
-        enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
-        is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
-        if is_enemy_crit: enemy_damage *= stats['enemy_crit_damage']
-        team_hp -= enemy_damage
-        combat_log.append({'type': 'enemy_attack', 'crit': is_enemy_crit, 'damage': int(enemy_damage),
-                           'team_hp': int(max(0, team_hp))})
+            enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
+            is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
+            if is_enemy_crit:
+                enemy_damage *= stats['enemy_crit_damage']
+            team_hp -= enemy_damage
+            combat_log.append({'type': 'enemy_attack', 'crit': is_enemy_crit, 'damage': int(enemy_damage),
+                               'team_hp': int(max(0, team_hp))})
 
-    victory = team_hp > 0
-    looted_item = None
-    gold_won = 0
-    if victory:
-        combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
-        if random.random() < 0.50:
-            looted_item_def = random.choice(equipment_definitions)
-            item_power = calculate_item_power(enemy_level)
-            looted_item = {
-                'name': looted_item_def['name'],
-                'rarity': looted_item_def['rarity'],
-                'power': item_power
-            }
-            conn = db.get_db_connection()
-            conn.execute("INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
-                         (user_id, looted_item['name'], looted_item['rarity']))
-            conn.commit()
-            conn.close()
-    else:
-        combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
+        victory = team_hp > 0
+        looted_item = None
+        gold_won = 0
+        if victory:
+            combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
+            if random.random() < 0.50:
+                looted_item_def = random.choice(equipment_definitions)
+                item_power = calculate_item_power(enemy_level)
+                looted_item = {
+                    'name': looted_item_def['name'],
+                    'rarity': looted_item_def['rarity'],
+                    'power': item_power
+                }
+                conn = db.get_db_connection()
+                conn.execute("INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
+                             (user_id, looted_item['name'], looted_item['rarity']))
+                conn.commit()
+                conn.close()
+        else:
+            combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
 
-    if victory:
-        db.increment_dungeon_runs(user_id)
-        player_data = db.get_player_data(user_id)
-        gold_won = 200
-        db.save_player_data(user_id, gold=player_data['gold'] + gold_won)
-    refresh_online_progress(user_id)
-    return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'gold_won': gold_won, 'looted_item': looted_item})
+        if victory:
+            db.increment_dungeon_runs(user_id)
+            player_data = db.get_player_data(user_id)
+            gold_won = 200
+            db.save_player_data(user_id, gold=player_data['gold'] + gold_won)
+        refresh_online_progress(user_id)
+        return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'gold_won': gold_won, 'looted_item': looted_item})
+    except Exception as e:
+        print('Error during dungeon fight:', e)
+        return jsonify({'success': False, 'message': 'Server error during dungeon fight.'}), 500
 
 
 # --- EQUIPMENT MANAGEMENT ---
