@@ -42,16 +42,16 @@ const chatContainer = document.getElementById('chat-container');
 const chatToggleBtn = document.getElementById('chat-toggle-btn');
 const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
-const heroImageOverlay = document.getElementById('hero-image-overlay');
-const heroImageLarge = document.getElementById('hero-image-large');
-const messageBox = document.getElementById('message-box');
-const registerModal = document.getElementById('register-modal-overlay');
-const regUsernameInput = document.getElementById('reg-username');
-const regEmailInput = document.getElementById('reg-email');
-const regPasswordInput = document.getElementById('reg-password');
-const regConfirmInput = document.getElementById('reg-confirm-password');
-const regSubmitBtn = document.getElementById('register-submit-btn');
-const regCancelBtn = document.getElementById('register-cancel-btn');
+let heroImageOverlay;
+let heroImageLarge;
+let messageBox;
+let registerModal;
+let regUsernameInput;
+let regEmailInput;
+let regPasswordInput;
+let regConfirmInput;
+let regSubmitBtn;
+let regCancelBtn;
 
 function displayMessage(text) {
     if (!messageBox) return;
@@ -86,18 +86,32 @@ const TOWER_LORE = [
 // ==== ATTACH EVENT LISTENERS (RUNS ONLY ONCE) ====
 // =========================================================================
 function attachEventListeners() {
+    // Late-loaded DOM elements
+    heroImageOverlay = document.getElementById('hero-image-overlay');
+    heroImageLarge = document.getElementById('hero-image-large');
+    messageBox = document.getElementById('message-box');
+    registerModal = document.getElementById('register-modal-overlay');
+    regUsernameInput = document.getElementById('reg-username');
+    regEmailInput = document.getElementById('reg-email');
+    regPasswordInput = document.getElementById('reg-password');
+    regConfirmInput = document.getElementById('reg-confirm-password');
+    regSubmitBtn = document.getElementById('register-submit-btn');
+    regCancelBtn = document.getElementById('register-cancel-btn');
+
     loginButton.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
     registerButton.addEventListener('click', () => {
-        registerModal.classList.add('active');
+        if (registerModal) registerModal.classList.add('active');
     });
 
-    regCancelBtn.addEventListener('click', () => {
-        registerModal.classList.remove('active');
-    });
+    if (regCancelBtn) {
+        regCancelBtn.addEventListener('click', () => {
+            if (registerModal) registerModal.classList.remove('active');
+        });
+    }
 
-    regSubmitBtn.addEventListener('click', async () => {
+    if (regSubmitBtn) regSubmitBtn.addEventListener('click', async () => {
         if (regPasswordInput.value !== regConfirmInput.value) {
             displayMessage('Passwords do not match');
             return;
@@ -113,7 +127,7 @@ function attachEventListeners() {
         });
         const result = await response.json();
         displayMessage(result.message);
-        if (result.success) {
+        if (result.success && registerModal) {
             registerModal.classList.remove('active');
         }
     });
