@@ -31,13 +31,14 @@ equipment_definitions = load_all_definitions(os.path.join(BASE_DIR, "static", "e
 LORE_FILE = os.path.join(BASE_DIR, "lore.txt")
 if not character_definitions or not enemy_definitions or not equipment_definitions: exit("Could not load game data.")
 
+# Order of rarities for heroes. Defined before it is referenced below.
+RARITY_ORDER = ["Common", "Rare", "SSR", "UR", "LR"]
 equipment_stats_map = {item['name']: item['stat_bonuses'] for item in equipment_definitions}
 available_rarities = sorted({c['rarity'] for c in character_definitions}, key=lambda r: RARITY_ORDER.index(r))
 gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity] for rarity in available_rarities}
 PULL_COST = 150
 SSR_PITY_THRESHOLD = 90
 online_users = {}
-RARITY_ORDER = ["Common", "Rare", "SSR", "UR", "LR"]
 # Enemy rarities include lower tiers not used for heroes
 ENEMY_RARITY_ORDER = ["Common", "Uncommon", "Rare", "Epic", "SSR", "UR", "LR"]
 MERGE_COST = {"Common": 3, "Rare": 3, "SSR": 4, "UR": 5}
