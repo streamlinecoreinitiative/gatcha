@@ -290,7 +290,8 @@ def fight():
         enemy_image = enemy['image']
         combat_log = [{'type': 'start',
                        'message': f"Floor {stage_num}: Your team faces a {stats['enemy_element']} {enemy['name']}!",
-                       'enemy_image': enemy_image}]
+                       'enemy_image': enemy_image,
+                       'element': stats['enemy_element']}]
 
         available_attackers = [c for c in team if c]
         while team_hp > 0 and enemy_hp > 0:
@@ -316,8 +317,11 @@ def fight():
             if is_enemy_crit:
                 enemy_damage *= stats['enemy_crit_damage']
             team_hp -= enemy_damage
-            combat_log.append({'type': 'enemy_attack', 'crit': is_enemy_crit, 'damage': int(enemy_damage),
-                               'team_hp': int(max(0, team_hp))})
+            combat_log.append({'type': 'enemy_attack',
+                               'crit': is_enemy_crit,
+                               'damage': int(enemy_damage),
+                               'team_hp': int(max(0, team_hp)),
+                               'element': stats['enemy_element']})
 
         victory = team_hp > 0
         gems_won = 0
@@ -375,8 +379,10 @@ def fight_dungeon():
 
         enemy_image = enemy['image']
         combat_log = [
-            {'type': 'start', 'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy['name']}!",
-             'enemy_image': enemy_image}]
+            {'type': 'start',
+             'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy['name']}!",
+             'enemy_image': enemy_image,
+             'element': stats['enemy_element']}]
 
         available_attackers = [c for c in team if c]
         while team_hp > 0 and enemy_hp > 0:
@@ -402,8 +408,11 @@ def fight_dungeon():
             if is_enemy_crit:
                 enemy_damage *= stats['enemy_crit_damage']
             team_hp -= enemy_damage
-            combat_log.append({'type': 'enemy_attack', 'crit': is_enemy_crit, 'damage': int(enemy_damage),
-                               'team_hp': int(max(0, team_hp))})
+            combat_log.append({'type': 'enemy_attack',
+                               'crit': is_enemy_crit,
+                               'damage': int(enemy_damage),
+                               'team_hp': int(max(0, team_hp)),
+                               'element': stats['enemy_element']})
 
         victory = team_hp > 0
         looted_item = None

@@ -285,6 +285,36 @@ function attachEventListeners() {
             gameScreen.classList.add('active');
             await fetchPlayerDataAndUpdate();
         }
+        else if (target.id === 'battle-next-button') {
+            const nextStage = currentStageForFight + 1;
+            const response = await fetch('/api/fight', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage: nextStage })
+            });
+            const result = await response.json();
+            if (result.success) {
+                currentStageForFight = nextStage;
+                await startBattle(result);
+                await fetchPlayerDataAndUpdate();
+            } else {
+                displayMessage(`Fight Failed: ${result.message}`);
+            }
+        }
+        else if (target.id === 'battle-retry-button') {
+            const response = await fetch('/api/fight', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage: currentStageForFight })
+            });
+            const result = await response.json();
+            if (result.success) {
+                await startBattle(result);
+                await fetchPlayerDataAndUpdate();
+            } else {
+                displayMessage(`Fight Failed: ${result.message}`);
+            }
+        }
         else if (target.classList.contains('tutorial-btn')) {
             const text = target.dataset.tutorial || '';
             document.getElementById('tutorial-text').textContent = text;
@@ -298,6 +328,15 @@ function attachEventListeners() {
 
 // --- ASYNC & STATE FUNCTIONS ---
 const delay = ms => new Promise(res => setTimeout(res, ms));
+
+function getScaledStats(hero) {
+    const charDef = masterCharacterList.find(c => c.name === hero.character_name) || {};
+    const rarityMult = {"Common":1.0,"Rare":1.3,"SSR":1.8,"UR":2.5,"LR":3.5}[hero.rarity] || 1.0;
+    const levelMult = 1 + 0.10 * (hero.level - 1);
+    const atk = Math.round((charDef.base_atk || 0) * rarityMult * levelMult);
+    const hp = Math.round((charDef.base_hp || 0) * rarityMult * levelMult);
+    return { atk, hp, crit: charDef.crit_chance, critDmg: charDef.crit_damage };
+}
 
 async function initializeGame() {
     const gameDataResponse = await fetch('/api/game_data');
@@ -373,10 +412,12 @@ async function openHeroDetailModal(hero) {
     const fullHeroData = gameState.collection.find(h => h.id === hero.id);
     const charDef = masterCharacterList.find(c => c.name === fullHeroData.character_name) || {};
     const equippedItems = allPlayerItems.filter(item => item.is_equipped_on === fullHeroData.id);
+    const stats = getScaledStats(fullHeroData);
     let html = `
         <img class="hero-detail-portrait" src="/static/images/characters/${charDef.image_file || 'placeholder_char.png'}" alt="${fullHeroData.character_name}">
         <h3>${fullHeroData.character_name}</h3>
         <p>Level: ${fullHeroData.level} | Dupes: ${fullHeroData.dupe_level}</p>
+        <p>ATK: ${stats.atk} | HP: ${stats.hp}</p>
         <h4>Equipped Items</h4>
         <div class="equipped-slots">
             <p>Weapon: ${equippedItems[0]?.equipment_name || 'Empty'}</p>
@@ -479,7 +520,8 @@ function updateTeamDisplay() {
         slot.className = 'team-slot';
         if (member) {
             const element = member.element || 'None';
-            slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name}</h4><p>ATK: ${member.base_atk} | HP: ${member.base_hp}</p><p>Crit: ${member.crit_chance}% | Crit DMG: ${member.crit_damage}x</p>`;
+            const stats = getScaledStats(member);
+            slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name}</h4><p>ATK: ${stats.atk} | HP: ${stats.hp}</p><p>Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</p>`;
         } else {
             slot.innerHTML = `<img src="/static/images/ui/placeholder_char.png" alt="Empty"><h4>Empty Slot</h4>`;
         }
@@ -508,7 +550,8 @@ function updateCollectionDisplay() {
         const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[hero.rarity] || 999;
         const canMerge = heroCounts[hero.character_name] >= mergeCost;
         const isInTeam = teamDBIds.includes(hero.id);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level} | Dupes: ${hero.dupe_level}</div><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level})</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
+        const stats = getScaledStats(hero);
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level} | Dupes: ${hero.dupe_level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level})</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
@@ -594,6 +637,8 @@ async function startBattle(fightResult) {
     const enemyDisplayContainer = document.getElementById('battle-enemy-display');
     const logEntriesContainer = document.getElementById('battle-log-entries');
     const returnButton = document.getElementById('battle-return-button');
+    const nextButton = document.getElementById('battle-next-button');
+    const retryButton = document.getElementById('battle-retry-button');
     const playerHpBar = document.getElementById('player-hp-bar');
     const playerHpText = document.getElementById('player-hp-text');
     const enemyHpBar = document.getElementById('enemy-hp-bar');
@@ -603,6 +648,8 @@ async function startBattle(fightResult) {
     enemyDisplayContainer.innerHTML = '';
     logEntriesContainer.innerHTML = '';
     returnButton.style.display = 'none';
+    nextButton.style.display = 'none';
+    retryButton.style.display = 'none';
 
     const startEntry = fightResult.log[0];
     // This parsing is fine for getting the name for the enemy card title.
@@ -658,7 +705,7 @@ async function startBattle(fightResult) {
     updateHealthBar(enemyHpBar, enemyHpText, maxEnemyHP, maxEnemyHP);
 
     // Use the message directly from the first log entry
-    addLogMessage(startEntry.message);
+    addLogMessage(startEntry.message, 'info', startEntry.element);
     await delay(1000);
 
     // Loop through the rest of the log entries
@@ -668,7 +715,7 @@ async function startBattle(fightResult) {
                 // --- THIS IS THE FIX ---
                 // We create a new message that combines the server data for clarity.
                 // Your backend doesn't send a full message for attacks, so we build it here.
-                addLogMessage(`${entry.attacker} ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Enemy HP: ${entry.enemy_hp}`, 'player', entry.element);
+                addLogMessage(`${entry.attacker} uses ${entry.element} and ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Enemy HP: ${entry.enemy_hp}`, 'player', entry.element);
                 document.getElementById('battle-enemy-side').classList.add('attack-effect');
                 showDamageNumber(document.getElementById('battle-enemy-side'), entry.damage, entry.crit, entry.element);
                 updateHealthBar(enemyHpBar, enemyHpText, entry.enemy_hp, maxEnemyHP);
@@ -676,11 +723,9 @@ async function startBattle(fightResult) {
                 document.getElementById('battle-enemy-side').classList.remove('attack-effect');
                 break;
             case 'enemy_attack':
-                // --- THIS IS THE FIX ---
-                // We do the same for the enemy attack.
-                addLogMessage(`Enemy ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Your Team HP: ${entry.team_hp}`, 'enemy');
+                addLogMessage(`Enemy uses ${entry.element} and ${entry.crit ? 'CRITS' : 'hits'} for ${entry.damage} damage! Your Team HP: ${entry.team_hp}`, 'enemy', entry.element);
                 document.getElementById('battle-player-side').classList.add('attack-effect');
-                showDamageNumber(document.getElementById('battle-player-side'), entry.damage, entry.crit);
+                showDamageNumber(document.getElementById('battle-player-side'), entry.damage, entry.crit, entry.element);
                 updateHealthBar(playerHpBar, playerHpText, entry.team_hp, maxTeamHP);
                 await delay(750);
                 document.getElementById('battle-player-side').classList.remove('attack-effect');
@@ -696,6 +741,11 @@ async function startBattle(fightResult) {
                     addLogMessage(`LOOTED: [${item.name}]`, `rarity-${rarityClass}`);
                 }
                 returnButton.style.display = 'block';
+                if (fightResult.victory) {
+                    nextButton.style.display = 'block';
+                } else {
+                    retryButton.style.display = 'block';
+                }
                 break;
         }
         await delay(250);
