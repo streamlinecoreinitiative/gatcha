@@ -45,6 +45,13 @@ const equipmentContainer = document.getElementById('equipment-container');
 const heroImageOverlay = document.getElementById('hero-image-overlay');
 const heroImageLarge = document.getElementById('hero-image-large');
 const messageBox = document.getElementById('message-box');
+const registerModal = document.getElementById('register-modal-overlay');
+const regUsernameInput = document.getElementById('reg-username');
+const regEmailInput = document.getElementById('reg-email');
+const regPasswordInput = document.getElementById('reg-password');
+const regConfirmInput = document.getElementById('reg-confirm-password');
+const regSubmitBtn = document.getElementById('register-submit-btn');
+const regCancelBtn = document.getElementById('register-cancel-btn');
 
 function displayMessage(text) {
     if (!messageBox) return;
@@ -82,9 +89,33 @@ function attachEventListeners() {
     loginButton.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
-    registerButton.addEventListener('click', async () => {
-        const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: usernameInput.value, password: passwordInput.value }) });
-        displayMessage((await response.json()).message);
+    registerButton.addEventListener('click', () => {
+        registerModal.classList.add('active');
+    });
+
+    regCancelBtn.addEventListener('click', () => {
+        registerModal.classList.remove('active');
+    });
+
+    regSubmitBtn.addEventListener('click', async () => {
+        if (regPasswordInput.value !== regConfirmInput.value) {
+            displayMessage('Passwords do not match');
+            return;
+        }
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: regUsernameInput.value,
+                email: regEmailInput.value,
+                password: regPasswordInput.value
+            })
+        });
+        const result = await response.json();
+        displayMessage(result.message);
+        if (result.success) {
+            registerModal.classList.remove('active');
+        }
     });
 
     logoutButton.addEventListener('click', handleLogout);

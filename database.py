@@ -23,6 +23,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
+            email TEXT,
             password TEXT NOT NULL
         )
     ''')
@@ -68,18 +69,23 @@ def init_db():
     ''')
     conn.commit()
     # Ensure new columns exist for existing databases
+    add_column_if_missing(conn, 'users', 'email', 'TEXT')
     add_column_if_missing(conn, 'player_data', 'gold', 'INTEGER NOT NULL DEFAULT 10000')
     add_column_if_missing(conn, 'player_data', 'pity_counter', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     conn.close()
 
-def register_user(username, password):
-    if not username or not password: return "Username and password are required."
+def register_user(username, email, password):
+    if not username or not password:
+        return "Username and password are required."
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        cursor.execute(
+            "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+            (username, email, password)
+        )
         user_id = cursor.lastrowid
         cursor.execute(
             "INSERT INTO player_data (user_id, gems, gold, pity_counter) VALUES (?, ?, ?, 0)",
