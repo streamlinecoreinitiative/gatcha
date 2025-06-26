@@ -72,6 +72,7 @@
             <!-- Home View -->
             <div id="home-view" class="view active">
                 <h2>Your Active Team</h2>
+                <button class="tutorial-btn" data-tutorial="This home screen shows your active team and important progress information.">?</button>
                 <div id="team-display" class="team-container"></div>
 
                     <!-- === NEW MESSAGE OF THE DAY SECTION === -->
@@ -95,12 +96,20 @@
             <!-- V3: NEW Online Users View -->
             <div id="online-view" class="view">
                  <h2>Players Online</h2>
+                 <button class="tutorial-btn" data-tutorial="See who is currently playing the game.">?</button>
                  <div id="online-list-container" class="online-list"></div>
                  <div id="all-users-container" class="online-list"></div>
             </div>
             <!-- Collection View -->
             <div id="collection-view" class="view">
                 <h2>Your Hero Collection</h2>
+                <button class="tutorial-btn" data-tutorial="Manage your heroes here. Elements counter each other: Fire beats Grass, Grass beats Water, Water beats Fire. Stats and critical hits decide combat results.">?</button>
+                <div class="heroes-guide">
+                    <h3>Elemental Synergy</h3>
+                    <p>Fire beats Grass, Grass beats Water, and Water beats Fire. Heroes with advantage deal more damage.</p>
+                    <h3>Combat Basics</h3>
+                    <p>ATK and HP come from hero rarity and equipment. Crit Chance triggers stronger attacks that use Crit Damage.</p>
+                </div>
                 <div id="collection-container" class="collection-grid">
                     <!-- Heroes will be dynamically inserted here by JavaScript -->
                 </div>
@@ -110,6 +119,7 @@
             <div id="summon-view" class="view">
                 <div class="summon-area">
                     <h2>The Summoning Altar</h2>
+                    <button class="tutorial-btn" data-tutorial="Spend gems here to summon additional heroes for your roster.">?</button>
                     <p>Use 150 Gems to summon a new hero!</p>
                     <button id="perform-summon-button">Summon</button>
                     <div id="summon-result" class="summon-result-box"></div>
@@ -118,6 +128,7 @@
 
             <div id="equipment-view" class="view">
     <h2>Your Armory</h2>
+    <button class="tutorial-btn" data-tutorial="View and equip gear found in dungeons.">?</button>
     <div id="equipment-container" class="collection-grid">
         <!-- Equipment will be dynamically inserted here -->
     </div>
@@ -130,6 +141,7 @@
     <!-- The header remains the same, which is great for consistency -->
     <div class="view-header" id="tower-lore-header">
         <h2>The Spire of Chaos</h2>
+        <button class="tutorial-btn" data-tutorial="Battle through the Spire to earn rewards. Elemental advantages increase your damage.">?</button>
         <p>A festering wound in reality itself...</p>
     </div>
 
@@ -156,6 +168,7 @@
 <!-- NEW & IMPROVED DUNGEONS VIEW -->
 <div id="dungeons-view" class="view">
     <h2>Expeditions</h2>
+    <button class="tutorial-btn" data-tutorial="Fight challenging foes here for equipment rewards.">?</button>
     <p class="view-description">Embark on a dangerous hunt for powerful rewards. The difficulty of the foe scales with your Tower progress.</p>
 
     <div class="dungeon-container">
@@ -184,6 +197,7 @@
             <!-- Lore View (Simple implementation) -->
             <div id="lore-view" class="view">
                  <h2>The Lore of Aethelgard</h2>
+                 <button class="tutorial-btn" data-tutorial="Read the latest updates and lore for the world.">?</button>
                  <div id="lore-text-container" class="lore-box"></div>
             </div>
 
@@ -286,6 +300,13 @@
     <div class="modal-content">
         <img id="hero-image-large" src="" alt="Hero" style="max-width:300px; height:auto;">
         <button id="close-hero-image-btn">Close</button>
+    </div>
+</div>
+
+<div id="tutorial-modal" class="modal-overlay">
+    <div class="modal-content">
+        <p id="tutorial-text"></p>
+        <button id="tutorial-close-btn">Close</button>
     </div>
 </div>
 

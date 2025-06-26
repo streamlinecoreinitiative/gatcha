@@ -224,6 +224,14 @@ function attachEventListeners() {
             gameScreen.classList.add('active');
             await fetchPlayerDataAndUpdate();
         }
+        else if (target.classList.contains('tutorial-btn')) {
+            const text = target.dataset.tutorial || '';
+            document.getElementById('tutorial-text').textContent = text;
+            document.getElementById('tutorial-modal').classList.add('active');
+        }
+        else if (target.id === 'tutorial-close-btn') {
+            document.getElementById('tutorial-modal').classList.remove('active');
+        }
     });
 }
 
@@ -422,6 +430,10 @@ function updateTeamDisplay() {
 function updateCollectionDisplay() {
     collectionContainer.innerHTML = '';
     if (!gameState.collection || masterCharacterList.length === 0) return;
+    if (gameState.collection.length === 0) {
+        collectionContainer.innerHTML = '<p class="no-heroes">No heroes found. Summon new allies in the Summon section.</p>';
+        return;
+    }
     const groupedHeroes = gameState.collection.reduce((acc, char) => {
         acc[char.character_name] = acc[char.character_name] || [];
         acc[char.character_name].push(char);

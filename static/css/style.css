@@ -809,6 +809,34 @@ button:disabled, .fantasy-button:disabled {
     min-width: 350px;
 }
 
+/* Simple round button used for tutorial pop ups */
+.tutorial-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.heroes-guide {
+    background: rgba(0,0,0,0.4);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.no-heroes {
+    text-align: center;
+    padding: 20px;
+}
+
 #intel-enemy-info .team-slot {
     border-color: #c0392b;
     margin: 10px auto;
