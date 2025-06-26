@@ -48,6 +48,8 @@ def refresh_online_progress(user_id):
     sid = next((sid for sid, info in online_users.items() if info.get('user_id') == user_id), None)
     if sid:
         progress = db.get_player_data(user_id)
+        if not progress:
+            return
         online_users[sid]['current_stage'] = progress.get('current_stage', 1)
         online_users[sid]['dungeon_runs'] = progress.get('dungeon_runs', 0)
         socketio.emit('update_online_list', list(online_users.values()), broadcast=True)
