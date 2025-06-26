@@ -22,6 +22,7 @@ const registerButton = document.getElementById('register-button');
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
+const premiumGemCountDisplay = document.getElementById('premium-gem-count');
 const logoutButton = document.getElementById('logout-button');
 const bugButton = document.getElementById('report-bug-button');
 const mainContent = document.getElementById('main-content');
@@ -42,6 +43,7 @@ const chatContainer = document.getElementById('chat-container');
 const chatToggleBtn = document.getElementById('chat-toggle-btn');
 const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
+const storePackagesContainer = document.getElementById('store-packages');
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -174,6 +176,9 @@ function attachEventListeners() {
             if (targetViewId === 'equipment-view') {
                 updateEquipmentDisplay();
             }
+            if (targetViewId === 'store-view') {
+                updateStoreDisplay();
+            }
             if (targetViewId === 'online-view') {
                 updateAllUsers();
             }
@@ -276,6 +281,14 @@ function attachEventListeners() {
             await fetch('/api/unequip_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ equipment_id: parseInt(equipmentId) }) });
             document.getElementById('hero-detail-overlay').classList.remove('active');
             await fetchPlayerDataAndUpdate();
+        }
+        else if (target.classList.contains('purchase-btn')) {
+            const packId = target.dataset.packageId;
+            const receipt = prompt('Enter receipt code to simulate payment:');
+            const response = await fetch('/api/purchase_premium', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ package_id: packId, receipt: receipt, platform: 'web' }) });
+            const result = await response.json();
+            displayMessage(result.message || (result.success ? 'Purchase successful!' : 'Purchase failed'));
+            if(result.success) await fetchPlayerDataAndUpdate();
         }
         else if (target.id === 'close-hero-image-btn') {
             heroImageOverlay.classList.remove('active');
@@ -449,6 +462,7 @@ function updateUI() {
     if (!gameState || !gameState.username) return;
     playerNameDisplay.textContent = gameState.username;
     gemCountDisplay.textContent = gameState.gems;
+    if (premiumGemCountDisplay) premiumGemCountDisplay.textContent = gameState.premium_gems;
     if (goldCountDisplay) goldCountDisplay.textContent = gameState.gold;
     if (dungeonRunCount) dungeonRunCount.textContent = gameState.dungeon_runs;
     const towerCount = document.getElementById('tower-floor-count');
@@ -510,6 +524,22 @@ async function updateTopPlayer() {
         nameEl.textContent = result.player.username;
         stageEl.textContent = result.player.current_stage;
     }
+}
+
+async function updateStoreDisplay() {
+    if (!storePackagesContainer) return;
+    storePackagesContainer.innerHTML = 'Loading...';
+    const response = await fetch('/api/store_items');
+    const result = await response.json();
+    if (!result.success) { storePackagesContainer.innerHTML = 'Failed to load store.'; return; }
+    storePackagesContainer.innerHTML = '';
+    result.items.forEach(pkg => {
+        const div = document.createElement('div');
+        div.className = 'store-package';
+        const label = pkg.label ? `<span class="best-value">${pkg.label}</span>` : '';
+        div.innerHTML = `<h4>${pkg.amount} Gems - $${pkg.price.toFixed(2)} ${label}</h4><button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
+        storePackagesContainer.appendChild(div);
+    });
 }
 
 function updateTeamDisplay() {

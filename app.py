@@ -44,6 +44,12 @@ ENEMY_RARITY_ORDER = ["Common", "Uncommon", "Rare", "Epic", "SSR", "UR", "LR"]
 MERGE_COST = {"Common": 3, "Rare": 3, "SSR": 4, "UR": 5}
 STAT_MULTIPLIER = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5}
 
+# --- Premium Currency Store Packages ---
+STORE_PACKAGES = [
+    {"id": "pack_small", "amount": 100, "price": 0.99},
+    {"id": "pack_medium", "amount": 550, "price": 4.99, "label": "Best Value"}
+]
+
 def refresh_online_progress(user_id):
     sid = next((sid for sid, info in online_users.items() if info.get('user_id') == user_id), None)
     if sid:
@@ -53,6 +59,13 @@ def refresh_online_progress(user_id):
         online_users[sid]['current_stage'] = progress.get('current_stage', 1)
         online_users[sid]['dungeon_runs'] = progress.get('dungeon_runs', 0)
         socketio.emit('update_online_list', list(online_users.values()))
+
+
+# Placeholder receipt verification
+def verify_purchase_receipt(platform: str, receipt: str) -> bool:
+    """Stub verification logic. In production, validate the receipt with
+    the respective platform (Apple or Google)."""
+    return receipt == "TEST_RECEIPT"
 
 
 # --- HELPER FUNCTIONS ---
@@ -193,6 +206,7 @@ def get_player_data():
     full_data = {
         'username': session.get('username'),
         'gems': player_data['gems'],
+        'premium_gems': player_data.get('premium_gems', 0),
         'gold': player_data.get('gold', 0),
         'pity_counter': player_data.get('pity_counter', 0),
         'current_stage': player_data['current_stage'],
@@ -212,6 +226,32 @@ def all_users():
 def top_player():
     player = db.get_top_player()
     return jsonify({'success': True, 'player': player})
+
+
+@app.route('/api/store_items')
+def store_items():
+    """Return available premium currency packages."""
+    return jsonify({'success': True, 'items': STORE_PACKAGES})
+
+
+@app.route('/api/purchase_premium', methods=['POST'])
+def purchase_premium():
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    data = request.json or {}
+    package_id = data.get('package_id')
+    receipt = data.get('receipt')
+    platform = data.get('platform')
+    package = next((p for p in STORE_PACKAGES if p['id'] == package_id), None)
+    if not package:
+        return jsonify({'success': False, 'message': 'Invalid package'}), 400
+    if not verify_purchase_receipt(platform, receipt):
+        return jsonify({'success': False, 'message': 'Receipt verification failed'}), 400
+    user_id = session['user_id']
+    player_data = db.get_player_data(user_id)
+    new_balance = player_data.get('premium_gems', 0) + package['amount']
+    db.save_player_data(user_id, premium_gems=new_balance)
+    return jsonify({'success': True, 'new_balance': new_balance})
 
 
 @app.route('/api/summon', methods=['POST'])

@@ -63,6 +63,8 @@
             <div id="currency-info">
                 <img src="{{ url_for('static', filename='images/ui/gem_icon.png') }}" alt="Gems">
                 <span id="gem-count"></span>
+                <img src="{{ url_for('static', filename='images/ui/gem_icon.png') }}" alt="Premium Gems">
+                <span id="premium-gem-count"></span>
                 <span>Gold:</span> <span id="gold-count"></span>
                 <button id="report-bug-button">Report Bug</button>
             </div>
@@ -135,6 +137,15 @@
                     <button id="perform-summon-button">Summon</button>
                     <div id="summon-result" class="summon-result-box"></div>
                 </div>
+            </div>
+
+            <!-- Store View -->
+            <div id="store-view" class="view">
+                <div class="section-header">
+                    <h2>Premium Shop</h2>
+                    <button class="tutorial-btn" data-tutorial="Purchase premium gems here. Transactions are verified server-side.">?</button>
+                </div>
+                <div id="store-packages" class="store-container"></div>
             </div>
 
             <div id="equipment-view" class="view">
@@ -229,6 +240,7 @@
             <button class="nav-button" data-view="collection-view">Heroes</button>
             <button class="nav-button" data-view="equipment-view">Equipment</button>
             <button class="nav-button" data-view="summon-view">Summon</button>
+            <button class="nav-button" data-view="store-view">Store</button>
             <button class="nav-button" data-view="campaign-view">The Tower</button>
             <button class="nav-button" data-view="dungeons-view">The Armory</button>
             <button class="nav-button" data-view="online-view">Online</button>

@@ -1277,3 +1277,19 @@ button:disabled, .fantasy-button:disabled {
     display: none;
     z-index: 1000;
 }
+
+/* Store styles */
+.store-container {
+    padding: 20px;
+}
+.store-package {
+    background-color: #222;
+    border: 1px solid #555;
+    padding: 10px;
+    margin: 10px 0;
+    text-align: center;
+}
+.best-value {
+    color: gold;
+    margin-left: 5px;
+}
