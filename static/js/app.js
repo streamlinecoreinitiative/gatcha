@@ -44,6 +44,14 @@ const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
 const heroImageOverlay = document.getElementById('hero-image-overlay');
 const heroImageLarge = document.getElementById('hero-image-large');
+const messageBox = document.getElementById('message-box');
+
+function displayMessage(text) {
+    if (!messageBox) return;
+    messageBox.textContent = text;
+    messageBox.style.display = 'block';
+    setTimeout(() => { messageBox.style.display = 'none'; }, 3000);
+}
 const TOWER_LORE = [
     {
         floor: 1,
@@ -76,7 +84,7 @@ function attachEventListeners() {
 
     registerButton.addEventListener('click', async () => {
         const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: usernameInput.value, password: passwordInput.value }) });
-        alert((await response.json()).message);
+        displayMessage((await response.json()).message);
     });
 
     logoutButton.addEventListener('click', handleLogout);
@@ -94,7 +102,7 @@ function attachEventListeners() {
             const element = character.element || 'None';
             summonResultContainer.innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${character.image_file}" alt="${character.name}"><h4>${character.name}</h4><p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p><p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p></div>`;
             await fetchPlayerDataAndUpdate();
-        } else { alert(`Summon Failed: ${result.message}`); }
+        } else { displayMessage(`Summon Failed: ${result.message}`); }
     });
 
     chatSendButton.addEventListener('click', sendMessage);
@@ -138,7 +146,7 @@ function attachEventListeners() {
             const response = await fetch('/api/manage_team', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ char_id: charId, action: action }) });
             const result = await response.json(); // Save the result to a variable
             if(!result.success) {
-                alert(`Team Update Failed: ${result.message}`); // Use the saved variable
+                displayMessage(`Team Update Failed: ${result.message}`);
             }
             await fetchPlayerDataAndUpdate();
         }
@@ -146,7 +154,7 @@ function attachEventListeners() {
             const charName = target.dataset.charName;
             const response = await fetch('/api/merge_heroes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: charName }) });
             const result = await response.json();
-            alert(result.message);
+            displayMessage(result.message);
             if(result.success) await fetchPlayerDataAndUpdate();
         }
         else if (target.classList.contains('equip-button')) {
@@ -168,7 +176,7 @@ function attachEventListeners() {
                 const element = enemy.element || 'None';
                 document.getElementById('intel-enemy-info').innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity">Enemy</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/${enemy.image_file}" alt="${enemy.name}"><h4>${enemy.name}</h4><div class="card-stats">HP: ~${enemy.hp} | ATK: ~${enemy.atk}</div></div>`;
                 document.getElementById('intel-modal-overlay').classList.add('active');
-            } else { alert(`Error: ${result.message}`); }
+            } else { displayMessage(`Error: ${result.message}`); }
         }
         else if (target.classList.contains('dungeon-fight-button')) {
             const response = await fetch('/api/fight_dungeon', { method: 'POST' });
@@ -177,7 +185,7 @@ function attachEventListeners() {
                 gameScreen.classList.remove('active');
                 battleScreen.classList.add('active');
                 await startBattle(result);
-            } else { alert(`Dungeon Failed: ${result.message}`); }
+            } else { displayMessage(`Dungeon Failed: ${result.message}`); }
         }
         else if (target.id === 'intel-close-btn') document.getElementById('intel-modal-overlay').classList.remove('active');
         else if (target.id === 'intel-change-team-btn') {
@@ -192,13 +200,13 @@ function attachEventListeners() {
                 gameScreen.classList.remove('active');
                 battleScreen.classList.add('active');
                 await startBattle(result);
-            } else { alert(`Fight Failed: ${result.message}`); }
+            } else { displayMessage(`Fight Failed: ${result.message}`); }
         }
         else if (target.id === 'close-hero-detail-btn') document.getElementById('hero-detail-overlay').classList.remove('active');
         else if (target.id === 'confirm-equip-btn') {
             const heroId = target.dataset.heroId;
             const equipmentId = document.getElementById('equip-select').value;
-            if (!equipmentId) { alert("Please select an item to equip."); return; }
+            if (!equipmentId) { displayMessage("Please select an item to equip."); return; }
             await fetch('/api/equip_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ character_id: parseInt(heroId), equipment_id: parseInt(equipmentId) }) });
             document.getElementById('hero-detail-overlay').classList.remove('active');
             await fetchPlayerDataAndUpdate();
@@ -207,7 +215,7 @@ function attachEventListeners() {
             const heroId = target.dataset.heroId;
             const response = await fetch('/api/level_up', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ char_id: parseInt(heroId) }) });
             const result = await response.json();
-            if (!result.success) alert(result.message);
+            if (!result.success) displayMessage(result.message);
             await fetchPlayerDataAndUpdate();
         }
         else if (target.classList.contains('unequip-btn')) {
@@ -266,7 +274,7 @@ async function handleLogin() {
     const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: usernameInput.value, password: passwordInput.value }) });
     const result = await response.json();
     if (result.success) await initializeGame();
-    else alert(`Login Failed: ${result.message}`);
+    else displayMessage(`Login Failed: ${result.message}`);
 }
 
 async function handleLogout() {

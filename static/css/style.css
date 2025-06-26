@@ -824,6 +824,18 @@ button:disabled, .fantasy-button:disabled {
     cursor: pointer;
 }
 
+.section-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.section-header .tutorial-btn {
+    position: static;
+}
+
 .heroes-guide {
     background: rgba(0,0,0,0.4);
     padding: 10px;
@@ -1213,4 +1225,18 @@ button:disabled, .fantasy-button:disabled {
 }
 #hero-detail-content .equipped-slots {
     margin: 10px 0;
+}
+
+/* transient message box for alerts */
+#message-box {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: none;
+    z-index: 1000;
 }
