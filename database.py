@@ -8,6 +8,14 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def add_column_if_missing(conn, table, column, definition):
+    cur = conn.cursor()
+    cur.execute(f"PRAGMA table_info({table})")
+    cols = [row[1] for row in cur.fetchall()]
+    if column not in cols:
+        cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+        conn.commit()
+
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -22,8 +30,10 @@ def init_db():
         CREATE TABLE IF NOT EXISTS player_data (
             user_id INTEGER PRIMARY KEY,
             gems INTEGER NOT NULL DEFAULT 100,
+            gold INTEGER NOT NULL DEFAULT 10000,
             current_stage INTEGER NOT NULL DEFAULT 1,
             dungeon_runs INTEGER NOT NULL DEFAULT 0,
+            pity_counter INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
@@ -57,6 +67,11 @@ def init_db():
         )
     ''')
     conn.commit()
+    # Ensure new columns exist for existing databases
+    add_column_if_missing(conn, 'player_data', 'gold', 'INTEGER NOT NULL DEFAULT 10000')
+    add_column_if_missing(conn, 'player_data', 'pity_counter', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
+    add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     conn.close()
 
 def register_user(username, password):
@@ -66,7 +81,10 @@ def register_user(username, password):
         cursor = conn.cursor()
         cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
         user_id = cursor.lastrowid
-        cursor.execute("INSERT INTO player_data (user_id) VALUES (?)", (user_id,))
+        cursor.execute(
+            "INSERT INTO player_data (user_id, gems, gold, pity_counter) VALUES (?, ?, ?, 0)",
+            (user_id, 100, 10000)
+        )
         # Initialize empty team slots
         for i in range(1, 4):
             cursor.execute("INSERT INTO player_team (user_id, slot_num, character_db_id) VALUES (?, ?, NULL)", (user_id, i))
@@ -88,7 +106,7 @@ def login_user(username, password):
 def get_player_data(user_id):
     conn = get_db_connection()
     player = conn.execute("SELECT * FROM player_data WHERE user_id = ?", (user_id,)).fetchone()
-    collection_rows = conn.execute("SELECT id, character_name, rarity FROM player_characters WHERE user_id = ?", (user_id,)).fetchall()
+    collection_rows = conn.execute("SELECT id, character_name, rarity, level, dupe_level FROM player_characters WHERE user_id = ?", (user_id,)).fetchall()
     conn.close()
     if player:
         player_dict = dict(player)
@@ -96,9 +114,17 @@ def get_player_data(user_id):
         return player_dict
     return None
 
-def save_player_data(user_id, gems, current_stage):
+def save_player_data(user_id, gems=None, current_stage=None, gold=None, pity_counter=None):
     conn = get_db_connection()
-    conn.execute("UPDATE player_data SET gems = ?, current_stage = ? WHERE user_id = ?", (gems, current_stage, user_id))
+    cursor = conn.cursor()
+    if gems is not None:
+        cursor.execute("UPDATE player_data SET gems = ? WHERE user_id = ?", (gems, user_id))
+    if gold is not None:
+        cursor.execute("UPDATE player_data SET gold = ? WHERE user_id = ?", (gold, user_id))
+    if current_stage is not None:
+        cursor.execute("UPDATE player_data SET current_stage = ? WHERE user_id = ?", (current_stage, user_id))
+    if pity_counter is not None:
+        cursor.execute("UPDATE player_data SET pity_counter = ? WHERE user_id = ?", (pity_counter, user_id))
     conn.commit()
     conn.close()
 
@@ -110,8 +136,18 @@ def increment_dungeon_runs(user_id):
 
 def add_character_to_player(user_id, char_def):
     conn = get_db_connection()
-    conn.execute("INSERT INTO player_characters (user_id, character_name, rarity) VALUES (?, ?, ?)",
-                 (user_id, char_def['name'], char_def['rarity']))
+    cursor = conn.cursor()
+    existing = cursor.execute(
+        "SELECT id FROM player_characters WHERE user_id = ? AND character_name = ? ORDER BY id LIMIT 1",
+        (user_id, char_def['name'])
+    ).fetchone()
+    if existing:
+        cursor.execute("UPDATE player_characters SET dupe_level = dupe_level + 1 WHERE id = ?", (existing['id'],))
+    else:
+        cursor.execute(
+            "INSERT INTO player_characters (user_id, character_name, rarity, level, dupe_level) VALUES (?, ?, ?, 1, 0)",
+            (user_id, char_def['name'], char_def['rarity'])
+        )
     conn.commit()
     conn.close()
 
@@ -160,3 +196,26 @@ def get_top_player():
     row = conn.execute('SELECT users.username, player_data.current_stage FROM users JOIN player_data ON users.id = player_data.user_id ORDER BY player_data.current_stage DESC LIMIT 1').fetchone()
     conn.close()
     return dict(row) if row else None
+
+def level_up_character(user_id, char_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    char = cursor.execute(
+        "SELECT level FROM player_characters WHERE id = ? AND user_id = ?",
+        (char_id, user_id)
+    ).fetchone()
+    if not char:
+        conn.close()
+        return False, "Character not found."
+    gold_row = cursor.execute("SELECT gold FROM player_data WHERE user_id = ?", (user_id,)).fetchone()
+    current_level = char['level']
+    cost = 100 * current_level
+    if gold_row['gold'] < cost:
+        conn.close()
+        return False, "Not enough Gold."
+    cursor.execute("UPDATE player_characters SET level = level + 1 WHERE id = ?", (char_id,))
+    cursor.execute("UPDATE player_data SET gold = gold - ? WHERE user_id = ?", (cost, user_id))
+    conn.commit()
+    new_gold = cursor.execute("SELECT gold FROM player_data WHERE user_id = ?", (user_id,)).fetchone()['gold']
+    conn.close()
+    return True, {'new_level': current_level + 1, 'new_gold': new_gold}

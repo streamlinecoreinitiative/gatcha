@@ -33,7 +33,8 @@ if not character_definitions or not enemy_definitions or not equipment_definitio
 equipment_stats_map = {item['name']: item['stat_bonuses'] for item in equipment_definitions}
 gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity] for rarity in
               ["Common", "Rare", "SSR"]}
-SUMMON_COST = 50
+PULL_COST = 150
+SSR_PITY_THRESHOLD = 90
 online_users = {}
 RARITY_ORDER = ["Common", "Rare", "SSR", "UR", "LR"]
 # Enemy rarities include lower tiers not used for heroes
@@ -178,6 +179,8 @@ def get_player_data():
     full_data = {
         'username': session.get('username'),
         'gems': player_data['gems'],
+        'gold': player_data.get('gold', 0),
+        'pity_counter': player_data.get('pity_counter', 0),
         'current_stage': player_data['current_stage'],
         'dungeon_runs': player_data.get('dungeon_runs', 0),
         'team': player_team,
@@ -205,12 +208,25 @@ def summon():
     if player_data is None:
         session.clear()
         return jsonify({'success': False, 'message': 'Player data not found. Please log in again.'}), 401
-    if player_data['gems'] < SUMMON_COST: return jsonify({'success': False, 'message': 'Not enough gems!'})
-    chosen_rarity = random.choices(list(gacha_pool.keys()), weights=[60, 30, 10], k=1)[0]
+    if player_data['gems'] < PULL_COST:
+        return jsonify({'success': False, 'message': 'Not enough gems!'})
+    pity = player_data.get('pity_counter', 0) + 1
+    if pity >= SSR_PITY_THRESHOLD:
+        chosen_rarity = 'SSR'
+        pity = 0
+    else:
+        rand = random.random()
+        if rand < 0.6:
+            chosen_rarity = 'Common'
+        elif rand < 0.9:
+            chosen_rarity = 'Rare'
+        else:
+            chosen_rarity = 'SSR'
+            pity = 0
     summoned_char_def = random.choice(gacha_pool[chosen_rarity])
     db.add_character_to_player(user_id, summoned_char_def)
-    new_gems = player_data['gems'] - SUMMON_COST
-    db.save_player_data(user_id, new_gems, player_data['current_stage'])
+    new_gems = player_data['gems'] - PULL_COST
+    db.save_player_data(user_id, gems=new_gems, pity_counter=pity)
     return jsonify({'success': True, 'character': summoned_char_def})
 
 
@@ -272,18 +288,27 @@ def fight():
 
     victory = team_hp > 0
     gems_won = 0
+    gold_won = 0
     if victory:
         combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
         player_data = db.get_player_data(user_id)
         if stage_num == player_data['current_stage']:
             gems_won = 25 + (stage_num // 5) * 5
-            db.save_player_data(user_id, player_data['gems'] + gems_won, player_data['current_stage'] + 1)
+            gold_won = 100 * stage_num
+            db.save_player_data(user_id,
+                                gems=player_data['gems'] + gems_won,
+                                gold=player_data['gold'] + gold_won,
+                                current_stage=player_data['current_stage'] + 1)
         else:
             gems_won = 5
-            db.save_player_data(user_id, player_data['gems'] + gems_won, player_data['current_stage'])
+            gold_won = 50 * stage_num
+            db.save_player_data(user_id,
+                                gems=player_data['gems'] + gems_won,
+                                gold=player_data['gold'] + gold_won,
+                                current_stage=player_data['current_stage'])
     else:
         combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
-    return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': gems_won, 'looted_item': None})
+    return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': gems_won, 'gold_won': gold_won, 'looted_item': None})
 
 
 # --- PILLAR 2: DUNGEONS ---
@@ -331,6 +356,7 @@ def fight_dungeon():
 
     victory = team_hp > 0
     looted_item = None
+    gold_won = 0
     if victory:
         combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
         if random.random() < 0.50:
@@ -346,7 +372,10 @@ def fight_dungeon():
 
     if victory:
         db.increment_dungeon_runs(user_id)
-    return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'looted_item': looted_item})
+        player_data = db.get_player_data(user_id)
+        gold_won = 200
+        db.save_player_data(user_id, gold=player_data['gold'] + gold_won)
+    return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'gold_won': gold_won, 'looted_item': looted_item})
 
 
 # --- EQUIPMENT MANAGEMENT ---
@@ -385,6 +414,19 @@ def unequip_item():
     conn.commit()
     conn.close()
     return jsonify({'success': True})
+
+
+@app.route('/api/level_up', methods=['POST'])
+def level_up():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    user_id = session['user_id']
+    char_id = request.json.get('char_id')
+    success, result = db.level_up_character(user_id, char_id)
+    if success:
+        return jsonify({'success': True, 'new_level': result['new_level'], 'new_gold': result['new_gold']})
+    else:
+        return jsonify({'success': False, 'message': result})
 
 
 # --- OTHER MANAGEMENT & CHAT ---
