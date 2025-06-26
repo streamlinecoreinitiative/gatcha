@@ -32,8 +32,8 @@ LORE_FILE = os.path.join(BASE_DIR, "lore.txt")
 if not character_definitions or not enemy_definitions or not equipment_definitions: exit("Could not load game data.")
 
 equipment_stats_map = {item['name']: item['stat_bonuses'] for item in equipment_definitions}
-gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity] for rarity in
-              ["Common", "Rare", "SSR"]}
+available_rarities = sorted({c['rarity'] for c in character_definitions}, key=lambda r: RARITY_ORDER.index(r))
+gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity] for rarity in available_rarities}
 PULL_COST = 150
 SSR_PITY_THRESHOLD = 90
 online_users = {}
@@ -42,6 +42,14 @@ RARITY_ORDER = ["Common", "Rare", "SSR", "UR", "LR"]
 ENEMY_RARITY_ORDER = ["Common", "Uncommon", "Rare", "Epic", "SSR", "UR", "LR"]
 MERGE_COST = {"Common": 3, "Rare": 3, "SSR": 4, "UR": 5}
 STAT_MULTIPLIER = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5}
+
+def refresh_online_progress(user_id):
+    sid = next((sid for sid, info in online_users.items() if info.get('user_id') == user_id), None)
+    if sid:
+        progress = db.get_player_data(user_id)
+        online_users[sid]['current_stage'] = progress.get('current_stage', 1)
+        online_users[sid]['dungeon_runs'] = progress.get('dungeon_runs', 0)
+        socketio.emit('update_online_list', list(online_users.values()), broadcast=True)
 
 
 # --- HELPER FUNCTIONS ---
@@ -214,12 +222,17 @@ def summon():
         pity = 0
     else:
         rand = random.random()
-        if rand < 0.6:
+        if rand < 0.5:
             chosen_rarity = 'Common'
-        elif rand < 0.9:
+        elif rand < 0.8:
             chosen_rarity = 'Rare'
-        else:
+        elif rand < 0.95:
             chosen_rarity = 'SSR'
+        elif rand < 0.985:
+            chosen_rarity = 'UR'
+        else:
+            chosen_rarity = 'LR'
+        if chosen_rarity in ['SSR', 'UR', 'LR']:
             pity = 0
     summoned_char_def = random.choice(gacha_pool[chosen_rarity])
     db.add_character_to_player(user_id, summoned_char_def)
@@ -306,6 +319,7 @@ def fight():
                                 current_stage=player_data['current_stage'])
     else:
         combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
+    refresh_online_progress(user_id)
     return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': gems_won, 'gold_won': gold_won, 'looted_item': None})
 
 
@@ -380,6 +394,7 @@ def fight_dungeon():
         player_data = db.get_player_data(user_id)
         gold_won = 200
         db.save_player_data(user_id, gold=player_data['gold'] + gold_won)
+    refresh_online_progress(user_id)
     return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'gold_won': gold_won, 'looted_item': looted_item})
 
 
@@ -497,6 +512,7 @@ def handle_connect():
         progress = db.get_user_progress(username)
         online_users[request.sid] = {
             'username': username,
+            'user_id': session.get('user_id'),
             'current_stage': progress.get('current_stage', 1),
             'dungeon_runs': progress.get('dungeon_runs', 0)
         }

@@ -71,8 +71,10 @@
         <div id="main-content">
             <!-- Home View -->
             <div id="home-view" class="view active">
-                <h2>Your Active Team</h2>
-                <button class="tutorial-btn" data-tutorial="This home screen shows your active team and important progress information.">?</button>
+                <div class="section-header">
+                    <h2>Your Active Team</h2>
+                    <button class="tutorial-btn" data-tutorial="This home screen shows your active team and important progress information.">?</button>
+                </div>
                 <div id="team-display" class="team-container"></div>
 
                     <!-- === NEW MESSAGE OF THE DAY SECTION === -->
@@ -95,18 +97,24 @@
 
             <!-- V3: NEW Online Users View -->
             <div id="online-view" class="view">
-                 <h2>Players Online</h2>
-                 <button class="tutorial-btn" data-tutorial="See who is currently playing the game.">?</button>
+                 <div class="section-header">
+                     <h2>Players Online</h2>
+                     <button class="tutorial-btn" data-tutorial="See who is currently playing the game.">?</button>
+                 </div>
                  <div id="online-list-container" class="online-list"></div>
                  <div id="all-users-container" class="online-list"></div>
-            </div>
+           </div>
             <!-- Collection View -->
             <div id="collection-view" class="view">
-                <h2>Your Hero Collection</h2>
-                <button class="tutorial-btn" data-tutorial="Manage your heroes here. Elements counter each other: Fire beats Grass, Grass beats Water, Water beats Fire. Stats and critical hits decide combat results.">?</button>
+                <div class="section-header">
+                    <h2>Your Hero Collection</h2>
+                    <button class="tutorial-btn" data-tutorial="Manage your heroes here. 🔥 Fire is strong against 🌿 Grass (Fire burns Grass). 🌿 Grass is strong against 💧 Water (Grass soaks up Water). 💧 Water is strong against 🔥 Fire (Water douses Fire). Stats and critical hits decide combat results.">?</button>
+                </div>
                 <div class="heroes-guide">
                     <h3>Elemental Synergy</h3>
-                    <p>Fire beats Grass, Grass beats Water, and Water beats Fire. Heroes with advantage deal more damage.</p>
+                    <p>🔥 Fire is strong against 🌿 Grass (Fire burns Grass).<br>
+                    🌿 Grass is strong against 💧 Water (Grass soaks up Water).<br>
+                    💧 Water is strong against 🔥 Fire (Water douses Fire).</p>
                     <h3>Combat Basics</h3>
                     <p>ATK and HP come from hero rarity and equipment. Crit Chance triggers stronger attacks that use Crit Damage.</p>
                 </div>
@@ -118,8 +126,10 @@
             <!-- Summon View -->
             <div id="summon-view" class="view">
                 <div class="summon-area">
-                    <h2>The Summoning Altar</h2>
-                    <button class="tutorial-btn" data-tutorial="Spend gems here to summon additional heroes for your roster.">?</button>
+                    <div class="section-header">
+                        <h2>The Summoning Altar</h2>
+                        <button class="tutorial-btn" data-tutorial="Spend gems here to summon additional heroes for your roster.">?</button>
+                    </div>
                     <p>Use 150 Gems to summon a new hero!</p>
                     <button id="perform-summon-button">Summon</button>
                     <div id="summon-result" class="summon-result-box"></div>
@@ -127,8 +137,10 @@
             </div>
 
             <div id="equipment-view" class="view">
-    <h2>Your Armory</h2>
-    <button class="tutorial-btn" data-tutorial="View and equip gear found in dungeons.">?</button>
+    <div class="section-header">
+        <h2>Your Armory</h2>
+        <button class="tutorial-btn" data-tutorial="View and equip gear found in dungeons.">?</button>
+    </div>
     <div id="equipment-container" class="collection-grid">
         <!-- Equipment will be dynamically inserted here -->
     </div>
@@ -140,8 +152,10 @@
 
     <!-- The header remains the same, which is great for consistency -->
     <div class="view-header" id="tower-lore-header">
-        <h2>The Spire of Chaos</h2>
-        <button class="tutorial-btn" data-tutorial="Battle through the Spire to earn rewards. Elemental advantages increase your damage.">?</button>
+        <div class="section-header">
+            <h2>The Spire of Chaos</h2>
+            <button class="tutorial-btn" data-tutorial="Battle through the Spire to earn rewards. Elemental advantages increase your damage.">?</button>
+        </div>
         <p>A festering wound in reality itself...</p>
     </div>
 
@@ -167,8 +181,10 @@
 
 <!-- NEW & IMPROVED DUNGEONS VIEW -->
 <div id="dungeons-view" class="view">
-    <h2>Expeditions</h2>
-    <button class="tutorial-btn" data-tutorial="Fight challenging foes here for equipment rewards.">?</button>
+    <div class="section-header">
+        <h2>Expeditions</h2>
+        <button class="tutorial-btn" data-tutorial="Fight challenging foes here for equipment rewards.">?</button>
+    </div>
     <p class="view-description">Embark on a dangerous hunt for powerful rewards. The difficulty of the foe scales with your Tower progress.</p>
 
     <div class="dungeon-container">
@@ -196,8 +212,10 @@
 
             <!-- Lore View (Simple implementation) -->
             <div id="lore-view" class="view">
-                 <h2>The Lore of Aethelgard</h2>
-                 <button class="tutorial-btn" data-tutorial="Read the latest updates and lore for the world.">?</button>
+                 <div class="section-header">
+                     <h2>The Lore of Aethelgard</h2>
+                     <button class="tutorial-btn" data-tutorial="Read the latest updates and lore for the world.">?</button>
+                 </div>
                  <div id="lore-text-container" class="lore-box"></div>
             </div>
 
@@ -267,6 +285,8 @@
             <button id="chat-send-button">Send</button>
         </div>
     </div>
+
+    <div id="message-box"></div>
 
     <!-- Link to our JavaScript file -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
