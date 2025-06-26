@@ -29,7 +29,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS player_data (
             user_id INTEGER PRIMARY KEY,
-            gems INTEGER NOT NULL DEFAULT 100,
+            gems INTEGER NOT NULL DEFAULT 150,
             gold INTEGER NOT NULL DEFAULT 10000,
             current_stage INTEGER NOT NULL DEFAULT 1,
             dungeon_runs INTEGER NOT NULL DEFAULT 0,
@@ -83,7 +83,7 @@ def register_user(username, password):
         user_id = cursor.lastrowid
         cursor.execute(
             "INSERT INTO player_data (user_id, gems, gold, pity_counter) VALUES (?, ?, ?, 0)",
-            (user_id, 100, 10000)
+            (user_id, 150, 10000)
         )
         # Initialize empty team slots
         for i in range(1, 4):
@@ -187,9 +187,22 @@ def set_player_team(user_id, team_ids):
 
 def get_all_users_with_runs():
     conn = get_db_connection()
-    rows = conn.execute('SELECT users.username, player_data.dungeon_runs FROM users JOIN player_data ON users.id = player_data.user_id').fetchall()
+    rows = conn.execute(
+        'SELECT users.username, player_data.current_stage, player_data.dungeon_runs '
+        'FROM users JOIN player_data ON users.id = player_data.user_id'
+    ).fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def get_user_progress(username):
+    conn = get_db_connection()
+    row = conn.execute(
+        'SELECT current_stage, dungeon_runs FROM player_data '
+        'JOIN users ON users.id = player_data.user_id WHERE users.username = ?',
+        (username,)
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else {'current_stage': 1, 'dungeon_runs': 0}
 
 def get_top_player():
     conn = get_db_connection()
