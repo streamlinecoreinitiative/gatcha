@@ -759,6 +759,18 @@ button:disabled, .fantasy-button:disabled {
     align-self: center; /* Center the button */
 }
 
+.battle-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#battle-next-button,#battle-retry-button {
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
 /* --- VISUAL EFFECTS --- */
 .attack-effect {
     animation: shake-effect 0.3s linear;
