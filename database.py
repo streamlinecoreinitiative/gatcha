@@ -31,6 +31,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS player_data (
             user_id INTEGER PRIMARY KEY,
             gems INTEGER NOT NULL DEFAULT 150,
+            premium_gems INTEGER NOT NULL DEFAULT 0,
             gold INTEGER NOT NULL DEFAULT 10000,
             current_stage INTEGER NOT NULL DEFAULT 1,
             dungeon_runs INTEGER NOT NULL DEFAULT 0,
@@ -72,6 +73,7 @@ def init_db():
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
     add_column_if_missing(conn, 'player_data', 'gold', 'INTEGER NOT NULL DEFAULT 10000')
     add_column_if_missing(conn, 'player_data', 'pity_counter', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'player_data', 'premium_gems', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     conn.close()
@@ -88,7 +90,7 @@ def register_user(username, email, password):
         )
         user_id = cursor.lastrowid
         cursor.execute(
-            "INSERT INTO player_data (user_id, gems, gold, pity_counter) VALUES (?, ?, ?, 0)",
+            "INSERT INTO player_data (user_id, gems, premium_gems, gold, pity_counter) VALUES (?, ?, 0, ?, 0)",
             (user_id, 150, 10000)
         )
         # Initialize empty team slots
@@ -120,11 +122,13 @@ def get_player_data(user_id):
         return player_dict
     return None
 
-def save_player_data(user_id, gems=None, current_stage=None, gold=None, pity_counter=None):
+def save_player_data(user_id, gems=None, premium_gems=None, current_stage=None, gold=None, pity_counter=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     if gems is not None:
         cursor.execute("UPDATE player_data SET gems = ? WHERE user_id = ?", (gems, user_id))
+    if premium_gems is not None:
+        cursor.execute("UPDATE player_data SET premium_gems = ? WHERE user_id = ?", (premium_gems, user_id))
     if gold is not None:
         cursor.execute("UPDATE player_data SET gold = ? WHERE user_id = ?", (gold, user_id))
     if current_stage is not None:
