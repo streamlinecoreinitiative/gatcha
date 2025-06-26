@@ -442,24 +442,21 @@ function updateCollectionDisplay() {
         collectionContainer.innerHTML = '<p class="no-heroes">No heroes found. Summon new allies in the Summon section.</p>';
         return;
     }
-    const groupedHeroes = gameState.collection.reduce((acc, char) => {
-        acc[char.character_name] = acc[char.character_name] || [];
-        acc[char.character_name].push(char);
+    const heroCounts = gameState.collection.reduce((acc, char) => {
+        acc[char.character_name] = (acc[char.character_name] || 0) + 1;
         return acc;
     }, {});
     const teamDBIds = gameState.team.filter(m => m).map(m => m.db_id);
-    for (const name in groupedHeroes) {
-        const heroGroup = groupedHeroes[name];
-        const heroInstance = heroGroup[0];
-        const charDef = masterCharacterList.find(c => c.name === heroInstance.character_name);
-        if (!charDef) continue;
+    gameState.collection.forEach(hero => {
+        const charDef = masterCharacterList.find(c => c.name === hero.character_name);
+        if (!charDef) return;
         const card = document.createElement('div');
         card.className = 'collection-card';
         const element = charDef.element || 'None';
-        const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[heroInstance.rarity] || 999;
-        const canMerge = heroGroup.length >= mergeCost;
-        const isInTeam = teamDBIds.includes(heroInstance.id);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${heroInstance.rarity.toLowerCase()}">[${heroInstance.rarity}] (x${heroGroup.length})</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${name}"><h4>${name}</h4><div class="card-stats">Level: ${heroInstance.level} | Dupes: ${heroInstance.dupe_level}</div><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${heroInstance.id}">Equip</button></div>`;
+        const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[hero.rarity] || 999;
+        const canMerge = heroCounts[hero.character_name] >= mergeCost;
+        const isInTeam = teamDBIds.includes(hero.id);
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level} | Dupes: ${hero.dupe_level}</div><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
@@ -467,7 +464,7 @@ function updateCollectionDisplay() {
             card.appendChild(indicator);
         }
         collectionContainer.appendChild(card);
-    }
+    });
 }
 
 function updateCampaignDisplay() {
@@ -503,7 +500,7 @@ function updateCampaignDisplay() {
 
         if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
-            const gemsForRepeat = 5;
+            const gemsForRepeat = 15;
             descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/gem_icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
         } else if (status === 'current') {
