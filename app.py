@@ -275,6 +275,11 @@ def fight():
             return jsonify({'success': False, 'message': 'Your team is empty!'})
         enemy = get_enemy_for_stage(stage_num)
 
+        player_data = db.get_player_data(user_id)
+        if player_data is None:
+            session.clear()
+            return jsonify({'success': False, 'message': 'Player data not found. Please log in again.'}), 500
+
         stats = calculate_fight_stats(team, enemy)
         team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
 
@@ -355,6 +360,11 @@ def fight_dungeon():
         dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
         enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
         enemy_level = enemy['level']
+
+        player_data = db.get_player_data(user_id)
+        if player_data is None:
+            session.clear()
+            return jsonify({'success': False, 'message': 'Player data not found. Please log in again.'}), 500
 
         stats = calculate_fight_stats(team, enemy)
         team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
