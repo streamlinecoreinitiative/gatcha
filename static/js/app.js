@@ -416,7 +416,7 @@ async function openHeroDetailModal(hero) {
     let html = `
         <img class="hero-detail-portrait" src="/static/images/characters/${charDef.image_file || 'placeholder_char.png'}" alt="${fullHeroData.character_name}">
         <h3>${fullHeroData.character_name}</h3>
-        <p>Level: ${fullHeroData.level} | Dupes: ${fullHeroData.dupe_level}</p>
+        <p>Level: ${fullHeroData.level}</p>
         <p>ATK: ${stats.atk} | HP: ${stats.hp}</p>
         <h4>Equipped Items</h4>
         <div class="equipped-slots">
@@ -551,7 +551,7 @@ function updateCollectionDisplay() {
         const canMerge = heroCounts[hero.character_name] >= mergeCost;
         const isInTeam = teamDBIds.includes(hero.id);
         const stats = getScaledStats(hero);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level} | Dupes: ${hero.dupe_level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level})</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level})</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
@@ -658,12 +658,9 @@ async function startBattle(fightResult) {
 
     const maxTeamHP = gameState.team.reduce((total, member) => {
         if (!member) return total;
-        const multipliers = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5};
-        let memberHP = (member.base_hp * (multipliers[member.rarity] || 1.0));
-        member.equipped.forEach(item => {
-            // This part is for display only, the real stats are calculated on the server.
-        });
-        return total + memberHP;
+        // Use the same scaling logic as the server so the HP bar matches
+        const stats = getScaledStats(member);
+        return total + stats.hp;
     }, 0);
     const firstPlayerAttack = fightResult.log.find(e => e.type === 'player_attack');
     const maxEnemyHP = firstPlayerAttack ? firstPlayerAttack.enemy_hp + firstPlayerAttack.damage : 100;
