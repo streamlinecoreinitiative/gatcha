@@ -330,15 +330,17 @@ def fight():
 # --- PILLAR 2: DUNGEONS ---
 @app.route('/api/fight_dungeon', methods=['POST'])
 def fight_dungeon():
-    if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
     user_id = session['user_id']
     team = db.get_player_team(user_id, character_definitions)
-    if not any(team): return jsonify({'success': False, 'message': 'Your team is empty!'})
-    stage_level_scaling = db.get_player_data(user_id)['current_stage']
+    if not any(team):
+        return jsonify({'success': False, 'message': 'Your team is empty!'})
+
+    ARMORY_FIXED_LEVEL = 40
     concept = random.choice(enemy_definitions)
-    enemy_level = 40 + stage_level_scaling
     dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
-    enemy = generate_enemy(enemy_level, dungeon_archetype, concept)
+    enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
 
     stats = calculate_fight_stats(team, enemy)
     team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
