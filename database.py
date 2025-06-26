@@ -143,17 +143,10 @@ def increment_dungeon_runs(user_id):
 def add_character_to_player(user_id, char_def):
     conn = get_db_connection()
     cursor = conn.cursor()
-    existing = cursor.execute(
-        "SELECT id FROM player_characters WHERE user_id = ? AND character_name = ? ORDER BY id LIMIT 1",
-        (user_id, char_def['name'])
-    ).fetchone()
-    if existing:
-        cursor.execute("UPDATE player_characters SET dupe_level = dupe_level + 1 WHERE id = ?", (existing['id'],))
-    else:
-        cursor.execute(
-            "INSERT INTO player_characters (user_id, character_name, rarity, level, dupe_level) VALUES (?, ?, ?, 1, 0)",
-            (user_id, char_def['name'], char_def['rarity'])
-        )
+    cursor.execute(
+        "INSERT INTO player_characters (user_id, character_name, rarity, level, dupe_level) VALUES (?, ?, ?, 1, 0)",
+        (user_id, char_def['name'], char_def['rarity'])
+    )
     conn.commit()
     conn.close()
 

@@ -856,6 +856,11 @@ button:disabled, .fantasy-button:disabled {
     position: static;
 }
 
+/* Center the tower header content */
+#tower-lore-header .section-header {
+    justify-content: center;
+}
+
 .heroes-guide {
     background: rgba(0,0,0,0.4);
     padding: 10px;
