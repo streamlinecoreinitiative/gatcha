@@ -231,3 +231,32 @@ def level_up_character(user_id, char_id):
     new_gold = cursor.execute("SELECT gold FROM player_data WHERE user_id = ?", (user_id,)).fetchone()['gold']
     conn.close()
     return True, {'new_level': current_level + 1, 'new_gold': new_gold}
+
+def sell_character(user_id, char_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    char = cursor.execute(
+        "SELECT rarity, level FROM player_characters WHERE id = ? AND user_id = ?",
+        (char_id, user_id)
+    ).fetchone()
+    if not char:
+        conn.close()
+        return False, "Character not found."
+
+    base_values = {
+        'Common': 50,
+        'Rare': 150,
+        'SSR': 400,
+        'UR': 800,
+        'LR': 1500
+    }
+    base = base_values.get(char['rarity'], 50)
+    gold_amount = base * char['level']
+
+    cursor.execute("UPDATE player_data SET gold = gold + ? WHERE user_id = ?", (gold_amount, user_id))
+    cursor.execute("UPDATE player_team SET character_db_id = NULL WHERE character_db_id = ? AND user_id = ?", (char_id, user_id))
+    cursor.execute("DELETE FROM player_characters WHERE id = ? AND user_id = ?", (char_id, user_id))
+    conn.commit()
+    new_gold = cursor.execute("SELECT gold FROM player_data WHERE user_id = ?", (user_id,)).fetchone()['gold']
+    conn.close()
+    return True, {'gold_received': gold_amount, 'new_gold': new_gold}

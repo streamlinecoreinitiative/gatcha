@@ -81,8 +81,10 @@ def calculate_fight_stats(team, enemy):
 
         try:
             # Start with base stats
-            char_hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
-            char_atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0)
+            level = character.get('level', 1)
+            level_mult = 1 + 0.10 * (level - 1)
+            char_hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
+            char_atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
             char_crit_chance = character.get('crit_chance', 0)
             char_crit_damage = character.get('crit_damage', 1.5)
 
@@ -483,6 +485,19 @@ def level_up():
     success, result = db.level_up_character(user_id, char_id)
     if success:
         return jsonify({'success': True, 'new_level': result['new_level'], 'new_gold': result['new_gold']})
+    else:
+        return jsonify({'success': False, 'message': result})
+
+
+@app.route('/api/sell_hero', methods=['POST'])
+def sell_hero():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    user_id = session['user_id']
+    char_id = request.json.get('char_id')
+    success, result = db.sell_character(user_id, char_id)
+    if success:
+        return jsonify({'success': True, 'gold_received': result['gold_received'], 'new_gold': result['new_gold']})
     else:
         return jsonify({'success': False, 'message': result})
 

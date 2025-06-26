@@ -256,11 +256,19 @@ function attachEventListeners() {
             document.getElementById('hero-detail-overlay').classList.remove('active');
             await fetchPlayerDataAndUpdate();
         }
-        else if (target.id === 'level-up-btn') {
+        else if (target.classList.contains('level-up-card-btn')) {
             const heroId = target.dataset.heroId;
             const response = await fetch('/api/level_up', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ char_id: parseInt(heroId) }) });
             const result = await response.json();
             if (!result.success) displayMessage(result.message);
+            await fetchPlayerDataAndUpdate();
+        }
+        else if (target.classList.contains('sell-hero-btn')) {
+            const heroId = target.dataset.heroId;
+            const response = await fetch('/api/sell_hero', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ char_id: parseInt(heroId) }) });
+            const result = await response.json();
+            if (result.success) displayMessage(`Sold for ${result.gold_received} gold`);
+            else displayMessage(result.message);
             await fetchPlayerDataAndUpdate();
         }
         else if (target.classList.contains('unequip-btn')) {
@@ -381,7 +389,6 @@ async function openHeroDetailModal(hero) {
         </select>
         <div class="modal-buttons">
             <button id="confirm-equip-btn" data-hero-id="${fullHeroData.id}">Equip Selected</button>
-            <button id="level-up-btn" data-hero-id="${fullHeroData.id}">Level Up (${100 * fullHeroData.level} Gold)</button>
             <button id="close-hero-detail-btn">Close</button>
         </div>
     `;
@@ -501,7 +508,7 @@ function updateCollectionDisplay() {
         const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[hero.rarity] || 999;
         const canMerge = heroCounts[hero.character_name] >= mergeCost;
         const isInTeam = teamDBIds.includes(hero.id);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level} | Dupes: ${hero.dupe_level}</div><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button></div>`;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level} | Dupes: ${hero.dupe_level}</div><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level})</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
