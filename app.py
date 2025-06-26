@@ -577,8 +577,20 @@ def handle_connect():
 def handle_send_message(data):
     if session.get('logged_in'):
         message = data.get('message', '').strip()
+        if message.lower() == '!profile':
+            user_id = session.get('user_id')
+            player_data = db.get_player_data(user_id)
+            if player_data:
+                profile_msg = (f"\U0001f4ac Profile for {session.get('username')}: "
+                               f"\U0001f48e {player_data['gems']} Gems | "
+                               f"\U0001f4b0 {player_data.get('gold', 0)} Gold")
+                socketio.emit('receive_message',
+                              {'username': 'System', 'message': profile_msg},
+                              room=request.sid)
+            return
         if 0 < len(message) <= 200:
-            socketio.emit('receive_message', {'username': session.get('username'), 'message': message})
+            socketio.emit('receive_message',
+                          {'username': session.get('username'), 'message': message})
 
 
 @socketio.on('disconnect')
