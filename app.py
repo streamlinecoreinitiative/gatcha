@@ -60,7 +60,10 @@ def get_enemy_for_stage(stage_num):
     target_rarity = ENEMY_RARITY_ORDER[tier_index]
     possible = [e for e in enemy_definitions if e.get("rarity") == target_rarity]
     concept = random.choice(possible) if possible else random.choice(enemy_definitions)
-    archetype = "boss" if stage_num % 10 == 0 else "standard"
+    if stage_num % 10 == 0:
+        archetype = "boss"
+    else:
+        archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
     enemy = generate_enemy(stage_num, archetype, concept)
     random.seed()
     return enemy
@@ -334,7 +337,8 @@ def fight_dungeon():
     stage_level_scaling = db.get_player_data(user_id)['current_stage']
     concept = random.choice(enemy_definitions)
     enemy_level = 40 + stage_level_scaling
-    enemy = generate_enemy(enemy_level, 'standard', concept)
+    dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
+    enemy = generate_enemy(enemy_level, dungeon_archetype, concept)
 
     stats = calculate_fight_stats(team, enemy)
     team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
