@@ -311,7 +311,7 @@ def fight():
                                 gold=player_data['gold'] + gold_won,
                                 current_stage=player_data['current_stage'] + 1)
         else:
-            gems_won = 5
+            gems_won = 15
             gold_won = 50 * stage_num
             db.save_player_data(user_id,
                                 gems=player_data['gems'] + gems_won,
