@@ -157,7 +157,7 @@ def get_lore():
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
-    result = db.register_user(data.get('username'), data.get('password'))
+    result = db.register_user(data.get('username'), data.get('email'), data.get('password'))
     return jsonify({'success': result == "Success", 'message': result})
 
 
