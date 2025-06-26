@@ -286,7 +286,7 @@ function connectSocket() {
         users.forEach(user => {
             const userElement = document.createElement('div');
             userElement.className = 'online-list-item';
-            userElement.textContent = user;
+            userElement.textContent = `${user.username} - Floor ${user.current_stage} | Runs ${user.dungeon_runs}`;
             onlineListContainer.appendChild(userElement);
         });
     });
@@ -342,6 +342,8 @@ function updateUI() {
     gemCountDisplay.textContent = gameState.gems;
     if (goldCountDisplay) goldCountDisplay.textContent = gameState.gold;
     if (dungeonRunCount) dungeonRunCount.textContent = gameState.dungeon_runs;
+    const towerCount = document.getElementById('tower-floor-count');
+    if (towerCount) towerCount.textContent = gameState.current_stage;
     updateTeamDisplay();
     updateCollectionDisplay();
     updateCampaignDisplay();
@@ -384,7 +386,7 @@ async function updateAllUsers() {
     result.users.forEach(u => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        div.textContent = `${u.username} - Dungeon Runs: ${u.dungeon_runs}`;
+        div.textContent = `${u.username} - Floor ${u.current_stage} | Runs ${u.dungeon_runs}`;
         allUsersContainer.appendChild(div);
     });
 }

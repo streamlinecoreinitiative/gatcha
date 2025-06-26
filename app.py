@@ -489,7 +489,12 @@ def merge_heroes():
 def handle_connect():
     if session.get('logged_in'):
         username = session.get('username')
-        online_users[request.sid] = username
+        progress = db.get_user_progress(username)
+        online_users[request.sid] = {
+            'username': username,
+            'current_stage': progress.get('current_stage', 1),
+            'dungeon_runs': progress.get('dungeon_runs', 0)
+        }
         emit('receive_message', {'username': 'System', 'message': f'{username} has joined the chat.'}, broadcast=True)
         emit('update_online_list', list(online_users.values()), broadcast=True)
 
@@ -504,7 +509,8 @@ def handle_send_message(data):
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    username = online_users.pop(request.sid, 'A user')
+    user_info = online_users.pop(request.sid, None)
+    username = user_info['username'] if isinstance(user_info, dict) else user_info or 'A user'
     emit('receive_message', {'username': 'System', 'message': f'{username} has left the chat.'}, broadcast=True)
     emit('update_online_list', list(online_users.values()), broadcast=True)
 
