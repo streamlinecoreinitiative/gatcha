@@ -52,7 +52,7 @@ def refresh_online_progress(user_id):
             return
         online_users[sid]['current_stage'] = progress.get('current_stage', 1)
         online_users[sid]['dungeon_runs'] = progress.get('dungeon_runs', 0)
-        socketio.emit('update_online_list', list(online_users.values()), broadcast=True)
+        socketio.emit('update_online_list', list(online_users.values()))
 
 
 # --- HELPER FUNCTIONS ---
@@ -554,8 +554,8 @@ def handle_connect():
             'current_stage': progress.get('current_stage', 1),
             'dungeon_runs': progress.get('dungeon_runs', 0)
         }
-        emit('receive_message', {'username': 'System', 'message': f'{username} has joined the chat.'}, broadcast=True)
-        emit('update_online_list', list(online_users.values()), broadcast=True)
+        socketio.emit('receive_message', {'username': 'System', 'message': f'{username} has joined the chat.'})
+        socketio.emit('update_online_list', list(online_users.values()))
 
 
 @socketio.on('send_message')
@@ -563,15 +563,15 @@ def handle_send_message(data):
     if session.get('logged_in'):
         message = data.get('message', '').strip()
         if 0 < len(message) <= 200:
-            emit('receive_message', {'username': session.get('username'), 'message': message}, broadcast=True)
+            socketio.emit('receive_message', {'username': session.get('username'), 'message': message})
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
     user_info = online_users.pop(request.sid, None)
     username = user_info['username'] if isinstance(user_info, dict) else user_info or 'A user'
-    emit('receive_message', {'username': 'System', 'message': f'{username} has left the chat.'}, broadcast=True)
-    emit('update_online_list', list(online_users.values()), broadcast=True)
+    socketio.emit('receive_message', {'username': 'System', 'message': f'{username} has left the chat.'})
+    socketio.emit('update_online_list', list(online_users.values()))
 
 
 if __name__ == '__main__':
