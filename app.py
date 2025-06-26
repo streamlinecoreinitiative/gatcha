@@ -6,6 +6,7 @@ import json
 import random
 from datetime import datetime
 import database as db
+from balance import generate_enemy, calculate_item_power
 
 
 def load_all_definitions(file_path):
@@ -45,24 +46,21 @@ STAT_MULTIPLIER = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5}
 
 # --- HELPER FUNCTIONS ---
 def get_enemy_for_stage(stage_num):
-    """Return an enemy scaled to the stage number."""
     random.seed(stage_num)
     tier_index = min(stage_num // 10, len(ENEMY_RARITY_ORDER) - 1)
     target_rarity = ENEMY_RARITY_ORDER[tier_index]
-    possible_enemies = [e for e in enemy_definitions if e.get('rarity') == target_rarity]
-    if not possible_enemies:
-        print(f"Warning: No enemies of rarity {target_rarity} for stage {stage_num}")
-        enemy_def = random.choice(enemy_definitions)
-    else:
-        enemy_def = random.choice(possible_enemies)
+    possible = [e for e in enemy_definitions if e.get("rarity") == target_rarity]
+    concept = random.choice(possible) if possible else random.choice(enemy_definitions)
+    archetype = "boss" if stage_num % 10 == 0 else "standard"
+    enemy = generate_enemy(stage_num, archetype, concept)
     random.seed()
-    return enemy_def
+    return enemy
 
 
 # --- THIS IS THE CORRECTED HELPER FUNCTION ---
 # in app.py
 
-def calculate_fight_stats(team, enemy_def, level_scaling):
+def calculate_fight_stats(team, enemy):
     total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
     for character in team:
         if not character: continue
@@ -107,16 +105,16 @@ def calculate_fight_stats(team, enemy_def, level_scaling):
 
     # --- The rest of the function remains the same ---
     team_elements = [c.get('element') for c in team if c]
-    enemy_element = enemy_def.get('element')
+    enemy_element = enemy.get('element')
     advantage = {'Fire': 'Grass', 'Grass': 'Water', 'Water': 'Fire'}
     advantageous_heroes = sum(1 for el in team_elements if advantage.get(el) == enemy_element)
     disadvantageous_heroes = sum(1 for el in team_elements if advantage.get(enemy_element) == el)
     team_elemental_multiplier = 1.0 + (0.25 * advantageous_heroes) - (0.25 * disadvantageous_heroes)
 
-    enemy_hp = enemy_def['base_hp'] * (1 + level_scaling * 0.25)
-    enemy_atk = enemy_def['base_atk'] * (1 + level_scaling * 0.15)
-    enemy_crit_chance = enemy_def.get('crit_chance', 0)
-    enemy_crit_damage = enemy_def.get('crit_damage', 1.5)
+    enemy_hp = enemy["stats"]["hp"]
+    enemy_atk = enemy["stats"]["atk"]
+    enemy_crit_chance = enemy.get('crit_chance', 0)
+    enemy_crit_damage = enemy.get('crit_damage', 1.5)
 
     return {
         "team_hp": total_team_hp, "team_atk": total_team_atk, "team_crit_chance": team_crit_chance,
@@ -233,13 +231,13 @@ def summon():
 @app.route('/api/stage_info/<int:stage_num>', methods=['GET'])
 def get_stage_info(stage_num):
     if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
-    enemy_def = get_enemy_for_stage(stage_num)
-    enemy_hp = enemy_def['base_hp'] * (1 + stage_num * 0.25)
-    enemy_atk = enemy_def['base_atk'] * (1 + stage_num * 0.15)
+    enemy = get_enemy_for_stage(stage_num)
     enemy_info = {
-        'name': enemy_def['name'], 'element': enemy_def.get('element', 'None'),
-        'image_file': f"enemies/{enemy_def.get('image_file', 'placeholder_enemy.png')}",
-        'hp': int(enemy_hp), 'atk': int(enemy_atk)
+        'name': enemy['name'],
+        'element': enemy.get('element', 'None'),
+        'image_file': enemy['image'],
+        'hp': enemy['stats']['hp'],
+        'atk': enemy['stats']['atk']
     }
     return jsonify({'success': True, 'enemy': enemy_info})
 
@@ -251,14 +249,14 @@ def fight():
     user_id, stage_num = session['user_id'], request.json.get('stage')
     team = db.get_player_team(user_id, character_definitions)
     if not any(team): return jsonify({'success': False, 'message': 'Your team is empty!'})
-    enemy_def = get_enemy_for_stage(stage_num)
+    enemy = get_enemy_for_stage(stage_num)
 
-    stats = calculate_fight_stats(team, enemy_def, stage_num)
+    stats = calculate_fight_stats(team, enemy)
     team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
 
-    enemy_image = f"enemies/{enemy_def.get('image_file', 'placeholder_enemy.png')}"
+    enemy_image = enemy['image']
     combat_log = [{'type': 'start',
-                   'message': f"Floor {stage_num}: Your team faces a {stats['enemy_element']} {enemy_def['name']}!",
+                   'message': f"Floor {stage_num}: Your team faces a {stats['enemy_element']} {enemy['name']}!",
                    'enemy_image': enemy_image}]
 
     available_attackers = [c for c in team if c]
@@ -318,15 +316,17 @@ def fight_dungeon():
     user_id = session['user_id']
     team = db.get_player_team(user_id, character_definitions)
     if not any(team): return jsonify({'success': False, 'message': 'Your team is empty!'})
-    enemy_def = random.choice(enemy_definitions)
     stage_level_scaling = db.get_player_data(user_id)['current_stage']
+    concept = random.choice(enemy_definitions)
+    enemy_level = 40 + stage_level_scaling
+    enemy = generate_enemy(enemy_level, 'standard', concept)
 
-    stats = calculate_fight_stats(team, enemy_def, stage_level_scaling)
+    stats = calculate_fight_stats(team, enemy)
     team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
 
-    enemy_image = f"enemies/{enemy_def.get('image_file', 'placeholder_enemy.png')}"
+    enemy_image = enemy['image']
     combat_log = [
-        {'type': 'start', 'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy_def['name']}!",
+        {'type': 'start', 'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy['name']}!",
          'enemy_image': enemy_image}]
 
     available_attackers = [c for c in team if c]
@@ -361,7 +361,12 @@ def fight_dungeon():
         combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
         if random.random() < 0.50:
             looted_item_def = random.choice(equipment_definitions)
-            looted_item = {'name': looted_item_def['name'], 'rarity': looted_item_def['rarity']}
+            item_power = calculate_item_power(enemy_level)
+            looted_item = {
+                'name': looted_item_def['name'],
+                'rarity': looted_item_def['rarity'],
+                'power': item_power
+            }
             conn = db.get_db_connection()
             conn.execute("INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
                          (user_id, looted_item['name'], looted_item['rarity']))
