@@ -341,6 +341,7 @@ def fight_dungeon():
     concept = random.choice(enemy_definitions)
     dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
     enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
+    enemy_level = enemy['level']
 
     stats = calculate_fight_stats(team, enemy)
     team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
