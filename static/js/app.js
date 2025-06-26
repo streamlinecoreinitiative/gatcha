@@ -21,6 +21,7 @@ const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
+const goldCountDisplay = document.getElementById('gold-count');
 const logoutButton = document.getElementById('logout-button');
 const bugButton = document.getElementById('report-bug-button');
 const mainContent = document.getElementById('main-content');
@@ -202,6 +203,13 @@ function attachEventListeners() {
             document.getElementById('hero-detail-overlay').classList.remove('active');
             await fetchPlayerDataAndUpdate();
         }
+        else if (target.id === 'level-up-btn') {
+            const heroId = target.dataset.heroId;
+            const response = await fetch('/api/level_up', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ char_id: parseInt(heroId) }) });
+            const result = await response.json();
+            if (!result.success) alert(result.message);
+            await fetchPlayerDataAndUpdate();
+        }
         else if (target.classList.contains('unequip-btn')) {
             const equipmentId = target.dataset.itemId;
             await fetch('/api/unequip_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ equipment_id: parseInt(equipmentId) }) });
@@ -299,6 +307,7 @@ async function openHeroDetailModal(hero) {
     let html = `
         <img class="hero-detail-portrait" src="/static/images/characters/${charDef.image_file || 'placeholder_char.png'}" alt="${fullHeroData.character_name}">
         <h3>${fullHeroData.character_name}</h3>
+        <p>Level: ${fullHeroData.level} | Dupes: ${fullHeroData.dupe_level}</p>
         <h4>Equipped Items</h4>
         <div class="equipped-slots">
             <p>Weapon: ${equippedItems[0]?.equipment_name || 'Empty'}</p>
@@ -311,6 +320,7 @@ async function openHeroDetailModal(hero) {
         </select>
         <div class="modal-buttons">
             <button id="confirm-equip-btn" data-hero-id="${fullHeroData.id}">Equip Selected</button>
+            <button id="level-up-btn" data-hero-id="${fullHeroData.id}">Level Up (${100 * fullHeroData.level} Gold)</button>
             <button id="close-hero-detail-btn">Close</button>
         </div>
     `;
@@ -330,6 +340,7 @@ function updateUI() {
     if (!gameState || !gameState.username) return;
     playerNameDisplay.textContent = gameState.username;
     gemCountDisplay.textContent = gameState.gems;
+    if (goldCountDisplay) goldCountDisplay.textContent = gameState.gold;
     if (dungeonRunCount) dungeonRunCount.textContent = gameState.dungeon_runs;
     updateTeamDisplay();
     updateCollectionDisplay();
@@ -426,7 +437,7 @@ function updateCollectionDisplay() {
         const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[heroInstance.rarity] || 999;
         const canMerge = heroGroup.length >= mergeCost;
         const isInTeam = teamDBIds.includes(heroInstance.id);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${heroInstance.rarity.toLowerCase()}">[${heroInstance.rarity}] (x${heroGroup.length})</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${name}"><h4>${name}</h4><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${heroInstance.id}">Equip</button></div>`;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${heroInstance.rarity.toLowerCase()}">[${heroInstance.rarity}] (x${heroGroup.length})</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${name}"><h4>${name}</h4><div class="card-stats">Level: ${heroInstance.level} | Dupes: ${heroInstance.dupe_level}</div><div class="card-stats">ATK: ${charDef.base_atk} | HP: ${charDef.base_hp}</div><div class="card-stats">Crit: ${charDef.crit_chance}% | Crit DMG: ${charDef.crit_damage}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${heroInstance.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${heroInstance.id}">Equip</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
@@ -607,6 +618,7 @@ async function startBattle(fightResult) {
                 // The 'end' entry from the server already has a good message.
                 addLogMessage(entry.message, fightResult.victory ? 'victory' : 'defeat');
                 if (fightResult.victory && fightResult.gems_won > 0) addLogMessage(`You earned ${fightResult.gems_won} gems!`);
+                if (fightResult.victory && fightResult.gold_won > 0) addLogMessage(`You earned ${fightResult.gold_won} gold!`);
                 if (fightResult.looted_item) {
                     const item = fightResult.looted_item;
                     const rarityClass = item.rarity.toLowerCase();
