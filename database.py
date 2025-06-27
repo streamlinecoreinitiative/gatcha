@@ -431,6 +431,12 @@ def email_exists(email):
     conn.close()
     return row is not None
 
+def verify_user_password(user_id, password):
+    conn = get_db_connection()
+    row = conn.execute("SELECT password FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return row and row['password'] == password
+
 def reset_password(email, new_password):
     conn = get_db_connection()
     cursor = conn.cursor()
