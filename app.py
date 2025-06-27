@@ -392,8 +392,8 @@ def admin_user_action():
     data = request.json or {}
     username = data.get('username')
     action = data.get('action')
-    target_id = db.get_user_id(username)
-    if not target_id:
+    target_id = db.get_user_id(username) if username else None
+    if action != 'grant_all' and not target_id:
         return jsonify({'success': False, 'message': 'User not found'}), 404
     if action == 'ban':
         db.ban_user(target_id, True)
@@ -405,6 +405,13 @@ def admin_user_action():
         premium_gems = data.get('platinum')
         gold = data.get('gold')
         db.adjust_resources(target_id, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
+    elif action == 'grant_all':
+        gems = data.get('gems')
+        energy = data.get('energy')
+        premium_gems = data.get('platinum')
+        gold = data.get('gold')
+        for uid in db.get_all_user_ids():
+            db.adjust_resources(uid, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
     elif action == 'add_hero':
         char_name = data.get('character_name')
         char_def = next((c for c in character_definitions if c['name'] == char_name), None)

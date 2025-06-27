@@ -425,6 +425,16 @@ def get_user_id(username):
     conn.close()
     return row['id'] if row else None
 
+def get_all_user_ids(include_admin=False):
+    """Return a list of all user IDs. Admin accounts are excluded by default."""
+    conn = get_db_connection()
+    if include_admin:
+        rows = conn.execute("SELECT id FROM users").fetchall()
+    else:
+        rows = conn.execute("SELECT id FROM users WHERE is_admin = 0").fetchall()
+    conn.close()
+    return [row['id'] for row in rows]
+
 def email_exists(email):
     conn = get_db_connection()
     row = conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone()

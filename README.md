@@ -8,6 +8,7 @@ This repository contains a Flask-based gacha game.
   and select a profile image.
 - **Admin Panel** lets administrators grant resources, manage PayPal settings,
   ban or unban users and edit the Message of the Day or event text.
+- **Batch Grants** allow admins to distribute gems, gold or energy to every player at once.
 - **Energy System** introduces separate energy for the campaign and dungeons
   which regenerates over time.
 - **Premium Store** now verifies purchases server‑side and refreshes after each
