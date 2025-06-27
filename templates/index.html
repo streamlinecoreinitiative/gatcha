@@ -62,16 +62,16 @@
                 <button id="logout-button">Logout</button>
             </div>
             <div id="currency-info">
-                <img src="{{ url_for('static', filename='images/ui/Gems_Icon.png') }}" alt="Gems" title="Gems - Earned from events and dungeons. Spend them at the Summoning Altar or purchase more in the Store.">
+                <img src="{{ url_for('static', filename='images/ui/Gems_Icon.png') }}" alt="Gems" title="Gems - Earned from events and dungeons. Spend them at the Summoning Altar or purchase more in the Store." class="clickable">
                 <span id="gem-count"></span>
-                <img src="{{ url_for('static', filename='images/ui/Platinum_Bars_Icon.png') }}" alt="Platinum" title="Platinum - Purchased with real money. Use it for energy refills and special packs.">
+                <img src="{{ url_for('static', filename='images/ui/Platinum_Bars_Icon.png') }}" alt="Platinum" title="Platinum - Purchased with real money. Use it for energy refills and special packs." class="clickable">
                 <span id="platinum-count"></span>
-                <img src="{{ url_for('static', filename='images/ui/Gold_Coins_Icon.png') }}" alt="Gold" title="Gold - Earned from battles and selling heroes. Spend it to level up heroes and equipment.">
+                <img src="{{ url_for('static', filename='images/ui/Gold_Coins_Icon.png') }}" alt="Gold" title="Gold - Earned from battles and selling heroes. Spend it to level up heroes and equipment." class="clickable">
                 <span id="gold-count"></span>
-                <img src="{{ url_for('static', filename='images/ui/Energy_Icon.png') }}" alt="Energy" title="Energy - Regenerates over time or with Platinum. Required for Tower battles.">
+                <img src="{{ url_for('static', filename='images/ui/Energy_Icon.png') }}" alt="Energy" title="Energy - Regenerates over time or with Platinum. Required for Tower battles." class="clickable">
                 <span id="energy-count"></span>/<span id="energy-max">10</span>
                 <span id="energy-timer"></span>
-                <img src="{{ url_for('static', filename='images/ui/Dungeon_Runs_Scroll_Icon.png') }}" alt="Dungeon Energy" title="Dungeon Energy - Regenerates over time or with Platinum. Required for Armory expeditions.">
+                <img src="{{ url_for('static', filename='images/ui/Dungeon_Runs_Scroll_Icon.png') }}" alt="Dungeon Energy" title="Dungeon Energy - Regenerates over time or with Platinum. Required for Armory expeditions." class="clickable">
                 <span id="dungeon-energy-count"></span>/<span id="dungeon-max">5</span>
                 <span id="dungeon-timer"></span>
             </div>
@@ -450,6 +450,23 @@
         <div class="modal-buttons">
             <button id="forgot-submit-btn">Submit</button>
             <button id="forgot-cancel-btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="info-modal" class="modal-overlay">
+    <div class="modal-content">
+        <p id="info-text"></p>
+        <button id="info-close-btn">Close</button>
+    </div>
+</div>
+
+<div id="welcome-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Welcome to Aethelgard Chronicles</h3>
+        <p>After the Great Shattering, the Spire of Chaos tore through the sky, unleashing endless horrors. Summon legendary heroines and ascend the tower to seal the rift.</p>
+        <div class="modal-buttons">
+            <button id="welcome-close-btn">Begin</button>
         </div>
     </div>
 </div>

@@ -92,6 +92,11 @@ let forgotEmailInput;
 let forgotSubmitBtn;
 let forgotCancelBtn;
 let forgotError;
+let infoModal;
+let infoText;
+let infoCloseBtn;
+let welcomeModal;
+let welcomeCloseBtn;
 
 function displayMessage(text) {
     if (!messageBox) return;
@@ -229,6 +234,11 @@ function attachEventListeners() {
     forgotSubmitBtn = document.getElementById('forgot-submit-btn');
     forgotCancelBtn = document.getElementById('forgot-cancel-btn');
     forgotError = document.getElementById('forgot-error');
+    infoModal = document.getElementById('info-modal');
+    infoText = document.getElementById('info-text');
+    infoCloseBtn = document.getElementById('info-close-btn');
+    welcomeModal = document.getElementById('welcome-modal');
+    welcomeCloseBtn = document.getElementById('welcome-close-btn');
 
     loginButton.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
@@ -315,6 +325,23 @@ function attachEventListeners() {
             window.open('https://github.com/your_username/your_repo/issues', '_blank');
         });
     }
+
+    if (infoCloseBtn) infoCloseBtn.addEventListener('click', () => {
+        if (infoModal) infoModal.classList.remove('active');
+    });
+
+    if (welcomeCloseBtn) welcomeCloseBtn.addEventListener('click', () => {
+        if (welcomeModal) welcomeModal.classList.remove('active');
+        localStorage.setItem('welcomeShown', 'true');
+    });
+
+    document.querySelectorAll('#currency-info img').forEach(icon => {
+        icon.classList.add('clickable');
+        icon.addEventListener('click', () => {
+            if (infoText) infoText.textContent = icon.getAttribute('title') || '';
+            if (infoModal) infoModal.classList.add('active');
+        });
+    });
 
     if (playerNameDisplay) playerNameDisplay.addEventListener('click', openProfileModal);
     if (userIcon) userIcon.addEventListener('click', openProfileModal);
@@ -676,6 +703,9 @@ async function initializeGame() {
         gameScreen.classList.add('active');
         if (chatContainer) chatContainer.classList.remove('hidden');
         connectSocket();
+        if (!localStorage.getItem('welcomeShown') && welcomeModal) {
+            welcomeModal.classList.add('active');
+        }
     } else {
         loginScreen.classList.add('active');
         gameScreen.classList.remove('active');
