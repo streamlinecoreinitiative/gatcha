@@ -22,7 +22,9 @@ const registerButton = document.getElementById('register-button');
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
-const premiumGemCountDisplay = document.getElementById('premium-gem-count');
+const platinumCountDisplay = document.getElementById('platinum-count');
+const energyCountDisplay = document.getElementById('energy-count');
+const dungeonEnergyCountDisplay = document.getElementById('dungeon-energy-count');
 const logoutButton = document.getElementById('logout-button');
 const bugButton = document.getElementById('report-bug-button');
 const mainContent = document.getElementById('main-content');
@@ -284,8 +286,11 @@ function attachEventListeners() {
         }
         else if (target.classList.contains('purchase-btn')) {
             const packId = target.dataset.packageId;
-            const receipt = prompt('Enter receipt code to simulate payment:');
-            const response = await fetch('/api/purchase_premium', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ package_id: packId, receipt: receipt, platform: 'web' }) });
+            let receipt = '';
+            if (target.parentElement.dataset.requiresReceipt === '1') {
+                receipt = prompt('Enter receipt code to simulate payment:');
+            }
+            const response = await fetch('/api/purchase_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ package_id: packId, receipt: receipt, platform: 'web' }) });
             const result = await response.json();
             displayMessage(result.message || (result.success ? 'Purchase successful!' : 'Purchase failed'));
             if(result.success) await fetchPlayerDataAndUpdate();
@@ -462,7 +467,9 @@ function updateUI() {
     if (!gameState || !gameState.username) return;
     playerNameDisplay.textContent = gameState.username;
     gemCountDisplay.textContent = gameState.gems;
-    if (premiumGemCountDisplay) premiumGemCountDisplay.textContent = gameState.premium_gems;
+    if (platinumCountDisplay) platinumCountDisplay.textContent = gameState.premium_gems;
+    if (energyCountDisplay) energyCountDisplay.textContent = gameState.energy;
+    if (dungeonEnergyCountDisplay) dungeonEnergyCountDisplay.textContent = gameState.dungeon_energy;
     if (goldCountDisplay) goldCountDisplay.textContent = gameState.gold;
     if (dungeonRunCount) dungeonRunCount.textContent = gameState.dungeon_runs;
     const towerCount = document.getElementById('tower-floor-count');
@@ -537,7 +544,18 @@ async function updateStoreDisplay() {
         const div = document.createElement('div');
         div.className = 'store-package';
         const label = pkg.label ? `<span class="best-value">${pkg.label}</span>` : '';
-        div.innerHTML = `<h4>${pkg.amount} Gems - $${pkg.price.toFixed(2)} ${label}</h4><button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
+        let text = '';
+        if (pkg.amount) {
+            text = `${pkg.amount} Platinum - $${pkg.price.toFixed(2)} ${label}`;
+            div.dataset.requiresReceipt = '1';
+        } else if (pkg.energy) {
+            text = `+${pkg.energy} Energy - ${pkg.platinum_cost} Platinum`;
+            div.dataset.requiresReceipt = '0';
+        } else if (pkg.dungeon_energy) {
+            text = `+${pkg.dungeon_energy} Dungeon Runs - ${pkg.platinum_cost} Platinum`;
+            div.dataset.requiresReceipt = '0';
+        }
+        div.innerHTML = `<h4>${text}</h4><button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
         storePackagesContainer.appendChild(div);
     });
 }

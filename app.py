@@ -47,7 +47,9 @@ STAT_MULTIPLIER = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5}
 # --- Premium Currency Store Packages ---
 STORE_PACKAGES = [
     {"id": "pack_small", "amount": 100, "price": 0.99},
-    {"id": "pack_medium", "amount": 550, "price": 4.99, "label": "Best Value"}
+    {"id": "pack_medium", "amount": 550, "price": 4.99, "label": "Best Value"},
+    {"id": "energy_tower", "energy": 5, "platinum_cost": 50},
+    {"id": "energy_dungeon", "dungeon_energy": 5, "platinum_cost": 50}
 ]
 
 def refresh_online_progress(user_id):
@@ -207,6 +209,8 @@ def get_player_data():
         'username': session.get('username'),
         'gems': player_data['gems'],
         'premium_gems': player_data.get('premium_gems', 0),
+        'energy': player_data.get('energy', 0),
+        'dungeon_energy': player_data.get('dungeon_energy', 0),
         'gold': player_data.get('gold', 0),
         'pity_counter': player_data.get('pity_counter', 0),
         'current_stage': player_data['current_stage'],
@@ -234,8 +238,8 @@ def store_items():
     return jsonify({'success': True, 'items': STORE_PACKAGES})
 
 
-@app.route('/api/purchase_premium', methods=['POST'])
-def purchase_premium():
+@app.route('/api/purchase_item', methods=['POST'])
+def purchase_item():
     if not session.get('logged_in'):
         return jsonify({'success': False, 'message': 'Not logged in'}), 401
     data = request.json or {}
@@ -245,13 +249,30 @@ def purchase_premium():
     package = next((p for p in STORE_PACKAGES if p['id'] == package_id), None)
     if not package:
         return jsonify({'success': False, 'message': 'Invalid package'}), 400
-    if not verify_purchase_receipt(platform, receipt):
-        return jsonify({'success': False, 'message': 'Receipt verification failed'}), 400
     user_id = session['user_id']
     player_data = db.get_player_data(user_id)
-    new_balance = player_data.get('premium_gems', 0) + package['amount']
-    db.save_player_data(user_id, premium_gems=new_balance)
-    return jsonify({'success': True, 'new_balance': new_balance})
+    if 'amount' in package:
+        if not verify_purchase_receipt(platform, receipt):
+            return jsonify({'success': False, 'message': 'Receipt verification failed'}), 400
+        new_balance = player_data.get('premium_gems', 0) + package['amount']
+        db.save_player_data(user_id, premium_gems=new_balance)
+        return jsonify({'success': True, 'new_balance': new_balance})
+    elif 'energy' in package:
+        cost = package.get('platinum_cost', 0)
+        if player_data['premium_gems'] < cost:
+            return jsonify({'success': False, 'message': 'Not enough Platinum'}), 400
+        new_energy = player_data.get('energy', 0) + package['energy']
+        db.save_player_data(user_id, premium_gems=player_data['premium_gems'] - cost, energy=new_energy)
+        return jsonify({'success': True, 'new_energy': new_energy})
+    elif 'dungeon_energy' in package:
+        cost = package.get('platinum_cost', 0)
+        if player_data['premium_gems'] < cost:
+            return jsonify({'success': False, 'message': 'Not enough Platinum'}), 400
+        new_energy = player_data.get('dungeon_energy', 0) + package['dungeon_energy']
+        db.save_player_data(user_id, premium_gems=player_data['premium_gems'] - cost, dungeon_energy=new_energy)
+        return jsonify({'success': True, 'new_dungeon_energy': new_energy})
+    else:
+        return jsonify({'success': False, 'message': 'Unknown package type'}), 400
 
 
 @app.route('/api/summon', methods=['POST'])
@@ -310,6 +331,10 @@ def fight():
     user_id = session['user_id']
     data = request.get_json(silent=True) or {}
     try:
+        player_data = db.get_player_data(user_id)
+        if player_data['energy'] <= 0:
+            return jsonify({'success': False, 'message': 'Not enough energy.'})
+        db.consume_energy(user_id)
         stage_num = int(data.get('stage', 1))
     except (TypeError, ValueError):
         return jsonify({'success': False, 'message': 'Invalid stage value.'}), 400
@@ -319,7 +344,6 @@ def fight():
             return jsonify({'success': False, 'message': 'Your team is empty!'})
         enemy = get_enemy_for_stage(stage_num)
 
-        player_data = db.get_player_data(user_id)
         if player_data is None:
             session.clear()
             return jsonify({'success': False, 'message': 'Player data not found. Please log in again.'}), 500
@@ -403,13 +427,16 @@ def fight_dungeon():
         return jsonify({'success': False, 'message': 'Your team is empty!'})
 
     try:
+        player_data = db.get_player_data(user_id)
+        if player_data['dungeon_energy'] <= 0:
+            return jsonify({'success': False, 'message': 'No dungeon energy left.'})
+        db.consume_dungeon_energy(user_id)
         ARMORY_FIXED_LEVEL = 40
         concept = random.choice(enemy_definitions)
         dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
         enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
         enemy_level = enemy['level']
 
-        player_data = db.get_player_data(user_id)
         if player_data is None:
             session.clear()
             return jsonify({'success': False, 'message': 'Player data not found. Please log in again.'}), 500

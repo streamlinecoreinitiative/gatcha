@@ -63,10 +63,14 @@
             <div id="currency-info">
                 <img src="{{ url_for('static', filename='images/ui/gem_icon.png') }}" alt="Gems">
                 <span id="gem-count"></span>
-                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Premium Gems">
-                <span id="premium-gem-count"></span>
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Platinum">
+                <span id="platinum-count"></span>
                 <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Gold">
                 <span id="gold-count"></span>
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Energy">
+                <span id="energy-count"></span>
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Dungeon Energy">
+                <span id="dungeon-energy-count"></span>
                 <button id="report-bug-button">Report Bug</button>
             </div>
         </div>
@@ -143,8 +147,8 @@
             <!-- Store View -->
             <div id="store-view" class="view">
                 <div class="section-header">
-                    <h2>Premium Shop</h2>
-                    <button class="tutorial-btn" data-tutorial="Purchase premium gems here. Transactions are verified server-side.">?</button>
+                    <h2>Platinum Shop</h2>
+                    <button class="tutorial-btn" data-tutorial="Purchase Platinum or energy here. Transactions are verified server-side.">?</button>
                 </div>
                 <div id="store-packages" class="store-container"></div>
             </div>
