@@ -489,15 +489,19 @@ function attachEventListeners() {
             await fetchPlayerDataAndUpdate();
         }
         else if (target.classList.contains('purchase-btn')) {
-            const packId = target.dataset.packageId;
+            const button = target;
+            button.disabled = true;
+            const packId = button.dataset.packageId;
             let receipt = '';
-            if (target.parentElement.dataset.requiresReceipt === '1') {
+            if (button.parentElement.dataset.requiresReceipt === '1') {
                 receipt = prompt('Enter receipt code to simulate payment:');
             }
             const response = await fetch('/api/purchase_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ package_id: packId, receipt: receipt, platform: 'web' }) });
             const result = await response.json();
             displayMessage(result.message || (result.success ? 'Purchase successful!' : 'Purchase failed'));
             if(result.success) await fetchPlayerDataAndUpdate();
+            button.disabled = false;
+            updateStoreDisplay();
         }
         else if (target.id === 'close-hero-image-btn') {
             heroImageOverlay.classList.remove('active');
