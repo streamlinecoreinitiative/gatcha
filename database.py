@@ -78,6 +78,12 @@ def init_db():
             client_secret TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            motd TEXT
+        )
+    ''')
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
@@ -94,6 +100,7 @@ def init_db():
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret) VALUES (1, "", "")')
+    cursor.execute('INSERT OR IGNORE INTO messages (id, motd) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.")')
     # Commit before opening a new connection in create_admin_if_missing
     conn.commit()
     create_admin_if_missing()
@@ -315,7 +322,8 @@ def get_all_users_with_runs():
     conn = get_db_connection()
     rows = conn.execute(
         'SELECT users.username, player_data.current_stage, player_data.dungeon_runs '
-        'FROM users JOIN player_data ON users.id = player_data.user_id'
+        'FROM users JOIN player_data ON users.id = player_data.user_id '
+        'WHERE users.is_admin = 0'
     ).fetchall()
     conn.close()
     return [dict(row) for row in rows]
@@ -332,7 +340,7 @@ def get_user_progress(username):
 
 def get_top_player():
     conn = get_db_connection()
-    row = conn.execute('SELECT users.username, player_data.current_stage FROM users JOIN player_data ON users.id = player_data.user_id ORDER BY player_data.current_stage DESC LIMIT 1').fetchone()
+    row = conn.execute('SELECT users.username, player_data.current_stage FROM users JOIN player_data ON users.id = player_data.user_id WHERE users.is_admin = 0 ORDER BY player_data.current_stage DESC LIMIT 1').fetchone()
     conn.close()
     return dict(row) if row else None
 
@@ -474,6 +482,18 @@ def update_paypal_config(client_id=None, client_secret=None):
         conn.execute('UPDATE paypal_config SET client_id = ? WHERE id = 1', (client_id,))
     if client_secret is not None:
         conn.execute('UPDATE paypal_config SET client_secret = ? WHERE id = 1', (client_secret,))
+    conn.commit()
+    conn.close()
+
+def get_motd():
+    conn = get_db_connection()
+    row = conn.execute('SELECT motd FROM messages WHERE id = 1').fetchone()
+    conn.close()
+    return row['motd'] if row else ''
+
+def set_motd(text):
+    conn = get_db_connection()
+    conn.execute('UPDATE messages SET motd = ? WHERE id = 1', (text,))
     conn.commit()
     conn.close()
  

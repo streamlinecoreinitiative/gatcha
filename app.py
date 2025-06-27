@@ -47,6 +47,10 @@ gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity
 PULL_COST = 150
 SSR_PITY_THRESHOLD = 90
 online_users = {}
+
+def emit_online_list():
+    visible = [u for u in online_users.values() if not db.is_user_admin(u.get('user_id'))]
+    socketio.emit('update_online_list', visible)
 # Enemy rarities include lower tiers not used for heroes
 ENEMY_RARITY_ORDER = ["Common", "Uncommon", "Rare", "Epic", "SSR", "UR", "LR"]
 MERGE_COST = {"Common": 3, "Rare": 3, "SSR": 4, "UR": 5}
@@ -68,7 +72,7 @@ def refresh_online_progress(user_id):
             return
         online_users[sid]['current_stage'] = progress.get('current_stage', 1)
         online_users[sid]['dungeon_runs'] = progress.get('dungeon_runs', 0)
-        socketio.emit('update_online_list', list(online_users.values()))
+        emit_online_list()
 
 
 # Placeholder receipt verification
@@ -179,6 +183,11 @@ def get_lore():
             return jsonify({'success': True, 'data': f.read()})
     except FileNotFoundError:
         return jsonify({'success': False, 'message': 'Lore file not found.'})
+
+
+@app.route('/api/motd')
+def get_motd():
+    return jsonify({'success': True, 'motd': db.get_motd()})
 
 
 @app.route('/api/register', methods=['POST'])
@@ -388,6 +397,28 @@ def admin_paypal_config():
     data = request.json or {}
     db.update_paypal_config(client_id=data.get('client_id'), client_secret=data.get('client_secret'))
     return jsonify({'success': True})
+
+
+@app.route('/api/admin/motd', methods=['POST'])
+def admin_update_motd():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    data = request.json or {}
+    db.set_motd(data.get('motd', ''))
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/lore', methods=['POST'])
+def admin_update_lore():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    data = request.json or {}
+    try:
+        with open(LORE_FILE, 'w', encoding='utf-8') as f:
+            f.write(data.get('text', ''))
+        return jsonify({'success': True})
+    except OSError:
+        return jsonify({'success': False, 'message': 'Failed to write lore'})
 
 
 @app.route('/api/summon', methods=['POST'])
@@ -761,7 +792,7 @@ def handle_connect():
             'dungeon_runs': progress.get('dungeon_runs', 0)
         }
         socketio.emit('receive_message', {'username': 'System', 'message': f'{username} has joined the chat.'})
-        socketio.emit('update_online_list', list(online_users.values()))
+        emit_online_list()
 
 
 @socketio.on('send_message')
@@ -789,7 +820,7 @@ def handle_disconnect():
     user_info = online_users.pop(request.sid, None)
     username = user_info['username'] if isinstance(user_info, dict) else user_info or 'A user'
     socketio.emit('receive_message', {'username': 'System', 'message': f'{username} has left the chat.'})
-    socketio.emit('update_online_list', list(online_users.values()))
+    emit_online_list()
 
 
 if __name__ == '__main__':
