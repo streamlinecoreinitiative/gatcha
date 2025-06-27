@@ -57,7 +57,7 @@
         <!-- TOP BAR: Player Info -->
         <div id="top-bar">
             <div id="player-info">
-                <img id="user-icon" src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon">
+                <img id="user-icon" src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon clickable">
                 <span id="player-name" class="clickable"></span>
                 <button id="logout-button">Logout</button>
             </div>
@@ -325,7 +325,7 @@
     </div>
 
     <!-- CHAT FEATURE -->
-    <div id="chat-container">
+    <div id="chat-container" class="hidden">
         <div id="chat-header">
             <h3>World Chat</h3>
             <button id="chat-toggle-btn">▾</button>
