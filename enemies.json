@@ -16,6 +16,16 @@
   { "name": "Infernal Minotaur", "rarity": "SSR", "element": "Fire", "base_hp": 1400, "base_atk": 110, "crit_chance": 18, "crit_damage": 2.6, "image_file": "infernal_minotaur.png" },
   { "name": "Ancient Treant", "rarity": "UR", "element": "Grass", "base_hp": 1800, "base_atk": 130, "crit_chance": 20, "crit_damage": 3.0, "image_file": "ancient_treant.png" },
   { "name": "Storm Leviathan", "rarity": "UR", "element": "Water", "base_hp": 2200, "base_atk": 150, "crit_chance": 25, "crit_damage": 3.2, "image_file": "storm_leviathan.png" },
-  { "name": "Abyssal Overlord", "rarity": "LR", "element": "Fire", "base_hp": 3000, "base_atk": 180, "crit_chance": 30, "crit_damage": 3.5, "image_file": "abyssal_overlord.png" }
+  { "name": "Abyssal Overlord", "rarity": "LR", "element": "Fire", "base_hp": 3000, "base_atk": 180, "crit_chance": 30, "crit_damage": 3.5, "image_file": "abyssal_overlord.png" },
+  { "name": "Skeleton Archer", "rarity": "Common", "element": "Fire", "base_hp": 60, "base_atk": 10, "crit_chance": 6, "crit_damage": 1.4, "image_file": "placeholder.png" },
+  { "name": "Bandit Rogue", "rarity": "Common", "element": "Grass", "base_hp": 75, "base_atk": 14, "crit_chance": 12, "crit_damage": 1.7, "image_file": "placeholder.png" },
+  { "name": "Lizardman Spear", "rarity": "Uncommon", "element": "Fire", "base_hp": 180, "base_atk": 22, "crit_chance": 8, "crit_damage": 1.6, "image_file": "placeholder.png" },
+  { "name": "Stone Guardian", "rarity": "Uncommon", "element": "Grass", "base_hp": 220, "base_atk": 26, "crit_chance": 10, "crit_damage": 1.5, "image_file": "placeholder.png" },
+  { "name": "Blood Elemental", "rarity": "Rare", "element": "Water", "base_hp": 350, "base_atk": 38, "crit_chance": 10, "crit_damage": 1.9, "image_file": "placeholder.png" },
+  { "name": "Bone Hydra", "rarity": "Epic", "element": "Fire", "base_hp": 800, "base_atk": 70, "crit_chance": 18, "crit_damage": 2.4, "image_file": "placeholder.png" },
+  { "name": "Ice Kraken", "rarity": "SSR", "element": "Water", "base_hp": 1300, "base_atk": 105, "crit_chance": 20, "crit_damage": 2.7, "image_file": "placeholder.png" },
+  { "name": "Sand Wyrm", "rarity": "UR", "element": "Grass", "base_hp": 2000, "base_atk": 140, "crit_chance": 24, "crit_damage": 3.1, "image_file": "placeholder.png" },
+  { "name": "Phoenix Lord", "rarity": "UR", "element": "Fire", "base_hp": 2300, "base_atk": 160, "crit_chance": 26, "crit_damage": 3.3, "image_file": "placeholder.png" },
+  { "name": "Celestial Colossus", "rarity": "LR", "element": "Water", "base_hp": 3200, "base_atk": 200, "crit_chance": 35, "crit_damage": 3.8, "image_file": "placeholder.png" }
 
 ]
