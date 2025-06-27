@@ -228,11 +228,11 @@
     </div>
 </div>
 
-            <!-- Lore View (Simple implementation) -->
+            <!-- Events View -->
             <div id="lore-view" class="view">
                  <div class="section-header">
-                     <h2>The Lore of Aethelgard</h2>
-                     <button class="tutorial-btn" data-tutorial="Read the latest updates and lore for the world.">?</button>
+                     <h2>Events</h2>
+                     <button class="tutorial-btn" data-tutorial="Read the latest events and lore for the world.">?</button>
                  </div>
                  <div id="lore-text-container" class="lore-box"></div>
             </div>
@@ -257,6 +257,11 @@
                 <input type="text" id="admin-paypal-client-id" placeholder="PayPal Client ID">
                 <input type="text" id="admin-paypal-secret" placeholder="PayPal Secret">
                 <button id="admin-paypal-save-btn">Save PayPal</button>
+                <hr>
+                <textarea id="admin-motd-text" placeholder="Message of the Day" rows="3"></textarea>
+                <button id="admin-motd-save-btn">Save MOTD</button>
+                <textarea id="admin-events-text" placeholder="Events text" rows="6"></textarea>
+                <button id="admin-events-save-btn">Save Events</button>
             </div>
 
 
@@ -272,7 +277,7 @@
             <button class="nav-button" data-view="campaign-view">The Tower</button>
             <button class="nav-button" data-view="dungeons-view">The Armory</button>
             <button class="nav-button" data-view="online-view">Online</button>
-            <button class="nav-button" data-view="lore-view">Change Log</button>
+            <button class="nav-button" data-view="lore-view">Events</button>
             <button class="nav-button admin-only" data-view="admin-view">Admin</button>
 
         </div>

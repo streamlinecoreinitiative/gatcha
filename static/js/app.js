@@ -58,6 +58,10 @@ let adminSubmitBtn;
 let paypalClientIdInput;
 let paypalSecretInput;
 let paypalSaveBtn;
+let adminMotdInput;
+let adminMotdSaveBtn;
+let adminEventsText;
+let adminEventsSaveBtn;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -131,6 +135,10 @@ function attachEventListeners() {
     paypalClientIdInput = document.getElementById('admin-paypal-client-id');
     paypalSecretInput = document.getElementById('admin-paypal-secret');
     paypalSaveBtn = document.getElementById('admin-paypal-save-btn');
+    adminMotdInput = document.getElementById('admin-motd-text');
+    adminMotdSaveBtn = document.getElementById('admin-motd-save-btn');
+    adminEventsText = document.getElementById('admin-events-text');
+    adminEventsSaveBtn = document.getElementById('admin-events-save-btn');
     regUsernameInput = document.getElementById('reg-username');
     regEmailInput = document.getElementById('reg-email');
     regPasswordInput = document.getElementById('reg-password');
@@ -286,6 +294,25 @@ function attachEventListeners() {
         const result = await response.json();
         displayMessage(result.success ? 'PayPal settings saved' : 'Update failed');
     });
+    if (adminMotdSaveBtn) adminMotdSaveBtn.addEventListener('click', async () => {
+        const response = await fetch('/api/admin/motd', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motd: adminMotdInput.value })
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'MOTD updated' : 'Update failed');
+        if (result.success) updateMotd();
+    });
+    if (adminEventsSaveBtn) adminEventsSaveBtn.addEventListener('click', async () => {
+        const response = await fetch('/api/admin/lore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: adminEventsText.value })
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'Events updated' : 'Update failed');
+    });
 
     summonButton.addEventListener('click', async () => {
         const response = await fetch('/api/summon', { method: 'POST' });
@@ -327,6 +354,8 @@ function attachEventListeners() {
             }
             if (targetViewId === 'admin-view') {
                 loadPaypalConfig();
+                loadMotd();
+                loadEventsText();
             }
             if (targetViewId === 'online-view') {
                 updateAllUsers();
@@ -506,6 +535,7 @@ function getScaledStats(hero) {
 async function initializeGame() {
     const gameDataResponse = await fetch('/api/game_data');
     if (gameDataResponse.ok) masterCharacterList = (await gameDataResponse.json()).characters;
+    updateMotd();
     const loggedIn = await fetchPlayerDataAndUpdate();
     if (loggedIn) {
         loginScreen.classList.remove('active');
@@ -524,7 +554,11 @@ async function fetchPlayerDataAndUpdate() {
         const result = await response.json();
         if (result.success) { 
             gameState = result.data; 
-            if (gameState.is_admin) loadPaypalConfig();
+            if (gameState.is_admin) {
+                loadPaypalConfig();
+                loadMotd();
+                loadEventsText();
+            }
             updateUI(); 
             return true; 
         }
@@ -636,6 +670,7 @@ function updateUI() {
     updateCollectionDisplay();
     updateCampaignDisplay();
     updateTopPlayer();
+    updateMotd();
 }
 
 async function updateEquipmentDisplay() {
@@ -698,6 +733,29 @@ async function loadPaypalConfig() {
     if (result.success && result.config) {
         paypalClientIdInput.value = result.config.client_id || '';
         paypalSecretInput.value = result.config.client_secret || '';
+    }
+}
+
+async function loadMotd() {
+    if (!adminMotdInput) return;
+    const resp = await fetch('/api/motd');
+    const result = await resp.json();
+    if (result.success) adminMotdInput.value = result.motd || '';
+}
+
+async function loadEventsText() {
+    if (!adminEventsText) return;
+    const resp = await fetch('/api/lore');
+    const result = await resp.json();
+    if (result.success) adminEventsText.value = result.data || '';
+}
+
+async function updateMotd() {
+    const resp = await fetch('/api/motd');
+    const result = await resp.json();
+    if (result.success) {
+        const box = document.querySelector('#motd-container p');
+        if (box) box.textContent = result.motd;
     }
 }
 
