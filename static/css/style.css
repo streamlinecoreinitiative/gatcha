@@ -475,11 +475,12 @@ button:disabled, .fantasy-button:disabled {
 }
 .collection-card .button-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 5px;
     margin-top: 8px;
 }
 .collection-card .button-row button {
-    flex: 1;
+    flex: 1 1 45%;
     font-size: 11px;
     padding: 4px;
 }
@@ -1321,4 +1322,11 @@ button:disabled, .fantasy-button:disabled {
 .best-value {
     color: gold;
     margin-left: 5px;
+}
+
+.currency-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 4px;
 }

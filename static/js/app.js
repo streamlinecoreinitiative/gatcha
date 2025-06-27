@@ -48,9 +48,12 @@ const equipmentContainer = document.getElementById('equipment-container');
 const storePackagesContainer = document.getElementById('store-packages');
 const userIcon = document.getElementById('user-icon');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
+const currencyIconHtml = '<img src="/static/images/ui/gem_icon.png" class="currency-icon" alt="Currency">';
 let profileModal;
 let profileEmailInput;
-let profilePasswordInput;
+let profileCurrentPasswordInput;
+let profileNewPasswordInput;
+let profileConfirmPasswordInput;
 let profileImageSelect;
 let profileSaveBtn;
 let profileCancelBtn;
@@ -127,7 +130,9 @@ function attachEventListeners() {
     registerModal = document.getElementById('register-modal-overlay');
     profileModal = document.getElementById('profile-modal');
     profileEmailInput = document.getElementById('profile-email');
-    profilePasswordInput = document.getElementById('profile-password');
+    profileCurrentPasswordInput = document.getElementById('profile-current-password');
+    profileNewPasswordInput = document.getElementById('profile-new-password');
+    profileConfirmPasswordInput = document.getElementById('profile-confirm-password');
     profileImageSelect = document.getElementById('profile-image-select');
     profileSaveBtn = document.getElementById('profile-save-btn');
     profileCancelBtn = document.getElementById('profile-cancel-btn');
@@ -237,7 +242,9 @@ function attachEventListeners() {
         playerNameDisplay.addEventListener('click', () => {
             if (!profileModal) return;
             profileEmailInput.value = gameState.email || '';
-            profilePasswordInput.value = '';
+            profileCurrentPasswordInput.value = '';
+            profileNewPasswordInput.value = '';
+            profileConfirmPasswordInput.value = '';
             profileImageSelect.innerHTML = '';
             masterCharacterList.forEach(c => {
                 const opt = document.createElement('option');
@@ -256,14 +263,35 @@ function attachEventListeners() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 email: profileEmailInput.value,
-                password: profilePasswordInput.value,
                 profile_image: profileImageSelect.value
             })
         });
         const result = await response.json();
         if (result.success) {
-            profileModal.classList.remove('active');
-            await fetchPlayerDataAndUpdate();
+            let passChanged = false;
+            if (profileCurrentPasswordInput.value || profileNewPasswordInput.value || profileConfirmPasswordInput.value) {
+                const passResp = await fetch('/api/change_password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        current_password: profileCurrentPasswordInput.value,
+                        new_password: profileNewPasswordInput.value,
+                        confirm_password: profileConfirmPasswordInput.value
+                    })
+                });
+                const passResult = await passResp.json();
+                passChanged = passResult.success;
+                if (!passResult.success) {
+                    displayMessage(passResult.message || 'Password change failed');
+                }
+            }
+            if (!profileCurrentPasswordInput.value && !profileNewPasswordInput.value && !profileConfirmPasswordInput.value || passChanged) {
+                profileModal.classList.remove('active');
+                await fetchPlayerDataAndUpdate();
+            }
+            profileCurrentPasswordInput.value = '';
+            profileNewPasswordInput.value = '';
+            profileConfirmPasswordInput.value = '';
         }
     });
     if (adminSubmitBtn) adminSubmitBtn.addEventListener('click', async () => {
@@ -685,7 +713,7 @@ async function updateEquipmentDisplay() {
     const equipmentDefs = await equipmentDefsResponse.json();
     const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
     if (result.equipment.length === 0) {
-        equipmentContainer.innerHTML = '<p>Your armory is empty. Farm dungeons to find loot!</p>';
+        equipmentContainer.innerHTML = '<p>Your armory is empty. Farm the Armory to find loot, it is an end game mechanic.</p>';
         return;
     }
     result.equipment.forEach(item => {
@@ -780,11 +808,11 @@ async function updateStoreDisplay() {
         const label = pkg.label ? `<span class="best-value">${pkg.label}</span>` : '';
         let text = '';
         if (pkg.amount) {
-            text = `${pkg.amount} Platinum - $${pkg.price.toFixed(2)} ${label}`;
+            text = `${currencyIconHtml} ${pkg.amount} Platinum - $${pkg.price.toFixed(2)} ${label}`;
         } else if (pkg.energy) {
-            text = `+${pkg.energy} Energy - ${pkg.platinum_cost} Platinum`;
+            text = `${currencyIconHtml} +${pkg.energy} Energy - ${pkg.platinum_cost} Platinum`;
         } else if (pkg.dungeon_energy) {
-            text = `+${pkg.dungeon_energy} Dungeon Runs - ${pkg.platinum_cost} Platinum`;
+            text = `${currencyIconHtml} +${pkg.dungeon_energy} Dungeon Runs - ${pkg.platinum_cost} Platinum`;
         }
         div.innerHTML = `<h4>${text}</h4>`;
         if (pkg.amount && clientId && window.paypal) {

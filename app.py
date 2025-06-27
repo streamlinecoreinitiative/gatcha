@@ -268,9 +268,28 @@ def update_profile():
         return jsonify({'success': False}), 401
     data = request.json or {}
     email = data.get('email')
-    password = data.get('password')
     profile_image = data.get('profile_image')
-    db.update_user_profile(session['user_id'], email=email, password=password, profile_image=profile_image)
+    db.update_user_profile(session['user_id'], email=email, profile_image=profile_image)
+    return jsonify({'success': True})
+
+
+@app.route('/api/change_password', methods=['POST'])
+def change_password():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    data = request.json or {}
+    current_password = data.get('current_password', '')
+    new_password = data.get('new_password', '')
+    confirm_password = data.get('confirm_password', '')
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({'success': False, 'message': 'All password fields required'})
+    if not db.verify_user_password(session['user_id'], current_password):
+        return jsonify({'success': False, 'message': 'Current password incorrect'})
+    if new_password != confirm_password:
+        return jsonify({'success': False, 'message': 'Passwords do not match'})
+    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$', new_password):
+        return jsonify({'success': False, 'message': 'Password must be 10 characters with letters and numbers'})
+    db.update_user_profile(session['user_id'], password=new_password)
     return jsonify({'success': True})
 
 
