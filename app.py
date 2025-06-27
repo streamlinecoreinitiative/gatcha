@@ -5,6 +5,7 @@ import os
 import json
 import random
 from datetime import datetime
+import paypalrestsdk
 import database as db
 from balance import generate_enemy, calculate_item_power
 
@@ -22,6 +23,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 socketio = SocketIO(app)
 db.init_db()
+paypal_conf = db.get_paypal_config()
+paypalrestsdk.configure({
+    'mode': 'sandbox',
+    'client_id': paypal_conf.get('client_id'),
+    'client_secret': paypal_conf.get('client_secret')
+})
 
 # --- DATA LOADING & CONFIG ---
 BASE_DIR = os.path.dirname(__file__)
@@ -324,6 +331,41 @@ def purchase_item():
         return jsonify({'success': True, 'new_dungeon_energy': new_energy})
     else:
         return jsonify({'success': False, 'message': 'Unknown package type'}), 400
+
+
+@app.route('/api/paypal_client_id')
+def paypal_client_id():
+    conf = db.get_paypal_config()
+    return jsonify({'client_id': conf.get('client_id')})
+
+
+@app.route('/api/paypal_complete', methods=['POST'])
+def paypal_complete():
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    data = request.json or {}
+    package_id = data.get('package_id')
+    order_id = data.get('order_id')
+    package = next((p for p in STORE_PACKAGES if p['id'] == package_id), None)
+    if not package:
+        return jsonify({'success': False, 'message': 'Invalid package'}), 400
+    # Placeholder for real PayPal verification using order_id
+    user_id = session['user_id']
+    player_data = db.get_player_data(user_id)
+    new_balance = player_data.get('premium_gems', 0) + package['amount']
+    db.save_player_data(user_id, premium_gems=new_balance)
+    return jsonify({'success': True, 'new_balance': new_balance})
+
+
+@app.route('/api/admin/paypal_config', methods=['GET', 'POST'])
+def admin_paypal_config():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    if request.method == 'GET':
+        return jsonify({'success': True, 'config': db.get_paypal_config()})
+    data = request.json or {}
+    db.update_paypal_config(client_id=data.get('client_id'), client_secret=data.get('client_secret'))
+    return jsonify({'success': True})
 
 
 @app.route('/api/summon', methods=['POST'])

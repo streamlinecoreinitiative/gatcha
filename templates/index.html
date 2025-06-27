@@ -13,6 +13,7 @@
     <!-- ================================ -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script id="paypal-sdk"></script>
 </head>
 <body>
 
@@ -252,6 +253,10 @@
                 <input type="number" id="admin-gold" placeholder="Gold">
                 <input type="text" id="admin-character-name" placeholder="Hero name or ID">
                 <button id="admin-submit-btn">Execute</button>
+                <hr>
+                <input type="text" id="admin-paypal-client-id" placeholder="PayPal Client ID">
+                <input type="text" id="admin-paypal-secret" placeholder="PayPal Secret">
+                <button id="admin-paypal-save-btn">Save PayPal</button>
             </div>
 
 
