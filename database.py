@@ -425,6 +425,12 @@ def get_user_id(username):
     conn.close()
     return row['id'] if row else None
 
+def email_exists(email):
+    conn = get_db_connection()
+    row = conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone()
+    conn.close()
+    return row is not None
+
 def reset_password(email, new_password):
     conn = get_db_connection()
     cursor = conn.cursor()

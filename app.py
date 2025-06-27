@@ -8,6 +8,8 @@ import re
 from datetime import datetime
 import paypalrestsdk
 import database as db
+import string
+import secrets
 from balance import generate_enemy, calculate_item_power
 
 
@@ -63,6 +65,14 @@ STORE_PACKAGES = [
     {"id": "energy_tower", "energy": 5, "platinum_cost": 50},
     {"id": "energy_dungeon", "dungeon_energy": 5, "platinum_cost": 50}
 ]
+
+# Simple email helper - writes emails to a log file
+def send_email(to_addr, subject, body):
+    with open('sent_emails.log', 'a', encoding='utf-8') as f:
+        f.write(f"TO: {to_addr}\nSUBJECT: {subject}\n{body}\n---\n")
+
+# In-memory store for pending password resets {token: (email, new_password)}
+PASSWORD_RESETS = {}
 
 def refresh_online_progress(user_id):
     sid = next((sid for sid, info in online_users.items() if info.get('user_id') == user_id), None)
@@ -200,6 +210,9 @@ def register():
     if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$', password):
         return jsonify({'success': False, 'message': 'Password must be 10 characters with letters and numbers'})
     result = db.register_user(data.get('username'), email, password)
+    if result == "Success":
+        send_email(email, "Registration Confirmation",
+                   "Thank you for registering. This email will only be used for password recovery.")
     return jsonify({'success': result == "Success", 'message': result})
 
 
@@ -226,15 +239,27 @@ def logout():
 def forgot_password():
     data = request.json or {}
     email = data.get('email', '')
-    password = data.get('password', '')
     if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
         return jsonify({'success': False, 'message': 'Invalid email format'})
-    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$', password):
-        return jsonify({'success': False, 'message': 'Password must be 10 characters with letters and numbers'})
-    if db.reset_password(email, password):
-        return jsonify({'success': True, 'message': 'Password updated'})
-    else:
+    if not db.email_exists(email):
         return jsonify({'success': False, 'message': 'Email not found'})
+    token = secrets.token_urlsafe(16)
+    new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    PASSWORD_RESETS[token] = (email, new_password)
+    confirm_link = request.url_root.rstrip('/') + '/confirm_reset/' + token
+    send_email(email, 'Confirm Password Reset', f'Please confirm your reset by visiting: {confirm_link}')
+    return jsonify({'success': True, 'message': 'Confirmation email sent'})
+
+
+@app.route('/confirm_reset/<token>')
+def confirm_reset(token):
+    info = PASSWORD_RESETS.pop(token, None)
+    if not info:
+        return 'Invalid or expired token.', 400
+    email, new_password = info
+    db.reset_password(email, new_password)
+    send_email(email, 'Your New Password', f'Your new password is: {new_password}')
+    return 'Password reset. Check your email for the new password.'
 
 
 @app.route('/api/update_profile', methods=['POST'])
