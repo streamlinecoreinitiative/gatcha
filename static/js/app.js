@@ -238,24 +238,8 @@ function attachEventListeners() {
         });
     }
 
-    if (playerNameDisplay) {
-        playerNameDisplay.addEventListener('click', () => {
-            if (!profileModal) return;
-            profileEmailInput.value = gameState.email || '';
-            profileCurrentPasswordInput.value = '';
-            profileNewPasswordInput.value = '';
-            profileConfirmPasswordInput.value = '';
-            profileImageSelect.innerHTML = '';
-            masterCharacterList.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.image_file;
-                opt.textContent = c.name;
-                if (gameState.profile_image === c.image_file) opt.selected = true;
-                profileImageSelect.appendChild(opt);
-            });
-            profileModal.classList.add('active');
-        });
-    }
+    if (playerNameDisplay) playerNameDisplay.addEventListener('click', openProfileModal);
+    if (userIcon) userIcon.addEventListener('click', openProfileModal);
     if (profileCancelBtn) profileCancelBtn.addEventListener('click', () => profileModal.classList.remove('active'));
     if (profileSaveBtn) profileSaveBtn.addEventListener('click', async () => {
         const response = await fetch('/api/update_profile', {
@@ -572,10 +556,12 @@ async function initializeGame() {
     if (loggedIn) {
         loginScreen.classList.remove('active');
         gameScreen.classList.add('active');
+        if (chatContainer) chatContainer.classList.remove('hidden');
         connectSocket();
     } else {
         loginScreen.classList.add('active');
         gameScreen.classList.remove('active');
+        if (chatContainer) chatContainer.classList.add('hidden');
     }
 }
 
@@ -611,6 +597,7 @@ async function handleLogout() {
     gameState = {};
     loginScreen.classList.add('active');
     gameScreen.classList.remove('active');
+    if (chatContainer) chatContainer.classList.add('hidden');
     usernameInput.value = '';
     passwordInput.value = '';
 }
@@ -672,6 +659,22 @@ async function openHeroDetailModal(hero) {
     modalContent.innerHTML = html;
 }
 
+function openProfileModal() {
+    if (!profileModal) return;
+    profileEmailInput.value = gameState.email || '';
+    profileCurrentPasswordInput.value = '';
+    profileNewPasswordInput.value = '';
+    profileConfirmPasswordInput.value = '';
+    profileImageSelect.innerHTML = '';
+    masterCharacterList.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.image_file;
+        opt.textContent = c.name;
+        if (gameState.profile_image === c.image_file) opt.selected = true;
+        profileImageSelect.appendChild(opt);
+    });
+    profileModal.classList.add('active');
+}
 
 function sendMessage() {
     if (chatInput.value.trim() !== '') {
