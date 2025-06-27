@@ -56,8 +56,8 @@
         <!-- TOP BAR: Player Info -->
         <div id="top-bar">
             <div id="player-info">
-                <img src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon">
-                <span id="player-name"></span>
+                <img id="user-icon" src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon">
+                <span id="player-name" class="clickable"></span>
                 <button id="logout-button">Logout</button>
             </div>
             <div id="currency-info">
@@ -236,6 +236,24 @@
                  <div id="lore-text-container" class="lore-box"></div>
             </div>
 
+            <div id="admin-view" class="view">
+                <h2>Admin Panel</h2>
+                <input type="text" id="admin-username" placeholder="Username">
+                <select id="admin-action">
+                    <option value="grant">Grant</option>
+                    <option value="ban">Ban</option>
+                    <option value="unban">Unban</option>
+                    <option value="add_hero">Add Hero</option>
+                    <option value="remove_hero">Remove Hero</option>
+                </select>
+                <input type="number" id="admin-gems" placeholder="Gems">
+                <input type="number" id="admin-energy" placeholder="Energy">
+                <input type="number" id="admin-platinum" placeholder="Platinum">
+                <input type="number" id="admin-gold" placeholder="Gold">
+                <input type="text" id="admin-character-name" placeholder="Hero name or ID">
+                <button id="admin-submit-btn">Execute</button>
+            </div>
+
 
         </div>
 
@@ -250,6 +268,7 @@
             <button class="nav-button" data-view="dungeons-view">The Armory</button>
             <button class="nav-button" data-view="online-view">Online</button>
             <button class="nav-button" data-view="lore-view">Change Log</button>
+            <button class="nav-button admin-only" data-view="admin-view">Admin</button>
 
         </div>
 
@@ -349,6 +368,19 @@
     <div class="modal-content">
         <p id="tutorial-text"></p>
         <button id="tutorial-close-btn">Close</button>
+    </div>
+</div>
+
+<div id="profile-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Profile</h3>
+        <input type="email" id="profile-email" placeholder="Email">
+        <input type="password" id="profile-password" placeholder="New Password">
+        <select id="profile-image-select"></select>
+        <div class="modal-buttons">
+            <button id="profile-save-btn">Save</button>
+            <button id="profile-cancel-btn">Cancel</button>
+        </div>
     </div>
 </div>
 

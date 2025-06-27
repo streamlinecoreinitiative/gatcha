@@ -199,11 +199,24 @@ def logout():
     return jsonify({'success': True})
 
 
+@app.route('/api/update_profile', methods=['POST'])
+def update_profile():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    data = request.json or {}
+    email = data.get('email')
+    password = data.get('password')
+    profile_image = data.get('profile_image')
+    db.update_user_profile(session['user_id'], email=email, password=password, profile_image=profile_image)
+    return jsonify({'success': True})
+
+
 @app.route('/api/player_data', methods=['GET'])
 def get_player_data():
     if not session.get('logged_in'): return jsonify({'success': False}), 401
     user_id = session['user_id']
     player_data = db.get_player_data(user_id)
+    profile = db.get_user_profile(user_id)
     player_team = db.get_player_team(user_id, character_definitions)
     full_data = {
         'username': session.get('username'),
@@ -216,7 +229,10 @@ def get_player_data():
         'current_stage': player_data['current_stage'],
         'dungeon_runs': player_data.get('dungeon_runs', 0),
         'team': player_team,
-        'collection': player_data['collection']
+        'collection': player_data['collection'],
+        'is_admin': profile.get('is_admin', 0),
+        'profile_image': profile.get('profile_image'),
+        'email': profile.get('email')
     }
     return jsonify({'success': True, 'data': full_data})
 
@@ -230,6 +246,41 @@ def all_users():
 def top_player():
     player = db.get_top_player()
     return jsonify({'success': True, 'player': player})
+
+
+@app.route('/api/admin/user_action', methods=['POST'])
+def admin_user_action():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    if not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False, 'message': 'Not authorized'}), 403
+    data = request.json or {}
+    username = data.get('username')
+    action = data.get('action')
+    target_id = db.get_user_id(username)
+    if not target_id:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+    if action == 'ban':
+        db.ban_user(target_id, True)
+    elif action == 'unban':
+        db.ban_user(target_id, False)
+    elif action == 'grant':
+        gems = data.get('gems')
+        energy = data.get('energy')
+        premium_gems = data.get('platinum')
+        gold = data.get('gold')
+        db.adjust_resources(target_id, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
+    elif action == 'add_hero':
+        char_name = data.get('character_name')
+        char_def = next((c for c in character_definitions if c['name'] == char_name), None)
+        if char_def:
+            db.add_character_to_player(target_id, char_def)
+    elif action == 'remove_hero':
+        char_id = data.get('character_id')
+        db.remove_character(target_id, char_id)
+    else:
+        return jsonify({'success': False, 'message': 'Invalid action'}), 400
+    return jsonify({'success': True})
 
 
 @app.route('/api/store_items')

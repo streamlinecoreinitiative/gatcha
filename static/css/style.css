@@ -846,6 +846,14 @@ button:disabled, .fantasy-button:disabled {
     box-sizing: border-box;
 }
 
+.clickable {
+    cursor: pointer;
+}
+
+.admin-only {
+    display: none;
+}
+
 /* Simple round button used for tutorial pop ups */
 .tutorial-btn {
     position: absolute;

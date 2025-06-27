@@ -24,7 +24,10 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             email TEXT,
-            password TEXT NOT NULL
+            password TEXT NOT NULL,
+            is_admin INTEGER NOT NULL DEFAULT 0,
+            banned INTEGER NOT NULL DEFAULT 0,
+            profile_image TEXT
         )
     ''')
     cursor.execute('''
@@ -71,6 +74,9 @@ def init_db():
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
+    add_column_if_missing(conn, 'users', 'is_admin', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'users', 'banned', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'users', 'profile_image', 'TEXT')
     add_column_if_missing(conn, 'player_data', 'gold', 'INTEGER NOT NULL DEFAULT 10000')
     add_column_if_missing(conn, 'player_data', 'pity_counter', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_data', 'premium_gems', 'INTEGER NOT NULL DEFAULT 0')
@@ -80,6 +86,7 @@ def init_db():
     add_column_if_missing(conn, 'player_data', 'dungeon_last', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
+    create_admin_if_missing()
     conn.close()
 
 def register_user(username, email, password):
@@ -112,9 +119,9 @@ def register_user(username, email, password):
 
 def login_user(username, password):
     conn = get_db_connection()
-    user = conn.execute("SELECT id, password FROM users WHERE username = ?", (username,)).fetchone()
+    user = conn.execute("SELECT id, password, banned FROM users WHERE username = ?", (username,)).fetchone()
     conn.close()
-    if user and user['password'] == password:
+    if user and user['password'] == password and user['banned'] == 0:
         return user['id']
     return None
 
@@ -370,3 +377,64 @@ def sell_character(user_id, char_id):
     new_gold = cursor.execute("SELECT gold FROM player_data WHERE user_id = ?", (user_id,)).fetchone()['gold']
     conn.close()
     return True, {'gold_received': gold_amount, 'new_gold': new_gold}
+
+def update_user_profile(user_id, email=None, password=None, profile_image=None):
+    conn = get_db_connection()
+    if email is not None:
+        conn.execute("UPDATE users SET email = ? WHERE id = ?", (email, user_id))
+    if password is not None:
+        conn.execute("UPDATE users SET password = ? WHERE id = ?", (password, user_id))
+    if profile_image is not None:
+        conn.execute("UPDATE users SET profile_image = ? WHERE id = ?", (profile_image, user_id))
+    conn.commit()
+    conn.close()
+
+def is_user_admin(user_id):
+    conn = get_db_connection()
+    row = conn.execute("SELECT is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return bool(row and row['is_admin'])
+
+def ban_user(user_id, banned=True):
+    conn = get_db_connection()
+    conn.execute("UPDATE users SET banned = ? WHERE id = ?", (1 if banned else 0, user_id))
+    conn.commit()
+    conn.close()
+
+def get_user_id(username):
+    conn = get_db_connection()
+    row = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+    conn.close()
+    return row['id'] if row else None
+
+def adjust_resources(user_id, gems=None, premium_gems=None, energy=None, gold=None):
+    save_player_data(user_id, gems=gems, premium_gems=premium_gems, energy=energy, gold=gold)
+
+def remove_character(user_id, char_id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM player_characters WHERE id = ? AND user_id = ?", (char_id, user_id))
+    conn.execute("UPDATE player_team SET character_db_id = NULL WHERE character_db_id = ? AND user_id = ?", (char_id, user_id))
+    conn.commit()
+    conn.close()
+
+def create_admin_if_missing():
+    conn = get_db_connection()
+    row = conn.execute("SELECT id FROM users WHERE username = 'admin'").fetchone()
+    if not row:
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (username, email, password, is_admin) VALUES ('admin', 'admin@example.com', 'adminpass', 1)")
+        admin_id = cursor.lastrowid
+        import time
+        now = int(time.time())
+        cursor.execute("INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter) VALUES (?, 1000, 0, 10000, 1, 0, 10, ?, 5, ?, 0)", (admin_id, now, now))
+        for i in range(1, 4):
+            cursor.execute("INSERT INTO player_team (user_id, slot_num, character_db_id) VALUES (?, ?, NULL)", (admin_id, i))
+        conn.commit()
+    conn.close()
+
+def get_user_profile(user_id):
+    conn = get_db_connection()
+    row = conn.execute("SELECT email, profile_image, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else {'email': '', 'profile_image': None, 'is_admin': 0}
+ 
