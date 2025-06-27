@@ -72,12 +72,12 @@ let regPasswordInput;
 let regConfirmInput;
 let regSubmitBtn;
 let regCancelBtn;
+let regError;
 let forgotModal;
 let forgotEmailInput;
-let forgotPasswordInput;
-let forgotConfirmInput;
 let forgotSubmitBtn;
 let forgotCancelBtn;
+let forgotError;
 
 function displayMessage(text) {
     if (!messageBox) return;
@@ -145,12 +145,12 @@ function attachEventListeners() {
     regConfirmInput = document.getElementById('reg-confirm-password');
     regSubmitBtn = document.getElementById('register-submit-btn');
     regCancelBtn = document.getElementById('register-cancel-btn');
+    regError = document.getElementById('register-error');
     forgotModal = document.getElementById('forgot-password-modal');
     forgotEmailInput = document.getElementById('forgot-email');
-    forgotPasswordInput = document.getElementById('forgot-password');
-    forgotConfirmInput = document.getElementById('forgot-confirm-password');
     forgotSubmitBtn = document.getElementById('forgot-submit-btn');
     forgotCancelBtn = document.getElementById('forgot-cancel-btn');
+    forgotError = document.getElementById('forgot-error');
 
     loginButton.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
@@ -166,16 +166,17 @@ function attachEventListeners() {
     }
 
     if (regSubmitBtn) regSubmitBtn.addEventListener('click', async () => {
+        if (regError) regError.textContent = '';
         if (!isValidEmail(regEmailInput.value)) {
-            displayMessage('Invalid email format');
+            if (regError) regError.textContent = 'Invalid email format';
             return;
         }
         if (!isValidPassword(regPasswordInput.value)) {
-            displayMessage('Password must be 10 characters with letters and numbers');
+            if (regError) regError.textContent = 'Password must be 10 characters with letters and numbers';
             return;
         }
         if (regPasswordInput.value !== regConfirmInput.value) {
-            displayMessage('Passwords do not match');
+            if (regError) regError.textContent = 'Passwords do not match';
             return;
         }
         const response = await fetch('/api/register', {
@@ -188,9 +189,11 @@ function attachEventListeners() {
             })
         });
         const result = await response.json();
-        displayMessage(result.message);
-        if (result.success && registerModal) {
-            registerModal.classList.remove('active');
+        if (result.success) {
+            displayMessage(result.message);
+            if (registerModal) registerModal.classList.remove('active');
+        } else if (regError) {
+            regError.textContent = result.message;
         }
     });
 
@@ -204,26 +207,23 @@ function attachEventListeners() {
     });
 
     if (forgotSubmitBtn) forgotSubmitBtn.addEventListener('click', async () => {
+        if (forgotError) forgotError.textContent = '';
         if (!isValidEmail(forgotEmailInput.value)) {
-            displayMessage('Invalid email format');
-            return;
-        }
-        if (!isValidPassword(forgotPasswordInput.value)) {
-            displayMessage('Password must be 10 characters with letters and numbers');
-            return;
-        }
-        if (forgotPasswordInput.value !== forgotConfirmInput.value) {
-            displayMessage('Passwords do not match');
+            if (forgotError) forgotError.textContent = 'Invalid email format';
             return;
         }
         const response = await fetch('/api/forgot_password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: forgotEmailInput.value, password: forgotPasswordInput.value })
+            body: JSON.stringify({ email: forgotEmailInput.value })
         });
         const result = await response.json();
-        displayMessage(result.message);
-        if (result.success && forgotModal) forgotModal.classList.remove('active');
+        if (result.success) {
+            displayMessage(result.message);
+            if (forgotModal) forgotModal.classList.remove('active');
+        } else if (forgotError) {
+            forgotError.textContent = result.message;
+        }
     });
 
     logoutButton.addEventListener('click', handleLogout);

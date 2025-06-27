@@ -399,8 +399,10 @@
         <h3>Create Account</h3>
         <input type="text" id="reg-username" placeholder="Username">
         <input type="email" id="reg-email" placeholder="Email">
+        <p class="email-note">Email will only be used for password recovery.</p>
         <input type="password" id="reg-password" placeholder="Password">
         <input type="password" id="reg-confirm-password" placeholder="Confirm Password">
+        <div id="register-error" class="modal-error"></div>
         <div class="modal-buttons">
             <button id="register-submit-btn">Register</button>
             <button id="register-cancel-btn">Cancel</button>
@@ -412,8 +414,7 @@
     <div class="modal-content">
         <h3>Reset Password</h3>
         <input type="email" id="forgot-email" placeholder="Email">
-        <input type="password" id="forgot-password" placeholder="New Password">
-        <input type="password" id="forgot-confirm-password" placeholder="Confirm Password">
+        <div id="forgot-error" class="modal-error"></div>
         <div class="modal-buttons">
             <button id="forgot-submit-btn">Submit</button>
             <button id="forgot-cancel-btn">Cancel</button>

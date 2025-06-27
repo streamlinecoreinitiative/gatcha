@@ -918,6 +918,17 @@ button:disabled, .fantasy-button:disabled {
     flex: 1 1 45%;
 }
 
+.modal-error {
+    color: #e74c3c;
+    margin-top: 10px;
+}
+
+.email-note {
+    font-size: 14px;
+    margin: 5px 0;
+    color: #ccc;
+}
+
 #intel-start-fight-btn {
     background-color: #c0392b; /* Red for fight */
 }
