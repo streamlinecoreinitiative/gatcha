@@ -1385,3 +1385,15 @@ button:disabled, .fantasy-button:disabled {
 .score-column {
     flex: 1;
 }
+
+/* Register password info */
+.password-note {
+    font-size: 14px;
+    margin: 5px 0;
+    color: #ccc;
+}
+
+/* Center equipment view text */
+#equipment-container p {
+    text-align: center;
+}
