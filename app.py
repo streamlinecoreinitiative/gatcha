@@ -87,9 +87,56 @@ def refresh_online_progress(user_id):
 
 # Placeholder receipt verification
 def verify_purchase_receipt(platform: str, receipt: str) -> bool:
-    """Stub verification logic. In production, validate the receipt with
-    the respective platform (Apple or Google)."""
+    """Stub verification logic used when the PayPal SDK fails to load."""
     return receipt == "TEST_RECEIPT"
+
+
+def verify_paypal_order(order_id: str, expected_amount: float) -> bool:
+    """Validate a PayPal order via the REST API."""
+    conf = db.get_paypal_config()
+    client_id = conf.get("client_id")
+    secret = conf.get("client_secret")
+    if not client_id or not secret:
+        return False
+    try:
+        import base64
+        from urllib import request, parse
+
+        auth = base64.b64encode(f"{client_id}:{secret}".encode()).decode()
+        data = parse.urlencode({"grant_type": "client_credentials"}).encode()
+        token_req = request.Request(
+            "https://api-m.sandbox.paypal.com/v1/oauth2/token",
+            data=data,
+            headers={
+                "Authorization": f"Basic {auth}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        )
+        with request.urlopen(token_req, timeout=10) as resp:
+            token_data = json.load(resp)
+        access_token = token_data.get("access_token")
+        if not access_token:
+            return False
+
+        order_req = request.Request(
+            f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        with request.urlopen(order_req, timeout=10) as resp:
+            order_info = json.load(resp)
+
+        if order_info.get("status") != "COMPLETED":
+            return False
+
+        amt = order_info.get("purchase_units", [{}])[0].get("amount", {}).get(
+            "value"
+        )
+        if amt is None:
+            return False
+        return abs(float(amt) - float(expected_amount)) < 0.01
+    except Exception as e:
+        print("PayPal verification failed", e)
+        return False
 
 
 # --- HELPER FUNCTIONS ---
@@ -424,7 +471,10 @@ def paypal_complete():
     package = next((p for p in STORE_PACKAGES if p['id'] == package_id), None)
     if not package:
         return jsonify({'success': False, 'message': 'Invalid package'}), 400
-    # Placeholder for real PayPal verification using order_id
+    if not order_id:
+        return jsonify({'success': False, 'message': 'Missing order id'}), 400
+    if not verify_paypal_order(order_id, package['price']):
+        return jsonify({'success': False, 'message': 'PayPal verification failed'}), 400
     user_id = session['user_id']
     player_data = db.get_player_data(user_id)
     new_balance = player_data.get('premium_gems', 0) + package['amount']

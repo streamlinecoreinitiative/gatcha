@@ -20,6 +20,10 @@ This repository contains a Flask-based gacha game.
 
 The store can now process payments via PayPal. Configure your PayPal client ID and secret from the Admin Panel. Once configured, PayPal buttons appear in the store for premium currency purchases.
 
+During checkout the client sends a PayPal `order_id` to `/api/paypal_complete`.
+The server verifies the order with PayPal's API before adding Platinum to the
+player account.
+
 ### Managing PayPal Credentials
 1. Login as an admin user.
 2. Open the **Admin** tab.
