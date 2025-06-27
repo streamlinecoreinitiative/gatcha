@@ -277,10 +277,15 @@
                 <hr>
                 <input type="text" id="admin-paypal-client-id" placeholder="PayPal Client ID">
                 <input type="text" id="admin-paypal-secret" placeholder="PayPal Secret">
+                <select id="admin-paypal-mode">
+                    <option value="sandbox">Sandbox</option>
+                    <option value="live">Live</option>
+                </select>
                 <button id="admin-paypal-save-btn">Save PayPal</button>
                 <div id="paypal-display">
                     <p>Client ID: <span id="paypal-client-display"></span></p>
                     <p>Secret: <span id="paypal-secret-display"></span></p>
+                    <p>Mode: <span id="paypal-mode-display"></span></p>
                     <button id="admin-paypal-remove-btn">Remove PayPal</button>
                 </div>
                 <hr>
