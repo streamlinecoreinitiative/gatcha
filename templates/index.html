@@ -62,19 +62,18 @@
                 <button id="logout-button">Logout</button>
             </div>
             <div id="currency-info">
-                <img src="{{ url_for('static', filename='images/ui/gem_icon.png') }}" alt="Gems">
+                <img src="{{ url_for('static', filename='images/ui/gem_icon.png') }}" alt="Gems" title="Used for summoning heroes">
                 <span id="gem-count"></span>
-                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Platinum">
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Platinum" title="Premium currency for store purchases">
                 <span id="platinum-count"></span>
-                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Gold">
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Gold" title="Spend to level up heroes and equipment">
                 <span id="gold-count"></span>
-                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Energy">
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Energy" title="Required for Tower battles">
                 <span id="energy-count"></span>/<span id="energy-max">10</span>
                 <span id="energy-timer"></span>
-                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Dungeon Energy">
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Dungeon Energy" title="Needed for Armory expeditions">
                 <span id="dungeon-energy-count"></span>/<span id="dungeon-max">5</span>
                 <span id="dungeon-timer"></span>
-                <button id="report-bug-button">Report Bug</button>
             </div>
         </div>
 
@@ -141,7 +140,7 @@
                         <h2>The Summoning Altar</h2>
                         <button class="tutorial-btn" data-tutorial="Spend gems here to summon additional heroes for your roster.">?</button>
                     </div>
-                    <p>Use 150 Gems to summon a new hero!</p>
+                    <p>Use 150 Gems to summon a new hero! Odds: 50% Common, 30% Rare, 15% SSR, 3.5% UR, 1.5% LR. Guaranteed SSR every 90 summons.</p>
                     <button id="perform-summon-button">Summon</button>
                     <div id="summon-result" class="summon-result-box"></div>
                 </div>
@@ -275,13 +274,11 @@
             <button class="nav-button" data-view="collection-view">Heroes</button>
             <button class="nav-button" data-view="equipment-view">Equipment</button>
             <button class="nav-button" data-view="summon-view">Summon</button>
-            <button class="nav-button" data-view="store-view">Store</button>
             <button class="nav-button" data-view="campaign-view">The Tower</button>
             <button class="nav-button" data-view="dungeons-view">The Armory</button>
             <button class="nav-button" data-view="online-view">Online</button>
-            <button class="nav-button" data-view="lore-view">Events</button>
             <button class="nav-button admin-only" data-view="admin-view">Admin</button>
-
+            <button class="nav-button" data-view="store-view">Store</button>
         </div>
 
     </div>
@@ -321,7 +318,7 @@
             <div class="battle-buttons">
                 <button id="battle-next-button" style="display: none;">Next Floor</button>
                 <button id="battle-retry-button" style="display: none;">Retry</button>
-                <button id="battle-return-button" style="display: none;">Return to Campaign</button>
+                <button id="battle-return-button" style="display: none;">Return</button>
             </div>
         </div>
     </div>
