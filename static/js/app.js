@@ -25,6 +25,8 @@ const goldCountDisplay = document.getElementById('gold-count');
 const platinumCountDisplay = document.getElementById('platinum-count');
 const energyCountDisplay = document.getElementById('energy-count');
 const dungeonEnergyCountDisplay = document.getElementById('dungeon-energy-count');
+const energyTimerDisplay = document.getElementById('energy-timer');
+const dungeonTimerDisplay = document.getElementById('dungeon-timer');
 const logoutButton = document.getElementById('logout-button');
 const bugButton = document.getElementById('report-bug-button');
 const mainContent = document.getElementById('main-content');
@@ -94,7 +96,56 @@ function isValidEmail(email) {
 }
 
 function isValidPassword(pwd) {
-    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$/.test(pwd);
+    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,}$/.test(pwd);
+}
+
+function formatDuration(sec) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+}
+
+let resourceTimer;
+
+function updateResourceTimers() {
+    if (!gameState || !gameState.energy_last) return;
+    const now = Math.floor(Date.now() / 1000);
+    if (energyTimerDisplay) {
+        if (gameState.energy < gameState.energy_cap) {
+            const next = gameState.energy_last + 3600;
+            const remain = next - now;
+            if (remain <= 0) {
+                fetchPlayerDataAndUpdate();
+            } else {
+                energyTimerDisplay.textContent = formatDuration(remain);
+            }
+        } else {
+            energyTimerDisplay.textContent = '';
+        }
+    }
+    if (dungeonTimerDisplay) {
+        if (gameState.dungeon_energy < gameState.dungeon_cap) {
+            const last = new Date(gameState.dungeon_last * 1000);
+            const nextReset = Date.UTC(last.getUTCFullYear(), last.getUTCMonth(), last.getUTCDate() + 1) / 1000;
+            const remain = nextReset - now;
+            if (remain <= 0) {
+                fetchPlayerDataAndUpdate();
+            } else {
+                dungeonTimerDisplay.textContent = formatDuration(remain);
+            }
+        } else {
+            dungeonTimerDisplay.textContent = '';
+        }
+    }
+}
+
+function startResourceTimers() {
+    if (resourceTimer) clearInterval(resourceTimer);
+    resourceTimer = setInterval(updateResourceTimers, 1000);
+    updateResourceTimers();
 }
 const TOWER_LORE = [
     {
@@ -177,7 +228,7 @@ function attachEventListeners() {
             return;
         }
         if (!isValidPassword(regPasswordInput.value)) {
-            if (regError) regError.textContent = 'Password must be 10 characters with letters and numbers';
+            if (regError) regError.textContent = 'Password must be at least 10 characters with letters and numbers';
             return;
         }
         if (regPasswordInput.value !== regConfirmInput.value) {
@@ -694,8 +745,8 @@ function updateUI() {
     }
     gemCountDisplay.textContent = gameState.gems;
     if (platinumCountDisplay) platinumCountDisplay.textContent = gameState.premium_gems;
-    if (energyCountDisplay) energyCountDisplay.textContent = gameState.energy;
-    if (dungeonEnergyCountDisplay) dungeonEnergyCountDisplay.textContent = gameState.dungeon_energy;
+    if (energyCountDisplay) energyCountDisplay.textContent = `${gameState.energy}/${gameState.energy_cap}`;
+    if (dungeonEnergyCountDisplay) dungeonEnergyCountDisplay.textContent = `${gameState.dungeon_energy}/${gameState.dungeon_cap}`;
     if (goldCountDisplay) goldCountDisplay.textContent = gameState.gold;
     if (dungeonRunCount) dungeonRunCount.textContent = gameState.dungeon_runs;
     const towerCount = document.getElementById('tower-floor-count');
@@ -708,6 +759,7 @@ function updateUI() {
     updateCampaignDisplay();
     updateTopPlayer();
     updateMotd();
+    startResourceTimers();
 }
 
 async function updateEquipmentDisplay() {

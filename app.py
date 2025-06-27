@@ -254,8 +254,10 @@ def register():
     password = data.get('password', '')
     if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
         return jsonify({'success': False, 'message': 'Invalid email format'})
-    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$', password):
-        return jsonify({'success': False, 'message': 'Password must be 10 characters with letters and numbers'})
+    if db.email_exists(email):
+        return jsonify({'success': False, 'message': 'Email already registered'})
+    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,}$', password):
+        return jsonify({'success': False, 'message': 'Password must be at least 10 characters with letters and numbers'})
     result = db.register_user(data.get('username'), email, password)
     if result == "Success":
         send_email(email, "Registration Confirmation",
@@ -334,8 +336,8 @@ def change_password():
         return jsonify({'success': False, 'message': 'Current password incorrect'})
     if new_password != confirm_password:
         return jsonify({'success': False, 'message': 'Passwords do not match'})
-    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$', new_password):
-        return jsonify({'success': False, 'message': 'Password must be 10 characters with letters and numbers'})
+    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,}$', new_password):
+        return jsonify({'success': False, 'message': 'Password must be at least 10 characters with letters and numbers'})
     db.update_user_profile(session['user_id'], password=new_password)
     return jsonify({'success': True})
 
@@ -361,7 +363,11 @@ def get_player_data():
         'collection': player_data['collection'],
         'is_admin': profile.get('is_admin', 0),
         'profile_image': profile.get('profile_image'),
-        'email': profile.get('email')
+        'email': profile.get('email'),
+        'energy_last': player_data.get('energy_last'),
+        'dungeon_last': player_data.get('dungeon_last'),
+        'energy_cap': 10,
+        'dungeon_cap': 5
     }
     return jsonify({'success': True, 'data': full_data})
 
