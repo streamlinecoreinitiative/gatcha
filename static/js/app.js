@@ -46,6 +46,14 @@ const chatToggleBtn = document.getElementById('chat-toggle-btn');
 const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
 const storePackagesContainer = document.getElementById('store-packages');
+const userIcon = document.getElementById('user-icon');
+let profileModal;
+let profileEmailInput;
+let profilePasswordInput;
+let profileImageSelect;
+let profileSaveBtn;
+let profileCancelBtn;
+let adminSubmitBtn;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -95,6 +103,13 @@ function attachEventListeners() {
     heroImageLarge = document.getElementById('hero-image-large');
     messageBox = document.getElementById('message-box');
     registerModal = document.getElementById('register-modal-overlay');
+    profileModal = document.getElementById('profile-modal');
+    profileEmailInput = document.getElementById('profile-email');
+    profilePasswordInput = document.getElementById('profile-password');
+    profileImageSelect = document.getElementById('profile-image-select');
+    profileSaveBtn = document.getElementById('profile-save-btn');
+    profileCancelBtn = document.getElementById('profile-cancel-btn');
+    adminSubmitBtn = document.getElementById('admin-submit-btn');
     regUsernameInput = document.getElementById('reg-username');
     regEmailInput = document.getElementById('reg-email');
     regPasswordInput = document.getElementById('reg-password');
@@ -142,6 +157,59 @@ function attachEventListeners() {
             window.open('https://github.com/your_username/your_repo/issues', '_blank');
         });
     }
+
+    if (playerNameDisplay) {
+        playerNameDisplay.addEventListener('click', () => {
+            if (!profileModal) return;
+            profileEmailInput.value = gameState.email || '';
+            profilePasswordInput.value = '';
+            profileImageSelect.innerHTML = '';
+            masterCharacterList.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.image_file;
+                opt.textContent = c.name;
+                if (gameState.profile_image === c.image_file) opt.selected = true;
+                profileImageSelect.appendChild(opt);
+            });
+            profileModal.classList.add('active');
+        });
+    }
+    if (profileCancelBtn) profileCancelBtn.addEventListener('click', () => profileModal.classList.remove('active'));
+    if (profileSaveBtn) profileSaveBtn.addEventListener('click', async () => {
+        const response = await fetch('/api/update_profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: profileEmailInput.value,
+                password: profilePasswordInput.value,
+                profile_image: profileImageSelect.value
+            })
+        });
+        const result = await response.json();
+        if (result.success) {
+            profileModal.classList.remove('active');
+            await fetchPlayerDataAndUpdate();
+        }
+    });
+    if (adminSubmitBtn) adminSubmitBtn.addEventListener('click', async () => {
+        const data = {
+            username: document.getElementById('admin-username').value,
+            action: document.getElementById('admin-action').value,
+            gems: parseInt(document.getElementById('admin-gems').value) || null,
+            energy: parseInt(document.getElementById('admin-energy').value) || null,
+            platinum: parseInt(document.getElementById('admin-platinum').value) || null,
+            gold: parseInt(document.getElementById('admin-gold').value) || null,
+            character_name: document.getElementById('admin-character-name').value,
+            character_id: parseInt(document.getElementById('admin-character-name').value)
+        };
+        const response = await fetch('/api/admin/user_action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'Action completed' : result.message);
+    });
 
     summonButton.addEventListener('click', async () => {
         const response = await fetch('/api/summon', { method: 'POST' });
@@ -466,6 +534,9 @@ function sendMessage() {
 function updateUI() {
     if (!gameState || !gameState.username) return;
     playerNameDisplay.textContent = gameState.username;
+    if (userIcon && gameState.profile_image) {
+        userIcon.src = `/static/images/characters/${gameState.profile_image}`;
+    }
     gemCountDisplay.textContent = gameState.gems;
     if (platinumCountDisplay) platinumCountDisplay.textContent = gameState.premium_gems;
     if (energyCountDisplay) energyCountDisplay.textContent = gameState.energy;
@@ -474,6 +545,9 @@ function updateUI() {
     if (dungeonRunCount) dungeonRunCount.textContent = gameState.dungeon_runs;
     const towerCount = document.getElementById('tower-floor-count');
     if (towerCount) towerCount.textContent = gameState.current_stage;
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = gameState.is_admin ? 'inline-block' : 'none';
+    });
     updateTeamDisplay();
     updateCollectionDisplay();
     updateCampaignDisplay();
