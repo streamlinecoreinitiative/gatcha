@@ -107,12 +107,26 @@
 
             <!-- V3: NEW Online Users View -->
             <div id="online-view" class="view">
-                 <div class="section-header">
-                     <h2>Players Online</h2>
-                     <button class="tutorial-btn" data-tutorial="See who is currently playing the game.">?</button>
-                 </div>
-                 <div id="online-list-container" class="online-list"></div>
-                 <div id="all-users-container" class="online-list"></div>
+                <div id="online-section" class="admin-only">
+                    <div class="section-header">
+                        <h2>Players Online</h2>
+                        <button class="tutorial-btn" data-tutorial="See who is currently playing the game.">?</button>
+                    </div>
+                    <div id="online-list-container" class="online-list"></div>
+                </div>
+                <div id="highscores-container" class="online-list">
+                    <h3>Highscores</h3>
+                    <div class="score-columns">
+                        <div class="score-column">
+                            <h4>Tower Progress</h4>
+                            <div id="tower-highscores"></div>
+                        </div>
+                        <div class="score-column">
+                            <h4>Dungeon Runs</h4>
+                            <div id="dungeon-highscores"></div>
+                        </div>
+                    </div>
+                </div>
            </div>
             <!-- Collection View -->
             <div id="collection-view" class="view">

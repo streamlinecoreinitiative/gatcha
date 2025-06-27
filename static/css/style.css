@@ -1353,3 +1353,13 @@ button:disabled, .fantasy-button:disabled {
     vertical-align: middle;
     margin-right: 4px;
 }
+
+/* Highscore columns */
+.score-columns {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+.score-column {
+    flex: 1;
+}

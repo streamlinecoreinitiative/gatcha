@@ -38,7 +38,8 @@ const summonResultContainer = document.getElementById('summon-result');
 const stageListContainer = document.getElementById('stage-list');
 const loreContainer = document.getElementById('lore-text-container');
 const onlineListContainer = document.getElementById('online-list-container');
-const allUsersContainer = document.getElementById('all-users-container');
+const towerScoresContainer = document.getElementById('tower-highscores');
+const dungeonScoresContainer = document.getElementById('dungeon-highscores');
 const navButtons = document.querySelectorAll('.nav-button');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
@@ -666,6 +667,7 @@ function connectSocket() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
     socket.on('update_online_list', (users) => {
+        if (!gameState.is_admin) return;
         onlineListContainer.innerHTML = '<h3>Currently Online:</h3>';
         users.forEach(user => {
             const userElement = document.createElement('div');
@@ -752,7 +754,8 @@ function updateUI() {
     const towerCount = document.getElementById('tower-floor-count');
     if (towerCount) towerCount.textContent = gameState.current_stage;
     document.querySelectorAll('.admin-only').forEach(el => {
-        el.style.display = gameState.is_admin ? 'inline-block' : 'none';
+        const disp = el.tagName === 'DIV' ? 'block' : 'inline-block';
+        el.style.display = gameState.is_admin ? disp : 'none';
     });
     updateTeamDisplay();
     updateCollectionDisplay();
@@ -789,17 +792,32 @@ async function updateEquipmentDisplay() {
 }
 
 async function updateAllUsers() {
-    if (!allUsersContainer) return;
-    allUsersContainer.innerHTML = 'Loading...';
+    if (!towerScoresContainer || !dungeonScoresContainer) return;
+    towerScoresContainer.innerHTML = 'Loading...';
+    dungeonScoresContainer.innerHTML = 'Loading...';
     const response = await fetch('/api/all_users');
     const result = await response.json();
-    if (!result.success) { allUsersContainer.innerHTML = 'Failed to load users.'; return; }
-    allUsersContainer.innerHTML = '<h3>All Players:</h3>';
-    result.users.forEach(u => {
+    if (!result.success) {
+        towerScoresContainer.innerHTML = 'Failed to load users.';
+        dungeonScoresContainer.innerHTML = '';
+        return;
+    }
+    const users = result.users || [];
+    const towerSorted = [...users].sort((a, b) => b.current_stage - a.current_stage);
+    const dungeonSorted = [...users].sort((a, b) => b.dungeon_runs - a.dungeon_runs);
+    towerScoresContainer.innerHTML = '';
+    dungeonScoresContainer.innerHTML = '';
+    towerSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        div.textContent = `${u.username} - Floor ${u.current_stage} | Runs ${u.dungeon_runs}`;
-        allUsersContainer.appendChild(div);
+        div.textContent = `${idx + 1}. ${u.username} - Floor ${u.current_stage}`;
+        towerScoresContainer.appendChild(div);
+    });
+    dungeonSorted.forEach((u, idx) => {
+        const div = document.createElement('div');
+        div.className = 'online-list-item';
+        div.textContent = `${idx + 1}. ${u.username} - Runs ${u.dungeon_runs}`;
+        dungeonScoresContainer.appendChild(div);
     });
 }
 
