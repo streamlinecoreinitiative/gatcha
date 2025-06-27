@@ -140,6 +140,14 @@ def verify_paypal_order(order_id: str, expected_amount: float) -> bool:
         return False
 
 
+def grant_currency(user_id: int, amount: int) -> int:
+    """Add premium currency to the given user and return the new balance."""
+    player_data = db.get_player_data(user_id)
+    new_balance = player_data.get("premium_gems", 0) + amount
+    db.save_player_data(user_id, premium_gems=new_balance)
+    return new_balance
+
+
 # --- HELPER FUNCTIONS ---
 def get_enemy_for_stage(stage_num):
     random.seed(stage_num)
@@ -491,9 +499,7 @@ def paypal_complete():
     if not verify_paypal_order(order_id, package['price']):
         return jsonify({'success': False, 'message': 'PayPal verification failed'}), 400
     user_id = session['user_id']
-    player_data = db.get_player_data(user_id)
-    new_balance = player_data.get('premium_gems', 0) + package['amount']
-    db.save_player_data(user_id, premium_gems=new_balance)
+    new_balance = grant_currency(user_id, package['amount'])
     return jsonify({'success': True, 'new_balance': new_balance})
 
 
