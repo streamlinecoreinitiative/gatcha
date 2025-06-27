@@ -381,20 +381,29 @@ button:disabled, .fantasy-button:disabled {
     font-size: 24px;
     cursor: pointer;
 }
-
+.summon-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
 .summon-result-box {
     margin-top: 20px;
     padding: 20px;
-    min-height: 220px; /* Give it a fixed height */
-    width: 200px;      /* Give it a fixed width */
-    display: flex;
+    min-height: 220px;
+    width: 200px;
+    display: none;
     justify-content: center;
     align-items: center;
-
-    /* --- THIS IS THE FIX --- */
-    /* Make it invisible by default */
     background-color: transparent;
     border: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.summon-result-box.show {
+    display: flex;
+    opacity: 1;
 }
 
 /* We also style the card that appears inside it for a better look */
@@ -833,6 +842,19 @@ button:disabled, .fantasy-button:disabled {
     to {
         opacity: 0;
         transform: translate(-50%, -100px);
+    }
+}
+
+.summon-flash {
+    animation: summon-flash 0.5s ease-out;
+}
+
+@keyframes summon-flash {
+    from {
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.9);
+    }
+    to {
+        box-shadow: none;
     }
 }
 

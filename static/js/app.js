@@ -34,6 +34,9 @@ const teamDisplayContainer = document.getElementById('team-display');
 const dungeonRunCount = document.getElementById('dungeon-run-count');
 const collectionContainer = document.getElementById('collection-container');
 const summonButton = document.getElementById('perform-summon-button');
+const summonTenButton = document.getElementById('summon-ten-button');
+const freeSummonButton = document.getElementById('free-summon-button');
+const freeSummonTimerDisplay = document.getElementById('free-summon-timer');
 const summonResultContainer = document.getElementById('summon-result');
 const stageListContainer = document.getElementById('stage-list');
 const loreContainer = document.getElementById('lore-text-container');
@@ -139,6 +142,16 @@ function updateResourceTimers() {
             }
         } else {
             dungeonTimerDisplay.textContent = '';
+        }
+    }
+    if (freeSummonButton && freeSummonTimerDisplay) {
+        const nextFree = (gameState.free_last || 0) + 86400;
+        if (now >= nextFree) {
+            freeSummonButton.disabled = false;
+            freeSummonTimerDisplay.textContent = '';
+        } else {
+            freeSummonButton.disabled = true;
+            freeSummonTimerDisplay.textContent = formatDuration(nextFree - now);
         }
     }
 }
@@ -380,16 +393,42 @@ function attachEventListeners() {
         displayMessage(result.success ? 'Events updated' : 'Update failed');
     });
 
-    summonButton.addEventListener('click', async () => {
-        const response = await fetch('/api/summon', { method: 'POST' });
+    const performSummon = async (btn, count = 1, free = false) => {
+        if (!btn) return;
+        btn.disabled = true;
+        btn.classList.add('summon-flash');
+        setTimeout(() => btn.classList.remove('summon-flash'), 500);
+        if (summonButton) summonButton.disabled = true;
+        if (summonTenButton) summonTenButton.disabled = true;
+        if (freeSummonButton) freeSummonButton.disabled = true;
+        const response = await fetch('/api/summon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count: count, free: free })
+        });
         const result = await response.json();
+        setTimeout(() => {
+            if (summonButton) summonButton.disabled = false;
+            if (summonTenButton) summonTenButton.disabled = false;
+            updateResourceTimers();
+        }, 1500);
         if (result.success) {
-            const character = result.character;
-            const element = character.element || 'None';
-            summonResultContainer.innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${character.image_file}" alt="${character.name}"><h4>${character.name}</h4><p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p><p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p></div>`;
+            const characters = result.characters || [];
+            summonResultContainer.innerHTML = '';
+            characters.forEach(character => {
+                const element = character.element || 'None';
+                summonResultContainer.innerHTML += `<div class="team-slot"><div class="card-header"><div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${character.image_file}" alt="${character.name}"><h4>${character.name}</h4><p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p><p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p></div>`;
+            });
+            summonResultContainer.classList.add('show');
             await fetchPlayerDataAndUpdate();
-        } else { displayMessage(`Summon Failed: ${result.message}`); }
-    });
+        } else {
+            displayMessage(`Summon Failed: ${result.message}`);
+        }
+    };
+
+    if (summonButton) summonButton.addEventListener('click', () => performSummon(summonButton, 1, false));
+    if (summonTenButton) summonTenButton.addEventListener('click', () => performSummon(summonTenButton, 10, false));
+    if (freeSummonButton) freeSummonButton.addEventListener('click', () => performSummon(freeSummonButton, 1, true));
 
     chatSendButton.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
@@ -406,7 +445,10 @@ function attachEventListeners() {
             const targetViewId = button.dataset.view;
             mainContent.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
             document.getElementById(targetViewId)?.classList.add('active');
-            if (targetViewId !== 'summon-view') summonResultContainer.innerHTML = '';
+            if (targetViewId !== 'summon-view') {
+                summonResultContainer.innerHTML = '';
+                summonResultContainer.classList.remove('show');
+            }
 
             if (targetViewId === 'lore-view') {
                  fetch('/api/lore').then(res => res.json()).then(result => { if(result.success) loreContainer.textContent = result.data; });

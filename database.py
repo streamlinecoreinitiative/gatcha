@@ -97,6 +97,7 @@ def init_db():
     add_column_if_missing(conn, 'player_data', 'energy_last', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_data', 'dungeon_energy', 'INTEGER NOT NULL DEFAULT 5')
     add_column_if_missing(conn, 'player_data', 'dungeon_last', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'player_data', 'free_last', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret) VALUES (1, "", "")')
@@ -120,8 +121,8 @@ def register_user(username, email, password):
         import time
         now = int(time.time())
         cursor.execute(
-            "INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter) "
-            "VALUES (?, ?, 0, ?, 1, 0, 10, ?, 5, ?, 0)",
+            "INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter, free_last) "
+            "VALUES (?, ?, 0, ?, 1, 0, 10, ?, 5, ?, 0, 0)",
             (user_id, 150, 10000, now, now)
         )
         # Initialize empty team slots
@@ -192,6 +193,7 @@ def get_player_data(user_id):
     player_dict["energy_last"] = last
     player_dict["dungeon_energy"] = dungeon_energy
     player_dict["dungeon_last"] = dungeon_last
+    player_dict["free_last"] = player_dict.get("free_last", 0)
     player_dict["collection"] = [dict(row) for row in collection_rows]
 
     return player_dict
@@ -207,6 +209,7 @@ def save_player_data(
     energy_last=None,
     dungeon_energy=None,
     dungeon_last=None,
+    free_last=None,
 ):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -242,6 +245,11 @@ def save_player_data(
         cursor.execute(
             "UPDATE player_data SET dungeon_last = ? WHERE user_id = ?",
             (dungeon_last, user_id),
+        )
+    if free_last is not None:
+        cursor.execute(
+            "UPDATE player_data SET free_last = ? WHERE user_id = ?",
+            (free_last, user_id),
         )
     conn.commit()
     conn.close()
@@ -478,7 +486,7 @@ def create_admin_if_missing():
         admin_id = cursor.lastrowid
         import time
         now = int(time.time())
-        cursor.execute("INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter) VALUES (?, 1000, 0, 10000, 1, 0, 10, ?, 5, ?, 0)", (admin_id, now, now))
+        cursor.execute("INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter, free_last) VALUES (?, 1000, 0, 10000, 1, 0, 10, ?, 5, ?, 0, 0)", (admin_id, now, now))
         for i in range(1, 4):
             cursor.execute("INSERT INTO player_team (user_id, slot_num, character_db_id) VALUES (?, ?, NULL)", (admin_id, i))
         conn.commit()

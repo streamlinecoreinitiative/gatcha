@@ -154,8 +154,13 @@
                         <h2>The Summoning Altar</h2>
                         <button class="tutorial-btn" data-tutorial="Spend gems here to summon additional heroes for your roster.">?</button>
                     </div>
-                    <p>Use 150 Gems to summon a new hero! Odds: 50% Common, 30% Rare, 15% SSR, 3.5% UR, 1.5% LR. Guaranteed SSR every 90 summons.</p>
-                    <button id="perform-summon-button">Summon</button>
+                    <p>Use <img src="{{ url_for('static', filename='images/ui/gem_icon.png') }}" class="currency-icon" alt="Gems">150 to summon a new hero! Odds: 50% Common, 30% Rare, 15% SSR, 3.5% UR, 1.5% LR. Guaranteed SSR every 90 summons.</p>
+                    <div class="summon-buttons">
+                        <button id="perform-summon-button">Summon</button>
+                        <button id="summon-ten-button">Summon x10</button>
+                        <button id="free-summon-button">Daily Free Summon</button>
+                        <span id="free-summon-timer"></span>
+                    </div>
                     <div id="summon-result" class="summon-result-box"></div>
                 </div>
             </div>
