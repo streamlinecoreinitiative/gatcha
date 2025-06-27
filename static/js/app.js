@@ -67,6 +67,8 @@ let adminSubmitBtn;
 let paypalClientIdInput;
 let paypalSecretInput;
 let paypalSaveBtn;
+let paypalClientDisplay;
+let paypalSecretDisplay;
 let adminMotdInput;
 let adminMotdSaveBtn;
 let adminEventsText;
@@ -205,6 +207,8 @@ function attachEventListeners() {
     paypalClientIdInput = document.getElementById('admin-paypal-client-id');
     paypalSecretInput = document.getElementById('admin-paypal-secret');
     paypalSaveBtn = document.getElementById('admin-paypal-save-btn');
+    paypalClientDisplay = document.getElementById('paypal-client-display');
+    paypalSecretDisplay = document.getElementById('paypal-secret-display');
     adminMotdInput = document.getElementById('admin-motd-text');
     adminMotdSaveBtn = document.getElementById('admin-motd-save-btn');
     adminEventsText = document.getElementById('admin-events-text');
@@ -370,7 +374,20 @@ function attachEventListeners() {
         });
         const result = await response.json();
         displayMessage(result.success ? 'PayPal settings saved' : 'Update failed');
+        if (result.success) loadPaypalConfig();
         // Refresh the store so PayPal buttons appear without a full page reload
+        updateStoreDisplay();
+    });
+    const paypalRemoveBtn = document.getElementById('admin-paypal-remove-btn');
+    if (paypalRemoveBtn) paypalRemoveBtn.addEventListener('click', async () => {
+        const response = await fetch('/api/admin/paypal_config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_id: '', client_secret: '' })
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'PayPal settings removed' : 'Update failed');
+        if (result.success) loadPaypalConfig();
         updateStoreDisplay();
     });
     if (adminMotdSaveBtn) adminMotdSaveBtn.addEventListener('click', async () => {
@@ -882,6 +899,8 @@ async function loadPaypalConfig() {
     if (result.success && result.config) {
         paypalClientIdInput.value = result.config.client_id || '';
         paypalSecretInput.value = result.config.client_secret || '';
+        if (paypalClientDisplay) paypalClientDisplay.textContent = result.config.client_id || '';
+        if (paypalSecretDisplay) paypalSecretDisplay.textContent = result.config.client_secret || '';
     }
 }
 
