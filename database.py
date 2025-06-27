@@ -1,5 +1,7 @@
 # database.py (V5.2 - Schema and Logic Fixes)
 import sqlite3
+import os
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DATABASE_NAME = "database.db"
 
@@ -7,6 +9,16 @@ def get_db_connection():
     conn = sqlite3.connect(DATABASE_NAME)
     conn.row_factory = sqlite3.Row
     return conn
+
+def hash_password(password: str) -> str:
+    """Hash a password for safe storage."""
+    return generate_password_hash(password)
+
+def verify_password_hash(stored: str, provided: str) -> bool:
+    """Verify a stored password hash against a provided password."""
+    if not stored:
+        return False
+    return check_password_hash(stored, provided)
 
 def add_column_if_missing(conn, table, column, definition):
     cur = conn.cursor()
@@ -113,9 +125,10 @@ def register_user(username, email, password):
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
+        hashed_pw = hash_password(password)
         cursor.execute(
             "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-            (username, email, password)
+            (username, email, hashed_pw)
         )
         user_id = cursor.lastrowid
         import time
@@ -139,7 +152,7 @@ def login_user(username, password):
     conn = get_db_connection()
     user = conn.execute("SELECT id, password, banned FROM users WHERE username = ?", (username,)).fetchone()
     conn.close()
-    if user and user['password'] == password and user['banned'] == 0:
+    if user and verify_password_hash(user['password'], password) and user['banned'] == 0:
         return user['id']
     return None
 
@@ -409,7 +422,7 @@ def update_user_profile(user_id, email=None, password=None, profile_image=None):
     if email is not None:
         conn.execute("UPDATE users SET email = ? WHERE id = ?", (email, user_id))
     if password is not None:
-        conn.execute("UPDATE users SET password = ? WHERE id = ?", (password, user_id))
+        conn.execute("UPDATE users SET password = ? WHERE id = ?", (hash_password(password), user_id))
     if profile_image is not None:
         conn.execute("UPDATE users SET profile_image = ? WHERE id = ?", (profile_image, user_id))
     conn.commit()
@@ -453,7 +466,7 @@ def verify_user_password(user_id, password):
     conn = get_db_connection()
     row = conn.execute("SELECT password FROM users WHERE id = ?", (user_id,)).fetchone()
     conn.close()
-    return row and row['password'] == password
+    return row and verify_password_hash(row['password'], password)
 
 def reset_password(email, new_password):
     conn = get_db_connection()
@@ -462,7 +475,8 @@ def reset_password(email, new_password):
     if not row:
         conn.close()
         return False
-    cursor.execute("UPDATE users SET password = ? WHERE email = ?", (new_password, email))
+    hashed = hash_password(new_password)
+    cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed, email))
     conn.commit()
     conn.close()
     return True
@@ -482,7 +496,8 @@ def create_admin_if_missing():
     row = conn.execute("SELECT id FROM users WHERE username = 'admin'").fetchone()
     if not row:
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO users (username, email, password, is_admin) VALUES ('admin', 'admin@example.com', 'adminpass', 1)")
+        cursor.execute("INSERT INTO users (username, email, password, is_admin) VALUES ('admin', 'admin@example.com', ?, 1)",
+                       (hash_password('adminpass'),))
         admin_id = cursor.lastrowid
         import time
         now = int(time.time())

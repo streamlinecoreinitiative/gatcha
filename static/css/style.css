@@ -1397,3 +1397,13 @@ button:disabled, .fantasy-button:disabled {
 #equipment-container p {
     text-align: center;
 }
+
+.tos-check {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.tos-link {
+    margin: 5px 0;
+    text-align: center;
+}

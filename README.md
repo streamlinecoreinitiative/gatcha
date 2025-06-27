@@ -15,6 +15,7 @@ This repository contains a Flask-based gacha game.
   attempt.
 - **Equipment Loot** drops from dungeons can be equipped from the Armory screen.
 - **Improved Registration** includes email validation and a password reset flow.
+- **Security Update** now stores passwords hashed and requires acceptance of a Terms of Service during registration.
 - **UI Updates** provide refreshed hero modals and combat log readability.
 
 ## PayPal Integration

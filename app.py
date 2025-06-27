@@ -256,11 +256,19 @@ def get_motd():
     return jsonify({'success': True, 'motd': db.get_motd()})
 
 
+@app.route('/tos')
+def terms_of_service():
+    """Display the Terms of Service page."""
+    return render_template('tos.html')
+
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
     email = data.get('email', '')
     password = data.get('password', '')
+    if not data.get('accepted_tos'):
+        return jsonify({'success': False, 'message': 'Terms must be accepted'})
     if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
         return jsonify({'success': False, 'message': 'Invalid email format'})
     if db.email_exists(email):
