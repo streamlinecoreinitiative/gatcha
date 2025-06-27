@@ -305,6 +305,8 @@ function attachEventListeners() {
         });
         const result = await response.json();
         displayMessage(result.success ? 'PayPal settings saved' : 'Update failed');
+        // Refresh the store so PayPal buttons appear without a full page reload
+        updateStoreDisplay();
     });
     if (adminMotdSaveBtn) adminMotdSaveBtn.addEventListener('click', async () => {
         const response = await fetch('/api/admin/motd', {
