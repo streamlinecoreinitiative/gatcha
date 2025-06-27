@@ -81,6 +81,7 @@ let regUsernameInput;
 let regEmailInput;
 let regPasswordInput;
 let regConfirmInput;
+let regTosCheckbox;
 let regSubmitBtn;
 let regCancelBtn;
 let regError;
@@ -217,6 +218,7 @@ function attachEventListeners() {
     regEmailInput = document.getElementById('reg-email');
     regPasswordInput = document.getElementById('reg-password');
     regConfirmInput = document.getElementById('reg-confirm-password');
+    regTosCheckbox = document.getElementById('reg-tos-checkbox');
     regSubmitBtn = document.getElementById('register-submit-btn');
     regCancelBtn = document.getElementById('register-cancel-btn');
     regError = document.getElementById('register-error');
@@ -253,13 +255,18 @@ function attachEventListeners() {
             if (regError) regError.textContent = 'Passwords do not match';
             return;
         }
+        if (regTosCheckbox && !regTosCheckbox.checked) {
+            if (regError) regError.textContent = 'You must accept the terms and conditions';
+            return;
+        }
         const response = await fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 username: regUsernameInput.value,
                 email: regEmailInput.value,
-                password: regPasswordInput.value
+                password: regPasswordInput.value,
+                accepted_tos: regTosCheckbox ? regTosCheckbox.checked : false
             })
         });
         const result = await response.json();
