@@ -6,6 +6,7 @@ import json
 import random
 import re
 from datetime import datetime
+import time
 import paypalrestsdk
 import database as db
 import string
@@ -366,6 +367,7 @@ def get_player_data():
         'email': profile.get('email'),
         'energy_last': player_data.get('energy_last'),
         'dungeon_last': player_data.get('dungeon_last'),
+        'free_last': player_data.get('free_last'),
         'energy_cap': 10,
         'dungeon_cap': 5
     }
@@ -536,31 +538,52 @@ def summon():
     if player_data is None:
         session.clear()
         return jsonify({'success': False, 'message': 'Player data not found. Please log in again.'}), 401
-    if player_data['gems'] < PULL_COST:
-        return jsonify({'success': False, 'message': 'Not enough gems!'})
-    pity = player_data.get('pity_counter', 0) + 1
-    if pity >= SSR_PITY_THRESHOLD:
-        chosen_rarity = 'SSR'
-        pity = 0
+    data = request.json or {}
+    count = int(data.get('count', 1))
+    free = data.get('free', False)
+
+    now = int(time.time())
+    free_last = player_data.get('free_last', 0)
+    if free:
+        if now - free_last < 86400:
+            return jsonify({'success': False, 'message': 'Free summon not ready'})
+        total_cost = 0
     else:
-        rand = random.random()
-        if rand < 0.5:
-            chosen_rarity = 'Common'
-        elif rand < 0.8:
-            chosen_rarity = 'Rare'
-        elif rand < 0.95:
+        total_cost = PULL_COST * count
+        if player_data['gems'] < total_cost:
+            return jsonify({'success': False, 'message': 'Not enough gems!'})
+
+    pity = player_data.get('pity_counter', 0)
+    characters = []
+    for _ in range(count):
+        pity += 1
+        if pity >= SSR_PITY_THRESHOLD:
             chosen_rarity = 'SSR'
-        elif rand < 0.985:
-            chosen_rarity = 'UR'
-        else:
-            chosen_rarity = 'LR'
-        if chosen_rarity in ['SSR', 'UR', 'LR']:
             pity = 0
-    summoned_char_def = random.choice(gacha_pool[chosen_rarity])
-    db.add_character_to_player(user_id, summoned_char_def)
-    new_gems = player_data['gems'] - PULL_COST
-    db.save_player_data(user_id, gems=new_gems, pity_counter=pity)
-    return jsonify({'success': True, 'character': summoned_char_def})
+        else:
+            rand = random.random()
+            if rand < 0.5:
+                chosen_rarity = 'Common'
+            elif rand < 0.8:
+                chosen_rarity = 'Rare'
+            elif rand < 0.95:
+                chosen_rarity = 'SSR'
+            elif rand < 0.985:
+                chosen_rarity = 'UR'
+            else:
+                chosen_rarity = 'LR'
+            if chosen_rarity in ['SSR', 'UR', 'LR']:
+                pity = 0
+        summoned_char_def = random.choice(gacha_pool[chosen_rarity])
+        db.add_character_to_player(user_id, summoned_char_def)
+        characters.append(summoned_char_def)
+
+    new_gems = player_data['gems'] - total_cost
+    save_args = {'gems': new_gems, 'pity_counter': pity}
+    if free:
+        save_args['free_last'] = now
+    db.save_player_data(user_id, **save_args)
+    return jsonify({'success': True, 'characters': characters})
 
 
 @app.route('/api/stage_info/<int:stage_num>', methods=['GET'])
