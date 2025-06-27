@@ -94,6 +94,8 @@ def init_db():
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret) VALUES (1, "", "")')
+    # Commit before opening a new connection in create_admin_if_missing
+    conn.commit()
     create_admin_if_missing()
     conn.close()
 
