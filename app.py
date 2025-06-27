@@ -29,7 +29,7 @@ socketio = SocketIO(app)
 db.init_db()
 paypal_conf = db.get_paypal_config()
 paypalrestsdk.configure({
-    'mode': 'sandbox',
+    'mode': paypal_conf.get('mode', 'sandbox'),
     'client_id': paypal_conf.get('client_id'),
     'client_secret': paypal_conf.get('client_secret')
 })
@@ -97,16 +97,18 @@ def verify_paypal_order(order_id: str, expected_amount: float) -> bool:
     conf = db.get_paypal_config()
     client_id = conf.get("client_id")
     secret = conf.get("client_secret")
+    mode = conf.get("mode", "sandbox")
     if not client_id or not secret:
         return False
     try:
         import base64
         from urllib import request, parse
 
+        base = "https://api-m.paypal.com" if mode == "live" else "https://api-m.sandbox.paypal.com"
         auth = base64.b64encode(f"{client_id}:{secret}".encode()).decode()
         data = parse.urlencode({"grant_type": "client_credentials"}).encode()
         token_req = request.Request(
-            "https://api-m.sandbox.paypal.com/v1/oauth2/token",
+            f"{base}/v1/oauth2/token",
             data=data,
             headers={
                 "Authorization": f"Basic {auth}",
@@ -120,7 +122,7 @@ def verify_paypal_order(order_id: str, expected_amount: float) -> bool:
             return False
 
         order_req = request.Request(
-            f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}",
+            f"{base}/v2/checkout/orders/{order_id}",
             headers={"Authorization": f"Bearer {access_token}"},
         )
         with request.urlopen(order_req, timeout=10) as resp:
@@ -518,7 +520,13 @@ def admin_paypal_config():
     if request.method == 'GET':
         return jsonify({'success': True, 'config': db.get_paypal_config()})
     data = request.json or {}
-    db.update_paypal_config(client_id=data.get('client_id'), client_secret=data.get('client_secret'))
+    db.update_paypal_config(client_id=data.get('client_id'), client_secret=data.get('client_secret'), mode=data.get('mode'))
+    conf = db.get_paypal_config()
+    paypalrestsdk.configure({
+        'mode': conf.get('mode', 'sandbox'),
+        'client_id': conf.get('client_id'),
+        'client_secret': conf.get('client_secret')
+    })
     return jsonify({'success': True})
 
 

@@ -87,7 +87,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS paypal_config (
             id INTEGER PRIMARY KEY CHECK (id = 1),
             client_id TEXT,
-            client_secret TEXT
+            client_secret TEXT,
+            mode TEXT NOT NULL DEFAULT 'sandbox'
         )
     ''')
     cursor.execute('''
@@ -112,7 +113,8 @@ def init_db():
     add_column_if_missing(conn, 'player_data', 'free_last', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
-    cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret) VALUES (1, "", "")')
+    add_column_if_missing(conn, 'paypal_config', 'mode', 'TEXT NOT NULL DEFAULT "sandbox"')
+    cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
     cursor.execute('INSERT OR IGNORE INTO messages (id, motd) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.")')
     # Commit before opening a new connection in create_admin_if_missing
     conn.commit()
@@ -515,18 +517,20 @@ def get_user_profile(user_id):
 
 def get_paypal_config():
     conn = get_db_connection()
-    row = conn.execute('SELECT client_id, client_secret FROM paypal_config WHERE id = 1').fetchone()
+    row = conn.execute('SELECT client_id, client_secret, mode FROM paypal_config WHERE id = 1').fetchone()
     conn.close()
     if row:
-        return {'client_id': row['client_id'], 'client_secret': row['client_secret']}
-    return {'client_id': '', 'client_secret': ''}
+        return {'client_id': row['client_id'], 'client_secret': row['client_secret'], 'mode': row['mode']}
+    return {'client_id': '', 'client_secret': '', 'mode': 'sandbox'}
 
-def update_paypal_config(client_id=None, client_secret=None):
+def update_paypal_config(client_id=None, client_secret=None, mode=None):
     conn = get_db_connection()
     if client_id is not None:
         conn.execute('UPDATE paypal_config SET client_id = ? WHERE id = 1', (client_id,))
     if client_secret is not None:
         conn.execute('UPDATE paypal_config SET client_secret = ? WHERE id = 1', (client_secret,))
+    if mode is not None:
+        conn.execute('UPDATE paypal_config SET mode = ? WHERE id = 1', (mode,))
     conn.commit()
     conn.close()
 
