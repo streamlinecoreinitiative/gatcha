@@ -63,9 +63,10 @@
             <div id="currency-info">
                 <img src="{{ url_for('static', filename='images/ui/gem_icon.png') }}" alt="Gems">
                 <span id="gem-count"></span>
-                <img src="{{ url_for('static', filename='images/ui/gem_icon.png') }}" alt="Premium Gems">
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Premium Gems">
                 <span id="premium-gem-count"></span>
-                <span>Gold:</span> <span id="gold-count"></span>
+                <img src="{{ url_for('static', filename='images/ui/placeholder_button.png') }}" alt="Gold">
+                <span id="gold-count"></span>
                 <button id="report-bug-button">Report Bug</button>
             </div>
         </div>
@@ -111,7 +112,7 @@
             <div id="collection-view" class="view">
                 <div class="section-header">
                     <h2>Your Hero Collection</h2>
-                    <button class="tutorial-btn" data-tutorial="Manage your heroes here. Gold is used to level up heroes and boost their stats. 🔥 Fire is strong against 🌿 Grass (Fire burns Grass). 🌿 Grass is strong against 💧 Water (Grass soaks up Water). 💧 Water is strong against 🔥 Fire (Water douses Fire). Stats and critical hits decide combat results.">?</button>
+                    <button class="tutorial-btn" data-tutorial="Manage your heroes here. Merge duplicates to raise rarity. Higher rarity grants better base stats. Equip items for extra power and spend gold to level up.">?</button>
                 </div>
                 <div class="heroes-guide">
                     <h3>Elemental Synergy</h3>
@@ -151,7 +152,7 @@
             <div id="equipment-view" class="view">
     <div class="section-header">
         <h2>Your Armory</h2>
-        <button class="tutorial-btn" data-tutorial="View and equip gear found in dungeons.">?</button>
+        <button class="tutorial-btn" data-tutorial="Manage your items here. Equipment boosts stats and can be merged for even better gear.">?</button>
     </div>
     <div id="equipment-container" class="collection-grid">
         <!-- Equipment will be dynamically inserted here -->
@@ -166,7 +167,7 @@
     <div class="view-header" id="tower-lore-header">
         <div class="section-header">
             <h2>The Spire of Chaos</h2>
-            <button class="tutorial-btn" data-tutorial="Battle through the Spire to earn rewards. Elemental advantages increase your damage.">?</button>
+            <button class="tutorial-btn" data-tutorial="Climb the Tower to track your progression and unlock new challenges. Each floor cleared makes your heroes stronger.">?</button>
         </div>
         <p>A festering wound in reality itself...</p>
     </div>
@@ -195,7 +196,7 @@
 <div id="dungeons-view" class="view">
     <div class="section-header">
         <h2>Expeditions</h2>
-        <button class="tutorial-btn" data-tutorial="Fight challenging foes here for equipment rewards.">?</button>
+        <button class="tutorial-btn" data-tutorial="The Armory offers end-game items for those who conquer its challenges.">?</button>
     </div>
     <p class="view-description">Embark on a dangerous hunt for powerful rewards. The difficulty of the foe scales with your Tower progress.</p>
 

@@ -538,7 +538,7 @@ button:disabled, .fantasy-button:disabled {
     padding: 15px;
     border-radius: 5px;
     font-family: 'Courier New', Courier, monospace;
-    color: #f0f0f0;
+    color: #fff;
     line-height: 1.6;
 }
 
@@ -593,6 +593,7 @@ button:disabled, .fantasy-button:disabled {
 }
 .log-entry-text {
     flex-grow: 1;
+    color: #fff;
 }
 .log-entry-text.crit {
     color: #ff5555;
@@ -748,6 +749,7 @@ button:disabled, .fantasy-button:disabled {
     overflow-y: auto;
     font-family: monospace;
     font-size: 14px;
+    color: #fff;
     display: flex;
     flex-direction: column-reverse;
 }
@@ -839,6 +841,9 @@ button:disabled, .fantasy-button:disabled {
     border: 2px solid #34495e;
     text-align: center;
     min-width: 350px;
+    max-width: 500px;
+    width: 90%;
+    box-sizing: border-box;
 }
 
 /* Simple round button used for tutorial pop ups */
@@ -895,11 +900,14 @@ button:disabled, .fantasy-button:disabled {
     margin-top: 20px;
     display: flex;
     justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .modal-buttons button {
     padding: 10px 20px;
     font-size: 16px;
+    flex: 1 1 45%;
 }
 
 #intel-start-fight-btn {
