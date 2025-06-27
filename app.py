@@ -4,6 +4,7 @@ from flask_socketio import SocketIO, emit
 import os
 import json
 import random
+import re
 from datetime import datetime
 import paypalrestsdk
 import database as db
@@ -183,7 +184,13 @@ def get_lore():
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
-    result = db.register_user(data.get('username'), data.get('email'), data.get('password'))
+    email = data.get('email', '')
+    password = data.get('password', '')
+    if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+        return jsonify({'success': False, 'message': 'Invalid email format'})
+    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$', password):
+        return jsonify({'success': False, 'message': 'Password must be 10 characters with letters and numbers'})
+    result = db.register_user(data.get('username'), email, password)
     return jsonify({'success': result == "Success", 'message': result})
 
 
@@ -204,6 +211,21 @@ def login():
 def logout():
     session.clear()
     return jsonify({'success': True})
+
+
+@app.route('/api/forgot_password', methods=['POST'])
+def forgot_password():
+    data = request.json or {}
+    email = data.get('email', '')
+    password = data.get('password', '')
+    if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+        return jsonify({'success': False, 'message': 'Invalid email format'})
+    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$', password):
+        return jsonify({'success': False, 'message': 'Password must be 10 characters with letters and numbers'})
+    if db.reset_password(email, password):
+        return jsonify({'success': True, 'message': 'Password updated'})
+    else:
+        return jsonify({'success': False, 'message': 'Email not found'})
 
 
 @app.route('/api/update_profile', methods=['POST'])

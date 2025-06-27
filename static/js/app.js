@@ -47,6 +47,7 @@ const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
 const storePackagesContainer = document.getElementById('store-packages');
 const userIcon = document.getElementById('user-icon');
+const forgotPasswordLink = document.getElementById('forgot-password-link');
 let profileModal;
 let profileEmailInput;
 let profilePasswordInput;
@@ -67,12 +68,26 @@ let regPasswordInput;
 let regConfirmInput;
 let regSubmitBtn;
 let regCancelBtn;
+let forgotModal;
+let forgotEmailInput;
+let forgotPasswordInput;
+let forgotConfirmInput;
+let forgotSubmitBtn;
+let forgotCancelBtn;
 
 function displayMessage(text) {
     if (!messageBox) return;
     messageBox.textContent = text;
     messageBox.style.display = 'block';
     setTimeout(() => { messageBox.style.display = 'none'; }, 3000);
+}
+
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPassword(pwd) {
+    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10}$/.test(pwd);
 }
 const TOWER_LORE = [
     {
@@ -122,6 +137,12 @@ function attachEventListeners() {
     regConfirmInput = document.getElementById('reg-confirm-password');
     regSubmitBtn = document.getElementById('register-submit-btn');
     regCancelBtn = document.getElementById('register-cancel-btn');
+    forgotModal = document.getElementById('forgot-password-modal');
+    forgotEmailInput = document.getElementById('forgot-email');
+    forgotPasswordInput = document.getElementById('forgot-password');
+    forgotConfirmInput = document.getElementById('forgot-confirm-password');
+    forgotSubmitBtn = document.getElementById('forgot-submit-btn');
+    forgotCancelBtn = document.getElementById('forgot-cancel-btn');
 
     loginButton.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
@@ -137,6 +158,14 @@ function attachEventListeners() {
     }
 
     if (regSubmitBtn) regSubmitBtn.addEventListener('click', async () => {
+        if (!isValidEmail(regEmailInput.value)) {
+            displayMessage('Invalid email format');
+            return;
+        }
+        if (!isValidPassword(regPasswordInput.value)) {
+            displayMessage('Password must be 10 characters with letters and numbers');
+            return;
+        }
         if (regPasswordInput.value !== regConfirmInput.value) {
             displayMessage('Passwords do not match');
             return;
@@ -155,6 +184,38 @@ function attachEventListeners() {
         if (result.success && registerModal) {
             registerModal.classList.remove('active');
         }
+    });
+
+    if (forgotPasswordLink) forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (forgotModal) forgotModal.classList.add('active');
+    });
+
+    if (forgotCancelBtn) forgotCancelBtn.addEventListener('click', () => {
+        if (forgotModal) forgotModal.classList.remove('active');
+    });
+
+    if (forgotSubmitBtn) forgotSubmitBtn.addEventListener('click', async () => {
+        if (!isValidEmail(forgotEmailInput.value)) {
+            displayMessage('Invalid email format');
+            return;
+        }
+        if (!isValidPassword(forgotPasswordInput.value)) {
+            displayMessage('Password must be 10 characters with letters and numbers');
+            return;
+        }
+        if (forgotPasswordInput.value !== forgotConfirmInput.value) {
+            displayMessage('Passwords do not match');
+            return;
+        }
+        const response = await fetch('/api/forgot_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: forgotEmailInput.value, password: forgotPasswordInput.value })
+        });
+        const result = await response.json();
+        displayMessage(result.message);
+        if (result.success && forgotModal) forgotModal.classList.remove('active');
     });
 
     logoutButton.addEventListener('click', handleLogout);

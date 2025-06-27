@@ -415,6 +415,18 @@ def get_user_id(username):
     conn.close()
     return row['id'] if row else None
 
+def reset_password(email, new_password):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    row = cursor.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+    if not row:
+        conn.close()
+        return False
+    cursor.execute("UPDATE users SET password = ? WHERE email = ?", (new_password, email))
+    conn.commit()
+    conn.close()
+    return True
+
 def adjust_resources(user_id, gems=None, premium_gems=None, energy=None, gold=None):
     save_player_data(user_id, gems=gems, premium_gems=premium_gems, energy=energy, gold=gold)
 
