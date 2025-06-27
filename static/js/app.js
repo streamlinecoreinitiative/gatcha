@@ -589,11 +589,7 @@ function attachEventListeners() {
             const button = target;
             button.disabled = true;
             const packId = button.dataset.packageId;
-            let receipt = '';
-            if (button.parentElement.dataset.requiresReceipt === '1') {
-                receipt = prompt('Enter receipt code to simulate payment:');
-            }
-            const response = await fetch('/api/purchase_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ package_id: packId, receipt: receipt, platform: 'web' }) });
+            const response = await fetch('/api/purchase_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ package_id: packId }) });
             const result = await response.json();
             displayMessage(result.message || (result.success ? 'Purchase successful!' : 'Purchase failed'));
             if(result.success) await fetchPlayerDataAndUpdate();
@@ -955,25 +951,28 @@ async function updateStoreDisplay() {
             text = `${currencyIconHtml} +${pkg.dungeon_energy} Dungeon Runs - ${pkg.platinum_cost} Platinum`;
         }
         div.innerHTML = `<h4>${text}</h4>`;
-        if (pkg.amount && clientId && window.paypal) {
-            const btnDiv = document.createElement('div');
-            btnDiv.id = `paypal-${pkg.id}`;
-            div.appendChild(btnDiv);
-            window.paypal.Buttons({
-                createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: pkg.price.toFixed(2) } }] }),
-                onApprove: (data, actions) => {
-                    return fetch('/api/paypal_complete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ package_id: pkg.id, order_id: data.orderID })
-                    }).then(res => res.json()).then(res => {
-                        displayMessage(res.success ? 'Purchase successful!' : 'Purchase failed');
-                        if(res.success) fetchPlayerDataAndUpdate();
-                    });
-                }
-            }).render(`#paypal-${pkg.id}`);
+        if (pkg.amount) {
+            if (clientId && window.paypal) {
+                const btnDiv = document.createElement('div');
+                btnDiv.id = `paypal-${pkg.id}`;
+                div.appendChild(btnDiv);
+                window.paypal.Buttons({
+                    createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: pkg.price.toFixed(2) } }] }),
+                    onApprove: (data, actions) => {
+                        return fetch('/api/paypal_complete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ package_id: pkg.id, order_id: data.orderID })
+                        }).then(res => res.json()).then(res => {
+                            displayMessage(res.success ? 'Purchase successful!' : 'Purchase failed');
+                            if(res.success) fetchPlayerDataAndUpdate();
+                        });
+                    }
+                }).render(`#paypal-${pkg.id}`);
+            } else {
+                div.innerHTML += '<span class="unavailable">PayPal unavailable</span>';
+            }
         } else {
-            div.dataset.requiresReceipt = pkg.amount ? '1' : '0';
             div.innerHTML += `<button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
         }
         storePackagesContainer.appendChild(div);
