@@ -894,6 +894,7 @@ async function updateStoreDisplay() {
                 }
             }).render(`#paypal-${pkg.id}`);
         } else {
+            div.dataset.requiresReceipt = pkg.amount ? '1' : '0';
             div.innerHTML += `<button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
         }
         storePackagesContainer.appendChild(div);
