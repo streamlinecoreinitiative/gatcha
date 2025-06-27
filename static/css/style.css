@@ -186,7 +186,7 @@ button:disabled, .fantasy-button:disabled {
     font-weight: bold;
 }
 #currency-info img {
-    height: 40px;
+    height: 50px;
 }
 #logout-button {
     padding: 5px 15px;
@@ -908,7 +908,7 @@ button:disabled, .fantasy-button:disabled {
     width: 24px;
     height: 24px;
     border: none;
-    background: url('/static/images/ui/placeholder_button.png') no-repeat center/contain;
+    background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiM0YTkwZTIiLz48cmVjdCB4PSIxMSIgeT0iMTAiIHdpZHRoPSIyIiBoZWlnaHQ9IjciIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSI3IiByPSIxIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==') no-repeat center/contain;
     text-indent: -9999px;
     cursor: pointer;
 }
@@ -1374,8 +1374,8 @@ button:disabled, .fantasy-button:disabled {
 }
 
 .currency-icon {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     vertical-align: middle;
     margin-right: 4px;
 }
