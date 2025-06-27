@@ -898,7 +898,6 @@ def handle_connect():
             'current_stage': progress.get('current_stage', 1),
             'dungeon_runs': progress.get('dungeon_runs', 0)
         }
-        socketio.emit('receive_message', {'username': 'System', 'message': f'{username} has joined the chat.'})
         emit_online_list()
 
 
