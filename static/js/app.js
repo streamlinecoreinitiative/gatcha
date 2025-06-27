@@ -54,7 +54,7 @@ const equipmentContainer = document.getElementById('equipment-container');
 const storePackagesContainer = document.getElementById('store-packages');
 const userIcon = document.getElementById('user-icon');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
-const currencyIconHtml = '<img src="/static/images/ui/gem_icon.png" class="currency-icon" alt="Currency">';
+const currencyIconHtml = '<img src="/static/images/ui/Platinum_Bars_Icon.png" class="currency-icon" alt="Currency">';
 let profileModal;
 let profileEmailInput;
 let profileCurrentPasswordInput;
@@ -1070,12 +1070,12 @@ function updateCampaignDisplay() {
         if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
             const gemsForRepeat = 15;
-            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/gem_icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
+            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
         } else if (status === 'current') {
             iconPath = '/static/images/ui/stage_node_current.png';
             const gemsForFirstClear = 25 + (Math.floor((stageNum - 1) / 5) * 5);
-            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/gem_icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
+            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;
         }
 
