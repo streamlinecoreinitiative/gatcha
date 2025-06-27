@@ -71,6 +71,13 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS paypal_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            client_id TEXT,
+            client_secret TEXT
+        )
+    ''')
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
@@ -86,6 +93,7 @@ def init_db():
     add_column_if_missing(conn, 'player_data', 'dungeon_last', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
+    cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret) VALUES (1, "", "")')
     create_admin_if_missing()
     conn.close()
 
@@ -437,4 +445,21 @@ def get_user_profile(user_id):
     row = conn.execute("SELECT email, profile_image, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
     conn.close()
     return dict(row) if row else {'email': '', 'profile_image': None, 'is_admin': 0}
+
+def get_paypal_config():
+    conn = get_db_connection()
+    row = conn.execute('SELECT client_id, client_secret FROM paypal_config WHERE id = 1').fetchone()
+    conn.close()
+    if row:
+        return {'client_id': row['client_id'], 'client_secret': row['client_secret']}
+    return {'client_id': '', 'client_secret': ''}
+
+def update_paypal_config(client_id=None, client_secret=None):
+    conn = get_db_connection()
+    if client_id is not None:
+        conn.execute('UPDATE paypal_config SET client_id = ? WHERE id = 1', (client_id,))
+    if client_secret is not None:
+        conn.execute('UPDATE paypal_config SET client_secret = ? WHERE id = 1', (client_secret,))
+    conn.commit()
+    conn.close()
  

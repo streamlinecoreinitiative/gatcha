@@ -54,6 +54,9 @@ let profileImageSelect;
 let profileSaveBtn;
 let profileCancelBtn;
 let adminSubmitBtn;
+let paypalClientIdInput;
+let paypalSecretInput;
+let paypalSaveBtn;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -110,6 +113,9 @@ function attachEventListeners() {
     profileSaveBtn = document.getElementById('profile-save-btn');
     profileCancelBtn = document.getElementById('profile-cancel-btn');
     adminSubmitBtn = document.getElementById('admin-submit-btn');
+    paypalClientIdInput = document.getElementById('admin-paypal-client-id');
+    paypalSecretInput = document.getElementById('admin-paypal-secret');
+    paypalSaveBtn = document.getElementById('admin-paypal-save-btn');
     regUsernameInput = document.getElementById('reg-username');
     regEmailInput = document.getElementById('reg-email');
     regPasswordInput = document.getElementById('reg-password');
@@ -210,6 +216,15 @@ function attachEventListeners() {
         const result = await response.json();
         displayMessage(result.success ? 'Action completed' : result.message);
     });
+    if (paypalSaveBtn) paypalSaveBtn.addEventListener('click', async () => {
+        const response = await fetch('/api/admin/paypal_config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_id: paypalClientIdInput.value, client_secret: paypalSecretInput.value })
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'PayPal settings saved' : 'Update failed');
+    });
 
     summonButton.addEventListener('click', async () => {
         const response = await fetch('/api/summon', { method: 'POST' });
@@ -248,6 +263,9 @@ function attachEventListeners() {
             }
             if (targetViewId === 'store-view') {
                 updateStoreDisplay();
+            }
+            if (targetViewId === 'admin-view') {
+                loadPaypalConfig();
             }
             if (targetViewId === 'online-view') {
                 updateAllUsers();
@@ -443,7 +461,12 @@ async function fetchPlayerDataAndUpdate() {
         const response = await fetch('/api/player_data');
         if (response.status === 401) { await handleLogout(); return false; }
         const result = await response.json();
-        if (result.success) { gameState = result.data; updateUI(); return true; }
+        if (result.success) { 
+            gameState = result.data; 
+            if (gameState.is_admin) loadPaypalConfig();
+            updateUI(); 
+            return true; 
+        }
         else { await handleLogout(); return false; }
     } catch (error) { console.error('Failed to fetch player data:', error); return false; }
 }
@@ -607,12 +630,30 @@ async function updateTopPlayer() {
     }
 }
 
+async function loadPaypalConfig() {
+    if (!paypalClientIdInput || !paypalSecretInput) return;
+    const resp = await fetch('/api/admin/paypal_config');
+    const result = await resp.json();
+    if (result.success && result.config) {
+        paypalClientIdInput.value = result.config.client_id || '';
+        paypalSecretInput.value = result.config.client_secret || '';
+    }
+}
+
 async function updateStoreDisplay() {
     if (!storePackagesContainer) return;
     storePackagesContainer.innerHTML = 'Loading...';
     const response = await fetch('/api/store_items');
     const result = await response.json();
     if (!result.success) { storePackagesContainer.innerHTML = 'Failed to load store.'; return; }
+    const paypalResp = await fetch('/api/paypal_client_id');
+    const paypalData = await paypalResp.json();
+    const clientId = paypalData.client_id;
+    const paypalScript = document.getElementById('paypal-sdk');
+    if (clientId && paypalScript && !paypalScript.src) {
+        paypalScript.onload = () => updateStoreDisplay();
+        paypalScript.src = `https://www.paypal.com/sdk/js?client-id=${clientId}`;
+    }
     storePackagesContainer.innerHTML = '';
     result.items.forEach(pkg => {
         const div = document.createElement('div');
@@ -621,15 +662,32 @@ async function updateStoreDisplay() {
         let text = '';
         if (pkg.amount) {
             text = `${pkg.amount} Platinum - $${pkg.price.toFixed(2)} ${label}`;
-            div.dataset.requiresReceipt = '1';
         } else if (pkg.energy) {
             text = `+${pkg.energy} Energy - ${pkg.platinum_cost} Platinum`;
-            div.dataset.requiresReceipt = '0';
         } else if (pkg.dungeon_energy) {
             text = `+${pkg.dungeon_energy} Dungeon Runs - ${pkg.platinum_cost} Platinum`;
-            div.dataset.requiresReceipt = '0';
         }
-        div.innerHTML = `<h4>${text}</h4><button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
+        div.innerHTML = `<h4>${text}</h4>`;
+        if (pkg.amount && clientId && window.paypal) {
+            const btnDiv = document.createElement('div');
+            btnDiv.id = `paypal-${pkg.id}`;
+            div.appendChild(btnDiv);
+            window.paypal.Buttons({
+                createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: pkg.price.toFixed(2) } }] }),
+                onApprove: (data, actions) => {
+                    return fetch('/api/paypal_complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ package_id: pkg.id, order_id: data.orderID })
+                    }).then(res => res.json()).then(res => {
+                        displayMessage(res.success ? 'Purchase successful!' : 'Purchase failed');
+                        if(res.success) fetchPlayerDataAndUpdate();
+                    });
+                }
+            }).render(`#paypal-${pkg.id}`);
+        } else {
+            div.innerHTML += `<button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
+        }
         storePackagesContainer.appendChild(div);
     });
 }
