@@ -74,6 +74,10 @@ def init_db():
     add_column_if_missing(conn, 'player_data', 'gold', 'INTEGER NOT NULL DEFAULT 10000')
     add_column_if_missing(conn, 'player_data', 'pity_counter', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_data', 'premium_gems', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'player_data', 'energy', 'INTEGER NOT NULL DEFAULT 10')
+    add_column_if_missing(conn, 'player_data', 'energy_last', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'player_data', 'dungeon_energy', 'INTEGER NOT NULL DEFAULT 5')
+    add_column_if_missing(conn, 'player_data', 'dungeon_last', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     conn.close()
@@ -89,9 +93,12 @@ def register_user(username, email, password):
             (username, email, password)
         )
         user_id = cursor.lastrowid
+        import time
+        now = int(time.time())
         cursor.execute(
-            "INSERT INTO player_data (user_id, gems, premium_gems, gold, pity_counter) VALUES (?, ?, 0, ?, 0)",
-            (user_id, 150, 10000)
+            "INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter) "
+            "VALUES (?, ?, 0, ?, 1, 0, 10, ?, 5, ?, 0)",
+            (user_id, 150, 10000, now, now)
         )
         # Initialize empty team slots
         for i in range(1, 4):
@@ -112,17 +119,71 @@ def login_user(username, password):
     return None
 
 def get_player_data(user_id):
+    import time
+    from datetime import datetime
     conn = get_db_connection()
     player = conn.execute("SELECT * FROM player_data WHERE user_id = ?", (user_id,)).fetchone()
-    collection_rows = conn.execute("SELECT id, character_name, rarity, level, dupe_level FROM player_characters WHERE user_id = ?", (user_id,)).fetchall()
-    conn.close()
-    if player:
-        player_dict = dict(player)
-        player_dict['collection'] = [dict(row) for row in collection_rows]
-        return player_dict
-    return None
+    collection_rows = conn.execute(
+        "SELECT id, character_name, rarity, level, dupe_level FROM player_characters WHERE user_id = ?",
+        (user_id,)
+    ).fetchall()
+    if not player:
+        conn.close()
+        return None
 
-def save_player_data(user_id, gems=None, premium_gems=None, current_stage=None, gold=None, pity_counter=None):
+    player_dict = dict(player)
+
+    now = int(time.time())
+
+    # --- Energy regeneration (1 per hour, cap 10 unless above from purchases) ---
+    energy = player_dict.get("energy", 10)
+    last = player_dict.get("energy_last", now)
+    if energy < 10:
+        hours = (now - last) // 3600
+        if hours > 0:
+            energy = min(10, energy + hours)
+            last += hours * 3600
+            conn.execute(
+                "UPDATE player_data SET energy = ?, energy_last = ? WHERE user_id = ?",
+                (energy, last, user_id),
+            )
+
+    # --- Dungeon energy reset daily to at least 5 ---
+    dungeon_energy = player_dict.get("dungeon_energy", 5)
+    dungeon_last = player_dict.get("dungeon_last", now)
+    last_day = datetime.utcfromtimestamp(dungeon_last).date()
+    today = datetime.utcnow().date()
+    if today > last_day and dungeon_energy < 5:
+        dungeon_energy = 5
+        dungeon_last = now
+        conn.execute(
+            "UPDATE player_data SET dungeon_energy = ?, dungeon_last = ? WHERE user_id = ?",
+            (dungeon_energy, dungeon_last, user_id),
+        )
+
+    conn.commit()
+    conn.close()
+
+    player_dict["energy"] = energy
+    player_dict["energy_last"] = last
+    player_dict["dungeon_energy"] = dungeon_energy
+    player_dict["dungeon_last"] = dungeon_last
+    player_dict["collection"] = [dict(row) for row in collection_rows]
+
+    return player_dict
+
+def save_player_data(
+    user_id,
+    gems=None,
+    premium_gems=None,
+    current_stage=None,
+    gold=None,
+    pity_counter=None,
+    energy=None,
+    energy_last=None,
+    dungeon_energy=None,
+    dungeon_last=None,
+):
     conn = get_db_connection()
     cursor = conn.cursor()
     if gems is not None:
@@ -132,9 +193,32 @@ def save_player_data(user_id, gems=None, premium_gems=None, current_stage=None, 
     if gold is not None:
         cursor.execute("UPDATE player_data SET gold = ? WHERE user_id = ?", (gold, user_id))
     if current_stage is not None:
-        cursor.execute("UPDATE player_data SET current_stage = ? WHERE user_id = ?", (current_stage, user_id))
+        cursor.execute(
+            "UPDATE player_data SET current_stage = ? WHERE user_id = ?",
+            (current_stage, user_id),
+        )
     if pity_counter is not None:
         cursor.execute("UPDATE player_data SET pity_counter = ? WHERE user_id = ?", (pity_counter, user_id))
+    if energy is not None:
+        cursor.execute(
+            "UPDATE player_data SET energy = ? WHERE user_id = ?",
+            (energy, user_id),
+        )
+    if energy_last is not None:
+        cursor.execute(
+            "UPDATE player_data SET energy_last = ? WHERE user_id = ?",
+            (energy_last, user_id),
+        )
+    if dungeon_energy is not None:
+        cursor.execute(
+            "UPDATE player_data SET dungeon_energy = ? WHERE user_id = ?",
+            (dungeon_energy, user_id),
+        )
+    if dungeon_last is not None:
+        cursor.execute(
+            "UPDATE player_data SET dungeon_last = ? WHERE user_id = ?",
+            (dungeon_last, user_id),
+        )
     conn.commit()
     conn.close()
 
@@ -143,6 +227,28 @@ def increment_dungeon_runs(user_id):
     conn.execute("UPDATE player_data SET dungeon_runs = dungeon_runs + 1 WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
+
+def consume_energy(user_id, amount=1):
+    conn = get_db_connection()
+    row = conn.execute("SELECT energy FROM player_data WHERE user_id = ?", (user_id,)).fetchone()
+    if row and row['energy'] >= amount:
+        conn.execute("UPDATE player_data SET energy = energy - ? WHERE user_id = ?", (amount, user_id))
+        conn.commit()
+        conn.close()
+        return True
+    conn.close()
+    return False
+
+def consume_dungeon_energy(user_id, amount=1):
+    conn = get_db_connection()
+    row = conn.execute("SELECT dungeon_energy FROM player_data WHERE user_id = ?", (user_id,)).fetchone()
+    if row and row['dungeon_energy'] >= amount:
+        conn.execute("UPDATE player_data SET dungeon_energy = dungeon_energy - ? WHERE user_id = ?", (amount, user_id))
+        conn.commit()
+        conn.close()
+        return True
+    conn.close()
+    return False
 
 def add_character_to_player(user_id, char_def):
     conn = get_db_connection()
