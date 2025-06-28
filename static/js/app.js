@@ -1375,7 +1375,8 @@ async function loadEntityLists() {
         charData.entities.forEach(ent => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="character" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="character" data-code="${ent.code}">Delete</button>`;
+            const details = `${ent.code} - ${ent.name} [${ent.rarity}] (${ent.element}) HP:${ent.base_hp} ATK:${ent.base_atk} Tier:${ent.tier}`;
+            div.innerHTML = `<span>${details}</span> <button class="edit-entity" data-type="character" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="character" data-code="${ent.code}">Delete</button>`;
             adminCharacterList.appendChild(div);
         });
     }
@@ -1387,7 +1388,8 @@ async function loadEntityLists() {
         enemyData.entities.forEach(ent => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="enemy" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="enemy" data-code="${ent.code}">Delete</button>`;
+            const details = `${ent.code} - ${ent.name} [${ent.rarity}] (${ent.element}) HP:${ent.base_hp} ATK:${ent.base_atk} Tier:${ent.tier}`;
+            div.innerHTML = `<span>${details}</span> <button class="edit-entity" data-type="enemy" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="enemy" data-code="${ent.code}">Delete</button>`;
             adminEnemyList.appendChild(div);
         });
     }
@@ -1418,7 +1420,8 @@ async function loadItemAdminList() {
         data.items.forEach(item => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${item.name} [${item.rarity}]</span> <button class="edit-item" data-code="${item.code}">Edit</button> <button class="delete-item" data-code="${item.code}">Delete</button>`;
+            const details = `${item.code} - ${item.name} [${item.rarity}] (${item.type}) ${JSON.stringify(item.stat_bonuses)}`;
+            div.innerHTML = `<span>${details}</span> <button class="edit-item" data-code="${item.code}">Edit</button> <button class="delete-item" data-code="${item.code}">Delete</button>`;
             adminItemList.appendChild(div);
         });
         loadedItems = data.items;
