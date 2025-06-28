@@ -85,6 +85,9 @@ let adminMotdInput;
 let adminMotdSaveBtn;
 let adminEventsText;
 let adminEventsSaveBtn;
+let adminExpeditionNameInput;
+let adminExpeditionEnemiesInput;
+let adminExpeditionCreateBtn;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -239,6 +242,9 @@ function attachEventListeners() {
     adminMotdSaveBtn = document.getElementById('admin-motd-save-btn');
     adminEventsText = document.getElementById('admin-events-text');
     adminEventsSaveBtn = document.getElementById('admin-events-save-btn');
+    adminExpeditionNameInput = document.getElementById('admin-expedition-name');
+    adminExpeditionEnemiesInput = document.getElementById('admin-expedition-enemies');
+    adminExpeditionCreateBtn = document.getElementById('admin-expedition-create-btn');
     regUsernameInput = document.getElementById('reg-username');
     regEmailInput = document.getElementById('reg-email');
     regPasswordInput = document.getElementById('reg-password');
@@ -487,6 +493,17 @@ function attachEventListeners() {
         });
         const result = await response.json();
         displayMessage(result.success ? 'Events updated' : 'Update failed');
+    });
+    if (adminExpeditionCreateBtn) adminExpeditionCreateBtn.addEventListener('click', async () => {
+        const name = adminExpeditionNameInput.value.trim();
+        const enemies = adminExpeditionEnemiesInput.value.split(',').map(e => e.trim()).filter(e => e);
+        const response = await fetch('/api/admin/expedition', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, enemies: enemies })
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'Expedition created' : result.message || 'Update failed');
     });
 
     const performSummon = async (btn, count = 1, free = false) => {
@@ -1184,12 +1201,12 @@ function updateCampaignDisplay() {
         if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
             const gemsForRepeat = 15;
-            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/gem_icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
+            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
         } else if (status === 'current') {
             iconPath = '/static/images/ui/stage_node_current.png';
             const gemsForFirstClear = 25 + (Math.floor((stageNum - 1) / 5) * 5);
-            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/gem_icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
+            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;
         }
 

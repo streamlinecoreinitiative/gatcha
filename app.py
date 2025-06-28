@@ -614,6 +614,24 @@ def admin_update_lore():
         return jsonify({'success': False, 'message': 'Failed to write lore'})
 
 
+@app.route('/api/admin/expedition', methods=['POST'])
+def admin_create_expedition():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    data = request.json or {}
+    name = data.get('name', '').strip()
+    enemies = data.get('enemies', [])
+    if not name or not enemies:
+        return jsonify({'success': False, 'message': 'Name and enemies required'}), 400
+    db.create_expedition(name, enemies)
+    return jsonify({'success': True})
+
+
+@app.route('/api/expeditions')
+def list_expeditions():
+    return jsonify({'success': True, 'expeditions': db.get_all_expeditions()})
+
+
 @app.route('/api/summon', methods=['POST'])
 def summon():
     if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
