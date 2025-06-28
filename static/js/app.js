@@ -57,7 +57,7 @@ const storePackagesContainer = document.getElementById('store-packages');
 const userIcon = document.getElementById('user-icon');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 // Use local icon so it always loads even without an internet connection
-const currencyIconHtml = '<i class="fa-solid fa-diamond currency-icon" title="Platinum - Purchased with real money. Use it for energy refills and special packs."></i>';
+const currencyIconHtml = '<i class="fa-solid fa-diamond currency-icon"></i>';
 let profileModal;
 let profileEmailInput;
 let profileCurrentPasswordInput;
@@ -132,7 +132,7 @@ function updateResourceTimers() {
     const now = Math.floor(Date.now() / 1000);
     if (energyTimerDisplay) {
         if (gameState.energy < gameState.energy_cap) {
-            const next = gameState.energy_last + 3600;
+            const next = gameState.energy_last + 300; // 5 minutes per energy
             const remain = next - now;
             if (remain <= 0) {
                 fetchPlayerDataAndUpdate();
@@ -145,9 +145,8 @@ function updateResourceTimers() {
     }
     if (dungeonTimerDisplay) {
         if (gameState.dungeon_energy < gameState.dungeon_cap) {
-            const last = new Date(gameState.dungeon_last * 1000);
-            const nextReset = Date.UTC(last.getUTCFullYear(), last.getUTCMonth(), last.getUTCDate() + 1) / 1000;
-            const remain = nextReset - now;
+            const next = gameState.dungeon_last + 900; // 15 minutes per energy
+            const remain = next - now;
             if (remain <= 0) {
                 fetchPlayerDataAndUpdate();
             } else {
@@ -340,10 +339,19 @@ function attachEventListeners() {
         localStorage.setItem('welcomeShown', 'true');
     });
 
+    const iconMessages = {
+        'gems-icon': 'Gems - Earned from events and dungeons. Spend them at the Summoning Altar or purchase more in the Store.',
+        'platinum-icon': 'Platinum - Purchased with real money. Use it for energy refills and special packs.',
+        'gold-icon': 'Gold - Earned from battles and selling heroes. Spend it to level up heroes and equipment.',
+        'energy-icon': 'Energy - Regenerates every 5 minutes or with Platinum. Required for Tower battles.',
+        'dungeon-icon': 'Dungeon Energy - Regenerates every 15 minutes or with Platinum. Required for Armory expeditions.'
+    };
+
     document.querySelectorAll('#currency-info .currency-icon').forEach(icon => {
         icon.classList.add('clickable');
         icon.addEventListener('click', () => {
-            if (infoText) infoText.textContent = icon.getAttribute('title') || '';
+            const msg = iconMessages[icon.id] || '';
+            if (infoText) infoText.textContent = msg;
             if (infoModal) infoModal.classList.add('active');
         });
     });
@@ -1010,7 +1018,10 @@ async function updateStoreDisplay() {
         } else if (pkg.dungeon_energy) {
             text = `${currencyIconHtml} +${pkg.dungeon_energy} Dungeon Runs - ${pkg.platinum_cost} Platinum`;
         }
-        div.innerHTML = `<h4>${text}</h4>`;
+        const textSpan = document.createElement('span');
+        textSpan.className = 'package-text';
+        textSpan.innerHTML = text;
+        div.appendChild(textSpan);
         // Append the container before rendering PayPal buttons so the element
         // exists in the DOM when PayPal queries for it.
         storePackagesContainer.appendChild(div);

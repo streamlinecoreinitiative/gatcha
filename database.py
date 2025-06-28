@@ -182,31 +182,31 @@ def get_player_data(user_id):
 
     now = int(time.time())
 
-    # --- Energy regeneration (1 per hour, cap 10 unless above from purchases) ---
+    # --- Energy regeneration (1 per 5 minutes, cap 10 unless above from purchases) ---
     energy = player_dict.get("energy", 10)
     last = player_dict.get("energy_last", now)
     if energy < 10:
-        hours = (now - last) // 3600
-        if hours > 0:
-            energy = min(10, energy + hours)
-            last += hours * 3600
+        gained = (now - last) // 300  # 5 minutes per energy
+        if gained > 0:
+            energy = min(10, energy + gained)
+            last += gained * 300
             conn.execute(
                 "UPDATE player_data SET energy = ?, energy_last = ? WHERE user_id = ?",
                 (energy, last, user_id),
             )
 
-    # --- Dungeon energy reset daily to at least 5 ---
+    # --- Dungeon energy regeneration (1 per 15 minutes, cap 5) ---
     dungeon_energy = player_dict.get("dungeon_energy", 5)
     dungeon_last = player_dict.get("dungeon_last", now)
-    last_day = datetime.utcfromtimestamp(dungeon_last).date()
-    today = datetime.utcnow().date()
-    if today > last_day and dungeon_energy < 5:
-        dungeon_energy = 5
-        dungeon_last = now
-        conn.execute(
-            "UPDATE player_data SET dungeon_energy = ?, dungeon_last = ? WHERE user_id = ?",
-            (dungeon_energy, dungeon_last, user_id),
-        )
+    if dungeon_energy < 5:
+        gained = (now - dungeon_last) // 900  # 15 minutes per energy
+        if gained > 0:
+            dungeon_energy = min(5, dungeon_energy + gained)
+            dungeon_last += gained * 900
+            conn.execute(
+                "UPDATE player_data SET dungeon_energy = ?, dungeon_last = ? WHERE user_id = ?",
+                (dungeon_energy, dungeon_last, user_id),
+            )
 
     conn.commit()
     conn.close()
