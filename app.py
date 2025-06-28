@@ -34,6 +34,9 @@ paypalrestsdk.configure({
     'client_secret': paypal_conf.get('client_secret')
 })
 
+# Base URL for links in emails
+BASE_URL = os.getenv('BASE_URL', 'https://towerchronicles.xyz')
+
 # --- DATA LOADING & CONFIG ---
 BASE_DIR = os.path.dirname(__file__)
 character_definitions = load_all_definitions(os.path.join(BASE_DIR, "characters.json"))
@@ -284,7 +287,7 @@ def register():
         user_id = db.get_user_id(data.get('username'))
         token = secrets.token_urlsafe(16)
         EMAIL_CONFIRMATIONS[token] = user_id
-        confirm_link = request.url_root.rstrip('/') + '/confirm_email/' + token
+        confirm_link = BASE_URL.rstrip('/') + '/confirm_email/' + token
         send_email(
             email,
             "Confirm Your Registration",
@@ -329,7 +332,7 @@ def forgot_password():
     token = secrets.token_urlsafe(16)
     new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
     PASSWORD_RESETS[token] = (email, new_password)
-    confirm_link = request.url_root.rstrip('/') + '/confirm_reset/' + token
+    confirm_link = BASE_URL.rstrip('/') + '/confirm_reset/' + token
     send_email(email, 'Confirm Password Reset', f'Please confirm your reset by visiting: {confirm_link}')
     return jsonify({'success': True, 'message': 'Confirmation email sent'})
 
@@ -993,8 +996,6 @@ def handle_send_message(data):
 @socketio.on('disconnect')
 def handle_disconnect():
     user_info = online_users.pop(request.sid, None)
-    username = user_info['username'] if isinstance(user_info, dict) else user_info or 'A user'
-    socketio.emit('receive_message', {'username': 'System', 'message': f'{username} has left the chat.'})
     emit_online_list()
 
 

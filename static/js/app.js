@@ -340,7 +340,7 @@ function attachEventListeners() {
         localStorage.setItem('welcomeShown', 'true');
     });
 
-    document.querySelectorAll('#currency-info img').forEach(icon => {
+    document.querySelectorAll('#currency-info .currency-icon').forEach(icon => {
         icon.classList.add('clickable');
         icon.addEventListener('click', () => {
             if (infoText) infoText.textContent = icon.getAttribute('title') || '';
