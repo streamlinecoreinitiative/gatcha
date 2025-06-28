@@ -106,6 +106,21 @@ def init_db():
             motd TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS expeditions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS expedition_levels (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            expedition_id INTEGER NOT NULL,
+            level_num INTEGER NOT NULL,
+            enemy_name TEXT NOT NULL,
+            FOREIGN KEY (expedition_id) REFERENCES expeditions(id)
+        )
+    ''')
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
@@ -602,4 +617,40 @@ def set_motd(text):
     conn.execute('UPDATE messages SET motd = ? WHERE id = 1', (text,))
     conn.commit()
     conn.close()
+
+
+def create_expedition(name, enemies):
+    """Create a new expedition with a list of enemy names."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO expeditions (name) VALUES (?)', (name,))
+    expedition_id = cursor.lastrowid
+    for idx, enemy in enumerate(enemies, start=1):
+        cursor.execute(
+            'INSERT INTO expedition_levels (expedition_id, level_num, enemy_name) VALUES (?, ?, ?)',
+            (expedition_id, idx, enemy)
+        )
+    conn.commit()
+    conn.close()
+    return expedition_id
+
+
+def get_all_expeditions():
+    """Return all expeditions with their level data."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    exps = cur.execute('SELECT id, name FROM expeditions').fetchall()
+    result = []
+    for exp in exps:
+        levels = cur.execute(
+            'SELECT level_num, enemy_name FROM expedition_levels WHERE expedition_id = ? ORDER BY level_num',
+            (exp['id'],)
+        ).fetchall()
+        result.append({
+            'id': exp['id'],
+            'name': exp['name'],
+            'levels': [{'level': row['level_num'], 'enemy': row['enemy_name']} for row in levels]
+        })
+    conn.close()
+    return result
  
