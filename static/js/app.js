@@ -56,7 +56,8 @@ const equipmentContainer = document.getElementById('equipment-container');
 const storePackagesContainer = document.getElementById('store-packages');
 const userIcon = document.getElementById('user-icon');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
-const currencyIconHtml = '<img src="https://twemoji.maxcdn.com/v/latest/72x72/1f4b0.png" class="currency-icon" alt="Platinum" title="Platinum - Purchased with real money. Use it for energy refills and special packs.">';
+// Use local icon so it always loads even without an internet connection
+const currencyIconHtml = '<img src="/static/images/ui/Platinum_Bars_Icon.png" class="currency-icon" alt="Platinum" title="Platinum - Purchased with real money. Use it for energy refills and special packs.">';
 let profileModal;
 let profileEmailInput;
 let profileCurrentPasswordInput;
@@ -1010,6 +1011,10 @@ async function updateStoreDisplay() {
             text = `${currencyIconHtml} +${pkg.dungeon_energy} Dungeon Runs - ${pkg.platinum_cost} Platinum`;
         }
         div.innerHTML = `<h4>${text}</h4>`;
+        // Append the container before rendering PayPal buttons so the element
+        // exists in the DOM when PayPal queries for it.
+        storePackagesContainer.appendChild(div);
+
         if (pkg.amount) {
             if (clientId && window.paypal) {
                 const btnDiv = document.createElement('div');
@@ -1034,7 +1039,6 @@ async function updateStoreDisplay() {
         } else {
             div.innerHTML += `<button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
         }
-        storePackagesContainer.appendChild(div);
     });
 }
 
@@ -1122,12 +1126,12 @@ function updateCampaignDisplay() {
         if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
             const gemsForRepeat = 15;
-            descriptionHTML = `<p class="stage-reward repeat"><img src="https://twemoji.maxcdn.com/v/latest/72x72/1f48e.png" alt="Gems"> Farm this floor for a small reward.</p>`;
+            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
         } else if (status === 'current') {
             iconPath = '/static/images/ui/stage_node_current.png';
             const gemsForFirstClear = 25 + (Math.floor((stageNum - 1) / 5) * 5);
-            descriptionHTML = `<p class="stage-reward"><img src="https://twemoji.maxcdn.com/v/latest/72x72/1f48e.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
+            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;
         }
 
