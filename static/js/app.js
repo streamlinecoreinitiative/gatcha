@@ -1375,7 +1375,12 @@ async function loadEntityLists() {
         charData.entities.forEach(ent => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="character" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="character" data-code="${ent.code}">Delete</button>`;
+            const details =
+                `${ent.code}: ${ent.name} [${ent.rarity}] ` +
+                `(Element: ${ent.element}, HP: ${ent.base_hp}, ATK: ${ent.base_atk}, ` +
+                `Crit: ${ent.crit_chance}, Crit DMG: ${ent.crit_damage}, ` +
+                `Img: ${ent.image_file})`;
+            div.innerHTML = `<span>${details}</span> <button class="edit-entity" data-type="character" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="character" data-code="${ent.code}">Delete</button>`;
             adminCharacterList.appendChild(div);
         });
     }
@@ -1387,7 +1392,12 @@ async function loadEntityLists() {
         enemyData.entities.forEach(ent => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="enemy" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="enemy" data-code="${ent.code}">Delete</button>`;
+            const details =
+                `${ent.code}: ${ent.name} [${ent.rarity}] ` +
+                `(Element: ${ent.element}, HP: ${ent.base_hp}, ATK: ${ent.base_atk}, ` +
+                `Crit: ${ent.crit_chance}, Crit DMG: ${ent.crit_damage}, Tier: ${ent.tier}, ` +
+                `Img: ${ent.image_file})`;
+            div.innerHTML = `<span>${details}</span> <button class="edit-entity" data-type="enemy" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="enemy" data-code="${ent.code}">Delete</button>`;
             adminEnemyList.appendChild(div);
         });
     }
@@ -1418,7 +1428,11 @@ async function loadItemAdminList() {
         data.items.forEach(item => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${item.name} [${item.rarity}]</span> <button class="edit-item" data-code="${item.code}">Edit</button> <button class="delete-item" data-code="${item.code}">Delete</button>`;
+            const stats = JSON.stringify(item.stat_bonuses || {});
+            const details =
+                `${item.code}: ${item.name} [${item.rarity}] ` +
+                `(Type: ${item.type}, Stats: ${stats}, Img: ${item.image_file || 'N/A'})`;
+            div.innerHTML = `<span>${details}</span> <button class="edit-item" data-code="${item.code}">Edit</button> <button class="delete-item" data-code="${item.code}">Delete</button>`;
             adminItemList.appendChild(div);
         });
         loadedItems = data.items;
