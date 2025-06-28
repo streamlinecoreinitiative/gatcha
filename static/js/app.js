@@ -57,7 +57,7 @@ const storePackagesContainer = document.getElementById('store-packages');
 const userIcon = document.getElementById('user-icon');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 // Use local icon so it always loads even without an internet connection
-const currencyIconHtml = '<img src="/static/images/ui/Platinum_Bars_Icon.png" class="currency-icon" alt="Platinum" title="Platinum - Purchased with real money. Use it for energy refills and special packs.">';
+const currencyIconHtml = '<i class="fa-solid fa-diamond currency-icon" title="Platinum - Purchased with real money. Use it for energy refills and special packs."></i>';
 let profileModal;
 let profileEmailInput;
 let profileCurrentPasswordInput;
@@ -1021,6 +1021,7 @@ async function updateStoreDisplay() {
                 btnDiv.id = `paypal-${pkg.id}`;
                 div.appendChild(btnDiv);
                 window.paypal.Buttons({
+                    style: { height: 30 },
                     createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: pkg.price.toFixed(2) } }] }),
                     onApprove: (data, actions) => {
                         return fetch('/api/paypal_complete', {
