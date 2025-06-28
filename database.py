@@ -92,6 +92,15 @@ def init_db():
         )
     ''')
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS email_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            host TEXT,
+            port INTEGER NOT NULL DEFAULT 587,
+            username TEXT,
+            password TEXT
+        )
+    ''')
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY CHECK (id = 1),
             motd TEXT
@@ -116,6 +125,7 @@ def init_db():
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'paypal_config', 'mode', 'TEXT NOT NULL DEFAULT "sandbox"')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
+    cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
     cursor.execute('INSERT OR IGNORE INTO messages (id, motd) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.")')
     # Commit before opening a new connection in create_admin_if_missing
     conn.commit()
@@ -552,6 +562,32 @@ def update_paypal_config(client_id=None, client_secret=None, mode=None):
         conn.execute('UPDATE paypal_config SET client_secret = ? WHERE id = 1', (client_secret,))
     if mode is not None:
         conn.execute('UPDATE paypal_config SET mode = ? WHERE id = 1', (mode,))
+    conn.commit()
+    conn.close()
+
+def get_email_config():
+    conn = get_db_connection()
+    row = conn.execute('SELECT host, port, username, password FROM email_config WHERE id = 1').fetchone()
+    conn.close()
+    if row:
+        return {
+            'host': row['host'],
+            'port': row['port'],
+            'username': row['username'],
+            'password': row['password']
+        }
+    return {'host': '', 'port': 587, 'username': '', 'password': ''}
+
+def update_email_config(host=None, port=None, username=None, password=None):
+    conn = get_db_connection()
+    if host is not None:
+        conn.execute('UPDATE email_config SET host = ? WHERE id = 1', (host,))
+    if port is not None:
+        conn.execute('UPDATE email_config SET port = ? WHERE id = 1', (port,))
+    if username is not None:
+        conn.execute('UPDATE email_config SET username = ? WHERE id = 1', (username,))
+    if password is not None:
+        conn.execute('UPDATE email_config SET password = ? WHERE id = 1', (password,))
     conn.commit()
     conn.close()
 

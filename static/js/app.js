@@ -74,6 +74,13 @@ let paypalClientDisplay;
 let paypalSecretDisplay;
 let paypalModeInput;
 let paypalModeDisplay;
+let emailHostInput;
+let emailPortInput;
+let emailUserInput;
+let emailPassInput;
+let emailHostDisplay;
+let emailUserDisplay;
+let emailPortDisplay;
 let adminMotdInput;
 let adminMotdSaveBtn;
 let adminEventsText;
@@ -221,6 +228,13 @@ function attachEventListeners() {
     paypalSecretDisplay = document.getElementById('paypal-secret-display');
     paypalModeInput = document.getElementById('admin-paypal-mode');
     paypalModeDisplay = document.getElementById('paypal-mode-display');
+    emailHostInput = document.getElementById('admin-email-host');
+    emailPortInput = document.getElementById('admin-email-port');
+    emailUserInput = document.getElementById('admin-email-user');
+    emailPassInput = document.getElementById('admin-email-pass');
+    emailHostDisplay = document.getElementById('email-host-display');
+    emailUserDisplay = document.getElementById('email-user-display');
+    emailPortDisplay = document.getElementById('email-port-display');
     adminMotdInput = document.getElementById('admin-motd-text');
     adminMotdSaveBtn = document.getElementById('admin-motd-save-btn');
     adminEventsText = document.getElementById('admin-events-text');
@@ -427,6 +441,22 @@ function attachEventListeners() {
         // Refresh the store so PayPal buttons appear without a full page reload
         updateStoreDisplay();
     });
+    const emailSaveBtn = document.getElementById('admin-email-save-btn');
+    if (emailSaveBtn) emailSaveBtn.addEventListener('click', async () => {
+        const response = await fetch('/api/admin/email_config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                host: emailHostInput.value,
+                port: parseInt(emailPortInput.value) || 587,
+                username: emailUserInput.value,
+                password: emailPassInput.value
+            })
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'Email settings saved' : 'Update failed');
+        if (result.success) loadEmailConfig();
+    });
     const paypalRemoveBtn = document.getElementById('admin-paypal-remove-btn');
     if (paypalRemoveBtn) paypalRemoveBtn.addEventListener('click', async () => {
         const response = await fetch('/api/admin/paypal_config', {
@@ -528,6 +558,7 @@ function attachEventListeners() {
             }
             if (targetViewId === 'admin-view') {
                 loadPaypalConfig();
+                loadEmailConfig();
                 loadMotd();
                 loadEventsText();
             }
@@ -732,9 +763,10 @@ async function fetchPlayerDataAndUpdate() {
         if (response.status === 401) { await handleLogout(); return false; }
         const result = await response.json();
         if (result.success) { 
-            gameState = result.data; 
+            gameState = result.data;
             if (gameState.is_admin) {
                 loadPaypalConfig();
+                loadEmailConfig();
                 loadMotd();
                 loadEventsText();
             }
@@ -964,6 +996,20 @@ async function loadPaypalConfig() {
     }
 }
 
+async function loadEmailConfig() {
+    if (!emailHostInput) return;
+    const resp = await fetch('/api/admin/email_config');
+    const result = await resp.json();
+    if (result.success && result.config) {
+        emailHostInput.value = result.config.host || '';
+        emailPortInput.value = result.config.port || 587;
+        emailUserInput.value = result.config.username || '';
+        if (emailHostDisplay) emailHostDisplay.textContent = result.config.host || '';
+        if (emailUserDisplay) emailUserDisplay.textContent = result.config.username || '';
+        if (emailPortDisplay) emailPortDisplay.textContent = result.config.port || 587;
+    }
+}
+
 async function loadMotd() {
     if (!adminMotdInput) return;
     const resp = await fetch('/api/motd');
@@ -1138,12 +1184,12 @@ function updateCampaignDisplay() {
         if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
             const gemsForRepeat = 15;
-            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
+            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/gem_icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
         } else if (status === 'current') {
             iconPath = '/static/images/ui/stage_node_current.png';
             const gemsForFirstClear = 25 + (Math.floor((stageNum - 1) / 5) * 5);
-            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
+            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/gem_icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;
         }
 
