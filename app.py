@@ -12,6 +12,7 @@ import database as db
 import string
 import secrets
 from balance import generate_enemy, calculate_item_power
+from werkzeug.utils import secure_filename
 
 
 def load_all_definitions(file_path):
@@ -53,6 +54,11 @@ gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity
 PULL_COST = 150
 SSR_PITY_THRESHOLD = 90
 online_users = {}
+
+def refresh_gacha_pool():
+    global available_rarities, gacha_pool
+    available_rarities = sorted({c['rarity'] for c in character_definitions}, key=lambda r: RARITY_ORDER.index(r))
+    gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity] for rarity in available_rarities}
 
 def emit_online_list():
     visible = [u for u in online_users.values() if not db.is_user_admin(u.get('user_id'))]
@@ -625,6 +631,100 @@ def admin_create_expedition():
         return jsonify({'success': False, 'message': 'Name and enemies required'}), 400
     db.create_expedition(name, enemies)
     return jsonify({'success': True})
+
+
+@app.route('/api/admin/entity', methods=['POST', 'PUT', 'DELETE'])
+def admin_add_entity():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    if request.method == 'DELETE':
+        data = request.json or {}
+        ent_type = data.get('type')
+        name = data.get('name')
+        if ent_type not in ('character', 'enemy') or not name:
+            return jsonify({'success': False, 'message': 'Invalid data'}), 400
+        arr = character_definitions if ent_type == 'character' else enemy_definitions
+        idx = next((i for i, e in enumerate(arr) if e['name'] == name), None)
+        if idx is None:
+            return jsonify({'success': False, 'message': 'Not found'}), 404
+        del arr[idx]
+        json_path = os.path.join(BASE_DIR, 'characters.json' if ent_type == 'character' else 'enemies.json')
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(arr, f, indent=2)
+        if ent_type == 'character':
+            refresh_gacha_pool()
+        return jsonify({'success': True})
+
+    data = request.form
+    ent_type = data.get('type')
+    if ent_type not in ('character', 'enemy'):
+        return jsonify({'success': False, 'message': 'Invalid type'}), 400
+    name = data.get('name', '').strip()
+    rarity = data.get('rarity')
+    element = data.get('element')
+    base_hp = int(data.get('base_hp', 0))
+    base_atk = int(data.get('base_atk', 0))
+    crit_chance = int(data.get('crit_chance', 0))
+    crit_damage = float(data.get('crit_damage', 0))
+    file = request.files.get('image')
+    if request.method == 'POST' and (not name or not rarity or not element or not file):
+        return jsonify({'success': False, 'message': 'Missing fields'}), 400
+    filename = secure_filename(file.filename) if file else None
+    folder = 'characters' if ent_type == 'character' else 'enemies'
+    image_dir = os.path.join(BASE_DIR, 'static', 'images', folder)
+    os.makedirs(image_dir, exist_ok=True)
+    if file:
+        image_path = os.path.join(image_dir, filename)
+        file.save(image_path)
+
+    entry = {
+        'name': name,
+        'rarity': rarity,
+        'element': element,
+        'base_hp': base_hp,
+        'base_atk': base_atk,
+        'crit_chance': crit_chance,
+        'crit_damage': crit_damage,
+        'image_file': filename if file else None
+    }
+    json_path = os.path.join(BASE_DIR, 'characters.json' if ent_type == 'character' else 'enemies.json')
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            arr = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        arr = []
+    orig_name = name
+    if request.method == 'PUT':
+        orig_name = data.get('orig_name', name)
+        orig_entry = next((e for e in arr if e.get('name') == orig_name), {})
+        arr = [e for e in arr if e.get('name') != orig_name]
+        if not file:
+            entry['image_file'] = orig_entry.get('image_file')
+    arr.append(entry)
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(arr, f, indent=2)
+    if ent_type == 'character':
+        if request.method == 'PUT':
+            character_definitions[:] = [e for e in character_definitions if e['name'] != orig_name]
+        character_definitions.append(entry)
+        refresh_gacha_pool()
+    else:
+        if request.method == 'PUT':
+            enemy_definitions[:] = [e for e in enemy_definitions if e['name'] != orig_name]
+        enemy_definitions.append(entry)
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/entities')
+def admin_list_entities():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    ent_type = request.args.get('type')
+    if ent_type == 'character':
+        return jsonify({'success': True, 'entities': character_definitions})
+    elif ent_type == 'enemy':
+        return jsonify({'success': True, 'entities': enemy_definitions})
+    return jsonify({'success': False, 'message': 'Invalid type'}), 400
 
 
 @app.route('/api/expeditions')

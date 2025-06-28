@@ -88,6 +88,21 @@ let adminEventsSaveBtn;
 let adminExpeditionNameInput;
 let adminExpeditionEnemiesInput;
 let adminExpeditionCreateBtn;
+let newEntityTypeSelect;
+let newEntityNameInput;
+let newEntityRaritySelect;
+let newEntityElementSelect;
+let newEntityHpInput;
+let newEntityAtkInput;
+let newEntityCritChanceInput;
+let newEntityCritDamageInput;
+let newEntityImageInput;
+let newEntityCreateBtn;
+let adminCharacterList;
+let adminEnemyList;
+let loadedCharacters = [];
+let loadedEnemies = [];
+let editingEntity = null;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -245,6 +260,18 @@ function attachEventListeners() {
     adminExpeditionNameInput = document.getElementById('admin-expedition-name');
     adminExpeditionEnemiesInput = document.getElementById('admin-expedition-enemies');
     adminExpeditionCreateBtn = document.getElementById('admin-expedition-create-btn');
+    newEntityTypeSelect = document.getElementById('admin-entity-type');
+    newEntityNameInput = document.getElementById('admin-entity-name');
+    newEntityRaritySelect = document.getElementById('admin-entity-rarity');
+    newEntityElementSelect = document.getElementById('admin-entity-element');
+    newEntityHpInput = document.getElementById('admin-entity-hp');
+    newEntityAtkInput = document.getElementById('admin-entity-atk');
+    newEntityCritChanceInput = document.getElementById('admin-entity-crit-chance');
+    newEntityCritDamageInput = document.getElementById('admin-entity-crit-damage');
+    newEntityImageInput = document.getElementById('admin-entity-image');
+    newEntityCreateBtn = document.getElementById('admin-entity-create-btn');
+    adminCharacterList = document.getElementById('admin-character-list');
+    adminEnemyList = document.getElementById('admin-enemy-list');
     regUsernameInput = document.getElementById('reg-username');
     regEmailInput = document.getElementById('reg-email');
     regPasswordInput = document.getElementById('reg-password');
@@ -506,6 +533,41 @@ function attachEventListeners() {
         displayMessage(result.success ? 'Expedition created' : result.message || 'Update failed');
     });
 
+    if (newEntityCreateBtn) newEntityCreateBtn.addEventListener('click', async () => {
+        const form = new FormData();
+        form.append('type', newEntityTypeSelect.value);
+        form.append('name', newEntityNameInput.value.trim());
+        form.append('rarity', newEntityRaritySelect.value);
+        form.append('element', newEntityElementSelect.value);
+        form.append('base_hp', parseInt(newEntityHpInput.value) || 0);
+        form.append('base_atk', parseInt(newEntityAtkInput.value) || 0);
+        form.append('crit_chance', parseInt(newEntityCritChanceInput.value) || 0);
+        form.append('crit_damage', parseFloat(newEntityCritDamageInput.value) || 0);
+        if (newEntityImageInput.files[0]) {
+            form.append('image', newEntityImageInput.files[0]);
+        }
+        let resp;
+        if (editingEntity) {
+            form.append('orig_name', editingEntity.origName);
+            resp = await fetch('/api/admin/entity', { method: 'PUT', body: form });
+        } else {
+            resp = await fetch('/api/admin/entity', { method: 'POST', body: form });
+        }
+        const result = await resp.json();
+        displayMessage(result.success ? (editingEntity ? 'Entity updated' : 'Entity created') : result.message || 'Update failed');
+        if (result.success) {
+            editingEntity = null;
+            newEntityCreateBtn.textContent = 'Create';
+            newEntityNameInput.value = '';
+            newEntityHpInput.value = '';
+            newEntityAtkInput.value = '';
+            newEntityCritChanceInput.value = '';
+            newEntityCritDamageInput.value = '';
+            newEntityImageInput.value = '';
+            await loadEntityLists();
+        }
+    });
+
     const performSummon = async (btn, count = 1, free = false) => {
         if (!btn) return;
         btn.disabled = true;
@@ -578,6 +640,7 @@ function attachEventListeners() {
                 loadEmailConfig();
                 loadMotd();
                 loadEventsText();
+                loadEntityLists();
             }
             if (targetViewId === 'online-view') {
                 updateAllUsers();
@@ -615,6 +678,37 @@ function attachEventListeners() {
         else if (target.classList.contains('hero-portrait')) {
             heroImageLarge.src = target.src;
             heroImageOverlay.classList.add('active');
+        }
+        else if (target.classList.contains('edit-entity')) {
+            const type = target.dataset.type;
+            const name = target.dataset.name;
+            const list = type === 'character' ? loadedCharacters : loadedEnemies;
+            const ent = list.find(e => e.name === name);
+            if (ent) {
+                newEntityTypeSelect.value = type;
+                newEntityNameInput.value = ent.name;
+                newEntityRaritySelect.value = ent.rarity;
+                newEntityElementSelect.value = ent.element;
+                newEntityHpInput.value = ent.base_hp;
+                newEntityAtkInput.value = ent.base_atk;
+                newEntityCritChanceInput.value = ent.crit_chance;
+                newEntityCritDamageInput.value = ent.crit_damage;
+                editingEntity = {origName: name};
+                newEntityCreateBtn.textContent = 'Save';
+                document.getElementById('admin-view').scrollTop = 0;
+            }
+        }
+        else if (target.classList.contains('delete-entity')) {
+            const type = target.dataset.type;
+            const name = target.dataset.name;
+            const resp = await fetch('/api/admin/entity', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: type, name: name })
+            });
+            const result = await resp.json();
+            displayMessage(result.success ? 'Entity removed' : result.message || 'Update failed');
+            if (result.success) loadEntityLists();
         }
         else if (target.classList.contains('fight-button')) {
             const stageNum = parseInt(target.dataset.stageNum);
@@ -1117,6 +1211,34 @@ async function updateStoreDisplay() {
     });
 }
 
+async function loadEntityLists() {
+    if (!adminCharacterList || !adminEnemyList) return;
+    const charResp = await fetch('/api/admin/entities?type=character');
+    const charData = await charResp.json();
+    if (charData.success) {
+        loadedCharacters = charData.entities;
+        adminCharacterList.innerHTML = '';
+        charData.entities.forEach(ent => {
+            const div = document.createElement('div');
+            div.className = 'admin-entity-item';
+            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="character" data-name="${ent.name}">Edit</button> <button class="delete-entity" data-type="character" data-name="${ent.name}">Delete</button>`;
+            adminCharacterList.appendChild(div);
+        });
+    }
+    const enemyResp = await fetch('/api/admin/entities?type=enemy');
+    const enemyData = await enemyResp.json();
+    if (enemyData.success) {
+        loadedEnemies = enemyData.entities;
+        adminEnemyList.innerHTML = '';
+        enemyData.entities.forEach(ent => {
+            const div = document.createElement('div');
+            div.className = 'admin-entity-item';
+            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="enemy" data-name="${ent.name}">Edit</button> <button class="delete-entity" data-type="enemy" data-name="${ent.name}">Delete</button>`;
+            adminEnemyList.appendChild(div);
+        });
+    }
+}
+
 function updateTeamDisplay() {
     teamDisplayContainer.innerHTML = '';
     for (let i = 0; i < 3; i++) {
@@ -1201,12 +1323,12 @@ function updateCampaignDisplay() {
         if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
             const gemsForRepeat = 15;
-            descriptionHTML = `<p class="stage-reward repeat"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> Farm this floor for a small reward.</p>`;
+            descriptionHTML = `<p class="stage-reward repeat"><i class="fa-solid fa-gem currency-icon"></i> Farm this floor for a small reward.</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
         } else if (status === 'current') {
             iconPath = '/static/images/ui/stage_node_current.png';
             const gemsForFirstClear = 25 + (Math.floor((stageNum - 1) / 5) * 5);
-            descriptionHTML = `<p class="stage-reward"><img src="/static/images/ui/Gems_Icon.png" alt="Gems"> First Clear Reward: ${gemsForFirstClear}</p>`;
+            descriptionHTML = `<p class="stage-reward"><i class="fa-solid fa-gem currency-icon"></i> First Clear Reward: ${gemsForFirstClear}</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;
         }
 
