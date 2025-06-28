@@ -74,6 +74,8 @@ def send_email(to_addr, subject, body):
 
 # In-memory store for pending password resets {token: (email, new_password)}
 PASSWORD_RESETS = {}
+# In-memory store for pending email confirmations {token: user_id}
+EMAIL_CONFIRMATIONS = {}
 
 def refresh_online_progress(user_id):
     sid = next((sid for sid, info in online_users.items() if info.get('user_id') == user_id), None)
@@ -279,21 +281,36 @@ def register():
         return jsonify({'success': False, 'message': 'Password must be at least 10 characters with letters and numbers'})
     result = db.register_user(data.get('username'), email, password)
     if result == "Success":
-        send_email(email, "Registration Confirmation",
-                   "Thank you for registering. This email will only be used for password recovery.")
-    return jsonify({'success': result == "Success", 'message': result})
+        user_id = db.get_user_id(data.get('username'))
+        token = secrets.token_urlsafe(16)
+        EMAIL_CONFIRMATIONS[token] = user_id
+        confirm_link = request.url_root.rstrip('/') + '/confirm_email/' + token
+        send_email(
+            email,
+            "Confirm Your Registration",
+            f"Please confirm your account by visiting: {confirm_link}",
+        )
+        return jsonify({'success': True, 'message': 'Registration successful. Please confirm your email.'})
+    return jsonify({'success': False, 'message': result})
 
 
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
-    user_id = db.login_user(data.get('username'), data.get('password'))
+    username = data.get('username')
+    password = data.get('password')
+    user_id = db.login_user(username, password)
     if user_id:
         session['logged_in'] = True
-        session['username'] = data.get('username')
+        session['username'] = username
         session['user_id'] = user_id
         return jsonify({'success': True})
     else:
+        uid = db.get_user_id(username)
+        if uid and db.verify_user_password(uid, password):
+            profile = db.get_user_profile(uid)
+            if profile.get('email_confirmed') != 1:
+                return jsonify({'success': False, 'message': 'Please confirm your email before logging in.'})
         return jsonify({'success': False, 'message': 'Invalid username or password.'})
 
 
@@ -328,6 +345,15 @@ def confirm_reset(token):
     db.reset_password(email, new_password)
     send_email(email, 'Your New Password', f'Your new password is: {new_password}')
     return 'Password reset. Check your email for the new password.'
+
+
+@app.route('/confirm_email/<token>')
+def confirm_email(token):
+    user_id = EMAIL_CONFIRMATIONS.pop(token, None)
+    if not user_id:
+        return 'Invalid or expired token.', 400
+    db.update_user_profile(user_id, email_confirmed=True)
+    return 'Email confirmed. You can now log in.'
 
 
 @app.route('/api/update_profile', methods=['POST'])

@@ -13,6 +13,7 @@ This repository contains a Flask-based gacha game.
   which regenerates over time.
 - **Premium Store** now verifies purchases server‑side and refreshes after each
   attempt.
+- **Email Confirmation** is required for new accounts with a link sent via email.
 - **Equipment Loot** drops from dungeons can be equipped from the Armory screen.
 - **Improved Registration** includes email validation and a password reset flow.
 - **Security Update** now stores passwords hashed and requires acceptance of a Terms of Service during registration.
