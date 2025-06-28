@@ -631,9 +631,14 @@ def admin_manage_expedition():
         return jsonify({'success': True})
 
     data = request.form
+    code = data.get('code', '').strip()
+    code = data.get('code', '').strip()
     name = data.get('name', '').strip()
     enemies = data.get('enemies', '')
     enemies = [e.strip() for e in enemies.split(',') if e.strip()]
+    description = data.get('description', '').strip()
+    drops = data.get('drops', '').strip()
+    image_res = data.get('image_res', '').strip()
     file = request.files.get('image')
     filename = secure_filename(file.filename) if file else None
     image_dir = os.path.join(BASE_DIR, 'static', 'images', 'ui')
@@ -644,10 +649,11 @@ def admin_manage_expedition():
     if request.method == 'POST':
         if not name or not enemies:
             return jsonify({'success': False, 'message': 'Name and enemies required'}), 400
-        db.create_expedition(name, enemies, filename)
+        db.create_expedition(name, enemies, filename, description or None, drops or None, image_res or None)
     else:
         exp_id = int(data.get('id', 0))
-        db.update_expedition(exp_id, name=name or None, enemies=enemies or None, image_file=filename)
+        db.update_expedition(exp_id, name=name or None, enemies=enemies or None, image_file=filename,
+                             description=description or None, drops=drops or None, image_res=image_res or None)
     return jsonify({'success': True})
 
 
@@ -658,11 +664,11 @@ def admin_add_entity():
     if request.method == 'DELETE':
         data = request.json or {}
         ent_type = data.get('type')
-        name = data.get('name')
-        if ent_type not in ('character', 'enemy') or not name:
+        code = data.get('code')
+        if ent_type not in ('character', 'enemy') or not code:
             return jsonify({'success': False, 'message': 'Invalid data'}), 400
         arr = character_definitions if ent_type == 'character' else enemy_definitions
-        idx = next((i for i, e in enumerate(arr) if e['name'] == name), None)
+        idx = next((i for i, e in enumerate(arr) if e.get('code') == code), None)
         if idx is None:
             return jsonify({'success': False, 'message': 'Not found'}), 404
         del arr[idx]
@@ -682,10 +688,11 @@ def admin_add_entity():
     element = data.get('element')
     base_hp = int(data.get('base_hp', 0))
     base_atk = int(data.get('base_atk', 0))
+    tier = int(data.get('tier', 1))
     crit_chance = int(data.get('crit_chance', 0))
     crit_damage = float(data.get('crit_damage', 0))
     file = request.files.get('image')
-    if request.method == 'POST' and (not name or not rarity or not element or not file):
+    if request.method == 'POST' and (not code or not name or not rarity or not element or not file):
         return jsonify({'success': False, 'message': 'Missing fields'}), 400
     filename = secure_filename(file.filename) if file else None
     folder = 'characters' if ent_type == 'character' else 'enemies'
@@ -696,11 +703,14 @@ def admin_add_entity():
         file.save(image_path)
 
     entry = {
+        'code': code,
+        'code': code,
         'name': name,
         'rarity': rarity,
         'element': element,
         'base_hp': base_hp,
         'base_atk': base_atk,
+        'tier': tier,
         'crit_chance': crit_chance,
         'crit_damage': crit_damage,
         'image_file': filename if file else None
@@ -712,10 +722,11 @@ def admin_add_entity():
     except (FileNotFoundError, json.JSONDecodeError):
         arr = []
     orig_name = name
+    orig_code = code
     if request.method == 'PUT':
-        orig_name = data.get('orig_name', name)
-        orig_entry = next((e for e in arr if e.get('name') == orig_name), {})
-        arr = [e for e in arr if e.get('name') != orig_name]
+        orig_code = data.get('orig_code', code)
+        orig_entry = next((e for e in arr if e.get('code') == orig_code), {})
+        arr = [e for e in arr if e.get('code') != orig_code]
         if not file:
             entry['image_file'] = orig_entry.get('image_file')
     arr.append(entry)
@@ -723,12 +734,12 @@ def admin_add_entity():
         json.dump(arr, f, indent=2)
     if ent_type == 'character':
         if request.method == 'PUT':
-            character_definitions[:] = [e for e in character_definitions if e['name'] != orig_name]
+            character_definitions[:] = [e for e in character_definitions if e.get('code') != orig_code]
         character_definitions.append(entry)
         refresh_gacha_pool()
     else:
         if request.method == 'PUT':
-            enemy_definitions[:] = [e for e in enemy_definitions if e['name'] != orig_name]
+            enemy_definitions[:] = [e for e in enemy_definitions if e.get('code') != orig_code]
         enemy_definitions.append(entry)
     return jsonify({'success': True})
 
@@ -766,8 +777,8 @@ def admin_manage_item():
     json_path = os.path.join(BASE_DIR, 'static', 'equipment.json')
     if request.method == 'DELETE':
         data = request.json or {}
-        name = data.get('name')
-        db.delete_item(json_path, name)
+        code = data.get('code')
+        db.delete_item(json_path, code)
         equipment_definitions[:] = db.load_items(json_path)
         equipment_stats_map.clear()
         equipment_stats_map.update({i['name']: i['stat_bonuses'] for i in equipment_definitions})
@@ -798,7 +809,7 @@ def admin_manage_item():
     if request.method == 'POST':
         db.add_item(json_path, entry)
     else:
-        orig = data.get('orig_name', name)
+        orig = data.get('orig_code', code)
         db.update_item(json_path, orig, entry)
     equipment_definitions[:] = db.load_items(json_path)
     equipment_stats_map.clear()
@@ -878,7 +889,9 @@ def get_stage_info(stage_num):
         'hp': enemy['stats']['hp'],
         'atk': enemy['stats']['atk']
     }
-    return jsonify({'success': True, 'enemy': enemy_info})
+    energy_cost = 1
+    gold_reward = 100 * stage_num
+    return jsonify({'success': True, 'enemy': enemy_info, 'energy_cost': energy_cost, 'gold_reward': gold_reward})
 
 
 # --- PILLAR 1: CAMPAIGN ---

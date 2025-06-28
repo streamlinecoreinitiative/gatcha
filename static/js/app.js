@@ -87,12 +87,16 @@ let adminEventsText;
 let adminEventsSaveBtn;
 let adminExpeditionNameInput;
 let adminExpeditionEnemiesInput;
+let adminExpeditionDescInput;
+let adminExpeditionDropsInput;
+let adminExpeditionResInput;
 let adminExpeditionCreateBtn;
 let adminExpeditionImageInput;
 let adminExpeditionList;
 let editingExpedition = null;
 let newEntityTypeSelect;
 let newEntityNameInput;
+let newEntityCodeInput;
 let newEntityRaritySelect;
 let newEntityElementSelect;
 let newEntityHpInput;
@@ -110,6 +114,7 @@ let editingEntity = null;
 let loadedItems = [];
 let editingItem = null;
 let adminItemNameInput;
+let adminItemCodeInput;
 let adminItemTypeInput;
 let adminItemRaritySelect;
 let adminItemStatsInput;
@@ -272,9 +277,13 @@ function attachEventListeners() {
     adminEventsSaveBtn = document.getElementById('admin-events-save-btn');
     adminExpeditionNameInput = document.getElementById('admin-expedition-name');
     adminExpeditionEnemiesInput = document.getElementById('admin-expedition-enemies');
+    adminExpeditionDescInput = document.getElementById('admin-expedition-desc');
+    adminExpeditionDropsInput = document.getElementById('admin-expedition-drops');
+    adminExpeditionResInput = document.getElementById('admin-expedition-res');
     adminExpeditionCreateBtn = document.getElementById('admin-expedition-create-btn');
     adminExpeditionImageInput = document.getElementById('admin-expedition-image');
     adminExpeditionList = document.getElementById('admin-expedition-list');
+    adminItemCodeInput = document.getElementById('admin-item-code');
     adminItemNameInput = document.getElementById('admin-item-name');
     adminItemTypeInput = document.getElementById('admin-item-type');
     adminItemRaritySelect = document.getElementById('admin-item-rarity');
@@ -284,6 +293,7 @@ function attachEventListeners() {
     adminItemList = document.getElementById('admin-item-list');
     newEntityTypeSelect = document.getElementById('admin-entity-type');
     newEntityNameInput = document.getElementById('admin-entity-name');
+    newEntityCodeInput = document.getElementById('admin-entity-code');
     newEntityRaritySelect = document.getElementById('admin-entity-rarity');
     newEntityElementSelect = document.getElementById('admin-entity-element');
     newEntityHpInput = document.getElementById('admin-entity-hp');
@@ -547,6 +557,9 @@ function attachEventListeners() {
         const form = new FormData();
         form.append('name', adminExpeditionNameInput.value.trim());
         form.append('enemies', adminExpeditionEnemiesInput.value);
+        form.append('description', adminExpeditionDescInput.value.trim());
+        form.append('drops', adminExpeditionDropsInput.value.trim());
+        form.append('image_res', adminExpeditionResInput.value.trim());
         if (adminExpeditionImageInput.files[0]) form.append('image', adminExpeditionImageInput.files[0]);
         let method = 'POST';
         if (editingExpedition) {
@@ -561,6 +574,9 @@ function attachEventListeners() {
             adminExpeditionCreateBtn.textContent = 'Create Expedition';
             adminExpeditionNameInput.value = '';
             adminExpeditionEnemiesInput.value = '';
+            adminExpeditionDescInput.value = '';
+            adminExpeditionDropsInput.value = '';
+            adminExpeditionResInput.value = '';
             adminExpeditionImageInput.value = '';
             loadExpeditionAdminList();
             loadItemAdminList();
@@ -570,11 +586,13 @@ function attachEventListeners() {
     if (newEntityCreateBtn) newEntityCreateBtn.addEventListener('click', async () => {
         const form = new FormData();
         form.append('type', newEntityTypeSelect.value);
+        form.append('code', newEntityCodeInput.value.trim());
         form.append('name', newEntityNameInput.value.trim());
         form.append('rarity', newEntityRaritySelect.value);
         form.append('element', newEntityElementSelect.value);
         form.append('base_hp', parseInt(newEntityHpInput.value) || 0);
         form.append('base_atk', parseInt(newEntityAtkInput.value) || 0);
+        form.append('tier', parseInt(document.getElementById('admin-entity-tier').value) || 1);
         form.append('crit_chance', parseInt(newEntityCritChanceInput.value) || 0);
         form.append('crit_damage', parseFloat(newEntityCritDamageInput.value) || 0);
         if (newEntityImageInput.files[0]) {
@@ -582,7 +600,7 @@ function attachEventListeners() {
         }
         let resp;
         if (editingEntity) {
-            form.append('orig_name', editingEntity.origName);
+            form.append('orig_code', editingEntity.origCode);
             resp = await fetch('/api/admin/entity', { method: 'PUT', body: form });
         } else {
             resp = await fetch('/api/admin/entity', { method: 'POST', body: form });
@@ -592,9 +610,11 @@ function attachEventListeners() {
         if (result.success) {
             editingEntity = null;
             newEntityCreateBtn.textContent = 'Create';
+            newEntityCodeInput.value = '';
             newEntityNameInput.value = '';
             newEntityHpInput.value = '';
             newEntityAtkInput.value = '';
+            document.getElementById('admin-entity-tier').value = '';
             newEntityCritChanceInput.value = '';
             newEntityCritDamageInput.value = '';
             newEntityImageInput.value = '';
@@ -604,6 +624,7 @@ function attachEventListeners() {
 
     if (adminItemCreateBtn) adminItemCreateBtn.addEventListener('click', async () => {
         const form = new FormData();
+        form.append('code', adminItemCodeInput.value.trim());
         form.append('name', adminItemNameInput.value.trim());
         form.append('type', adminItemTypeInput.value.trim());
         form.append('rarity', adminItemRaritySelect.value);
@@ -611,7 +632,7 @@ function attachEventListeners() {
         if (adminItemImageInput.files[0]) form.append('image', adminItemImageInput.files[0]);
         let method = 'POST';
         if (editingItem) {
-            form.append('orig_name', editingItem.origName);
+            form.append('orig_code', editingItem.origCode);
             method = 'PUT';
         }
         const resp = await fetch('/api/admin/item', { method: method, body: form });
@@ -620,6 +641,7 @@ function attachEventListeners() {
         if (result.success) {
             editingItem = null;
             adminItemCreateBtn.textContent = 'Create Item';
+            adminItemCodeInput.value = '';
             adminItemNameInput.value = '';
             adminItemTypeInput.value = '';
             adminItemStatsInput.value = '';
@@ -746,30 +768,32 @@ function attachEventListeners() {
         }
         else if (target.classList.contains('edit-entity')) {
             const type = target.dataset.type;
-            const name = target.dataset.name;
+            const code = target.dataset.code;
             const list = type === 'character' ? loadedCharacters : loadedEnemies;
-            const ent = list.find(e => e.name === name);
+            const ent = list.find(e => e.code === code);
             if (ent) {
                 newEntityTypeSelect.value = type;
+                newEntityCodeInput.value = ent.code;
                 newEntityNameInput.value = ent.name;
                 newEntityRaritySelect.value = ent.rarity;
                 newEntityElementSelect.value = ent.element;
                 newEntityHpInput.value = ent.base_hp;
                 newEntityAtkInput.value = ent.base_atk;
+                document.getElementById('admin-entity-tier').value = ent.tier || 1;
                 newEntityCritChanceInput.value = ent.crit_chance;
                 newEntityCritDamageInput.value = ent.crit_damage;
-                editingEntity = {origName: name};
+                editingEntity = {origCode: code};
                 newEntityCreateBtn.textContent = 'Save';
                 document.getElementById('admin-view').scrollTop = 0;
             }
         }
         else if (target.classList.contains('delete-entity')) {
             const type = target.dataset.type;
-            const name = target.dataset.name;
+            const code = target.dataset.code;
             const resp = await fetch('/api/admin/entity', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: type, name: name })
+                body: JSON.stringify({ type: type, code: code })
             });
             const result = await resp.json();
             displayMessage(result.success ? 'Entity removed' : result.message || 'Update failed');
@@ -781,6 +805,9 @@ function attachEventListeners() {
             if (exp) {
                 adminExpeditionNameInput.value = exp.name;
                 adminExpeditionEnemiesInput.value = exp.levels.map(l => l.enemy).join(',');
+                adminExpeditionDescInput.value = exp.description || '';
+                adminExpeditionDropsInput.value = exp.drops || '';
+                adminExpeditionResInput.value = exp.image_res || '';
                 editingExpedition = exp;
                 adminExpeditionCreateBtn.textContent = 'Save Expedition';
                 document.getElementById('admin-view').scrollTop = 0;
@@ -794,21 +821,22 @@ function attachEventListeners() {
             if (result.success) loadExpeditionAdminList();
         }
         else if (target.classList.contains('edit-item')) {
-            const name = target.dataset.name;
-            const item = loadedItems.find(i => i.name === name);
+            const code = target.dataset.code;
+            const item = loadedItems.find(i => i.code === code);
             if (item) {
+                adminItemCodeInput.value = item.code;
                 adminItemNameInput.value = item.name;
                 adminItemTypeInput.value = item.type;
                 adminItemRaritySelect.value = item.rarity;
                 adminItemStatsInput.value = JSON.stringify(item.stat_bonuses);
-                editingItem = {origName: name};
+                editingItem = {origCode: code};
                 adminItemCreateBtn.textContent = 'Save Item';
                 document.getElementById('admin-view').scrollTop = 0;
             }
         }
         else if (target.classList.contains('delete-item')) {
-            const name = target.dataset.name;
-            const resp = await fetch('/api/admin/item', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) });
+            const code = target.dataset.code;
+            const resp = await fetch('/api/admin/item', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) });
             const result = await resp.json();
             displayMessage(result.success ? 'Item removed' : result.message || 'Update failed');
             if (result.success) loadItemAdminList();
@@ -821,7 +849,9 @@ function attachEventListeners() {
             if (result.success) {
                 const enemy = result.enemy;
                 const element = enemy.element || 'None';
-                document.getElementById('intel-enemy-info').innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity">Enemy</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/${enemy.image_file}" alt="${enemy.name}"><h4>${enemy.name}</h4><div class="card-stats">HP: ~${enemy.hp} | ATK: ~${enemy.atk}</div></div>`;
+                const cost = result.energy_cost;
+                const gold = result.gold_reward;
+                document.getElementById('intel-enemy-info').innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity">Enemy</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/${enemy.image_file}" alt="${enemy.name}"><h4>${enemy.name}</h4><div class="card-stats">HP: ~${enemy.hp} | ATK: ~${enemy.atk}</div><p>Energy Cost: ${cost} | Gold: ${gold}</p></div>`;
                 document.getElementById('intel-modal-overlay').classList.add('active');
             } else { displayMessage(`Error: ${result.message}`); }
         }
@@ -1167,7 +1197,10 @@ async function updateExpeditionDisplay() {
         const card = document.createElement('div');
         card.className = 'dungeon-details-container';
         const img = exp.image_file ? `/static/images/ui/${exp.image_file}` : '/static/images/ui/dungeon_armory.png';
-        card.innerHTML = `<div class="dungeon-image-container"><img src="${img}" alt="${exp.name}"></div><div class="dungeon-details-container"><h3>${exp.name}</h3><button class="dungeon-fight-button" data-expedition-id="${exp.id}">Enter</button></div>`;
+        const drops = exp.drops ? `<p>Drops: ${exp.drops}</p>` : '';
+        const desc = exp.description ? `<p>${exp.description}</p>` : '';
+        const res = exp.image_res ? `<p>Res: ${exp.image_res}</p>` : '';
+        card.innerHTML = `<div class="dungeon-image-container"><img src="${img}" alt="${exp.name}"></div><div class="dungeon-details-container"><h3>${exp.name}</h3>${desc}${drops}${res}<button class="dungeon-fight-button" data-expedition-id="${exp.id}">Enter</button></div>`;
         list.appendChild(card);
     });
 }
@@ -1342,7 +1375,7 @@ async function loadEntityLists() {
         charData.entities.forEach(ent => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="character" data-name="${ent.name}">Edit</button> <button class="delete-entity" data-type="character" data-name="${ent.name}">Delete</button>`;
+            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="character" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="character" data-code="${ent.code}">Delete</button>`;
             adminCharacterList.appendChild(div);
         });
     }
@@ -1354,7 +1387,7 @@ async function loadEntityLists() {
         enemyData.entities.forEach(ent => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="enemy" data-name="${ent.name}">Edit</button> <button class="delete-entity" data-type="enemy" data-name="${ent.name}">Delete</button>`;
+            div.innerHTML = `<span>${ent.name} [${ent.rarity}]</span> <button class="edit-entity" data-type="enemy" data-code="${ent.code}">Edit</button> <button class="delete-entity" data-type="enemy" data-code="${ent.code}">Delete</button>`;
             adminEnemyList.appendChild(div);
         });
     }
@@ -1385,7 +1418,7 @@ async function loadItemAdminList() {
         data.items.forEach(item => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${item.name} [${item.rarity}]</span> <button class="edit-item" data-name="${item.name}">Edit</button> <button class="delete-item" data-name="${item.name}">Delete</button>`;
+            div.innerHTML = `<span>${item.name} [${item.rarity}]</span> <button class="edit-item" data-code="${item.code}">Edit</button> <button class="delete-item" data-code="${item.code}">Delete</button>`;
             adminItemList.appendChild(div);
         });
         loadedItems = data.items;
