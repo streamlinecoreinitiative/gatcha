@@ -18,9 +18,25 @@
 
     <!-- This screen shows before the user logs in -->
     <div id="login-screen" class="screen active">
-        <div class="login-container">
-            <img src="{{ url_for('static', filename='images/ui/game_logo.png') }}" alt="Game Logo" class="game-logo">
-            <div class="form-box">
+        <div id="login-wrapper">
+            <div class="login-lore-box">
+                <h2>Welcome to Aethelgard</h2>
+                <p>
+                    After the Great Shattering, the endless Spire of Chaos appeared,
+                    unleashing void-touched horrors. Only the Star-forged Maidens you
+                    summon can survive its corruption. Ascend the tower floor by floor
+                    to seal the rift and save our world.
+                </p>
+                <p>
+                    This is a side project from a couple of humble developers who
+                    wanted a lightweight game to enjoy during breaks. Gather heroes,
+                    climb the tower and compare your progress with other players.
+                </p>
+                <p>Thank you for playing and sharing this journey with us!</p>
+            </div>
+            <div class="login-container">
+                <img src="{{ url_for('static', filename='images/ui/game_logo.png') }}" alt="Game Logo" class="game-logo">
+                <div class="form-box">
                 <input type="text" id="username-input" placeholder="Username">
                 <input type="password" id="password-input" placeholder="Password">
                 <div class="button-group">
@@ -48,6 +64,7 @@
         <!-- ============================== -->
 
             </div>
+        </div>
         </div>
     </div>
 

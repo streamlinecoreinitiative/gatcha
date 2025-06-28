@@ -87,6 +87,28 @@ button:disabled, .fantasy-button:disabled {
 .login-container {
     text-align: center;
 }
+.login-lore-box {
+    max-width: 400px;
+    margin-right: 40px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    text-align: left;
+}
+.login-lore-box h2 {
+    color: #f1c40f;
+    margin-bottom: 10px;
+}
+.login-lore-box p {
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+#login-wrapper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
 .form-box {
     background-color: rgba(0, 0, 0, 0.5);
     padding: 30px;
