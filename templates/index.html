@@ -239,31 +239,11 @@
 <div id="dungeons-view" class="view">
     <div class="section-header">
         <h2>Expeditions</h2>
-        <button class="tutorial-btn" data-tutorial="The Armory offers end-game items for those who conquer its challenges.">?</button>
+        <button class="tutorial-btn" data-tutorial="Expeditions offer end-game items for those who conquer their challenges.">?</button>
     </div>
-    <p class="view-description">Embark on a dangerous hunt for powerful rewards. The difficulty of the foe scales with your Tower progress.</p>
+    <p class="view-description">Embark on dangerous hunts for powerful rewards.</p>
 
-    <div class="dungeon-container">
-        <!-- Column 1: Image -->
-        <div class="dungeon-image-container">
-            <img src="{{ url_for('static', filename='images/ui/dungeon_armory.png') }}" alt="The Armory">
-        </div>
-
-        <!-- Column 2: Details -->
-        <div class="dungeon-details-container">
-            <h3>The Armory</h3>
-            <p class="dungeon-description">
-                Venture into the molten heart of a forgotten forge, now guarded by chaotic constructs. Defeat the guardian for a high chance to loot powerful equipment.
-            </p>
-            <div class="dungeon-rewards">
-                <strong>Possible Rewards:</strong>
-                <div class="reward-icon-box">
-                    <span>Common, Rare, & Legendary Equipment</span>
-                </div>
-            </div>
-            <button id="enter-armory-btn" class="dungeon-fight-button">Enter The Armory</button>
-        </div>
-    </div>
+    <div id="expedition-list" class="collection-grid"></div>
 </div>
 
             <!-- Events View -->
@@ -326,7 +306,9 @@
                 <h3>New Expedition</h3>
                 <input type="text" id="admin-expedition-name" placeholder="Expedition Name">
                 <textarea id="admin-expedition-enemies" placeholder="Enemy names comma separated" rows="2"></textarea>
+                <input type="file" id="admin-expedition-image">
                 <button id="admin-expedition-create-btn">Create Expedition</button>
+                <div id="admin-expedition-list" class="admin-entity-list"></div>
 
                 <hr>
                 <h3>Create Hero/Monster</h3>
@@ -360,6 +342,22 @@
                 <div id="admin-character-list" class="admin-entity-list"></div>
                 <h3>Existing Monsters</h3>
                 <div id="admin-enemy-list" class="admin-entity-list"></div>
+
+                <hr>
+                <h3>Manage Items</h3>
+                <input type="text" id="admin-item-name" placeholder="Item Name">
+                <input type="text" id="admin-item-type" placeholder="Type">
+                <select id="admin-item-rarity">
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Epic">Epic</option>
+                    <option value="Legendary">Legendary</option>
+                </select>
+                <textarea id="admin-item-stats" placeholder='{"atk":10}' rows="2"></textarea>
+                <input type="file" id="admin-item-image">
+                <button id="admin-item-create-btn">Create Item</button>
+                <div id="admin-item-list" class="admin-entity-list"></div>
             </div>
 
 
@@ -372,7 +370,7 @@
             <button class="nav-button" data-view="equipment-view">Equipment</button>
             <button class="nav-button" data-view="summon-view">Summon</button>
             <button class="nav-button" data-view="campaign-view">The Tower</button>
-            <button class="nav-button" data-view="dungeons-view">The Armory</button>
+            <button class="nav-button" data-view="dungeons-view">Expeditions</button>
             <button class="nav-button" data-view="online-view">Players</button>
             <button class="nav-button admin-only" data-view="admin-view">Admin</button>
             <button class="nav-button" data-view="store-view">Store</button>

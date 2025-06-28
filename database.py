@@ -1,6 +1,7 @@
 # database.py (V5.2 - Schema and Logic Fixes)
 import sqlite3
 import os
+import json
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DATABASE_NAME = "database.db"
@@ -109,7 +110,8 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS expeditions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL
+            name TEXT UNIQUE NOT NULL,
+            image_file TEXT
         )
     ''')
     cursor.execute('''
@@ -139,6 +141,7 @@ def init_db():
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'paypal_config', 'mode', 'TEXT NOT NULL DEFAULT "sandbox"')
+    add_column_if_missing(conn, 'expeditions', 'image_file', 'TEXT')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
     cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
     cursor.execute('INSERT OR IGNORE INTO messages (id, motd) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.")')
@@ -619,11 +622,11 @@ def set_motd(text):
     conn.close()
 
 
-def create_expedition(name, enemies):
+def create_expedition(name, enemies, image_file=None):
     """Create a new expedition with a list of enemy names."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO expeditions (name) VALUES (?)', (name,))
+    cursor.execute('INSERT INTO expeditions (name, image_file) VALUES (?, ?)', (name, image_file))
     expedition_id = cursor.lastrowid
     for idx, enemy in enumerate(enemies, start=1):
         cursor.execute(
@@ -634,12 +637,37 @@ def create_expedition(name, enemies):
     conn.close()
     return expedition_id
 
+def update_expedition(expedition_id, name=None, enemies=None, image_file=None):
+    """Update an existing expedition."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    if name is not None:
+        cur.execute('UPDATE expeditions SET name = ? WHERE id = ?', (name, expedition_id))
+    if image_file is not None:
+        cur.execute('UPDATE expeditions SET image_file = ? WHERE id = ?', (image_file, expedition_id))
+    if enemies is not None:
+        cur.execute('DELETE FROM expedition_levels WHERE expedition_id = ?', (expedition_id,))
+        for idx, enemy in enumerate(enemies, start=1):
+            cur.execute('INSERT INTO expedition_levels (expedition_id, level_num, enemy_name) VALUES (?, ?, ?)',
+                        (expedition_id, idx, enemy))
+    conn.commit()
+    conn.close()
+
+def delete_expedition(expedition_id):
+    """Delete an expedition and its levels."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM expedition_levels WHERE expedition_id = ?', (expedition_id,))
+    cur.execute('DELETE FROM expeditions WHERE id = ?', (expedition_id,))
+    conn.commit()
+    conn.close()
+
 
 def get_all_expeditions():
     """Return all expeditions with their level data."""
     conn = get_db_connection()
     cur = conn.cursor()
-    exps = cur.execute('SELECT id, name FROM expeditions').fetchall()
+    exps = cur.execute('SELECT id, name, image_file FROM expeditions').fetchall()
     result = []
     for exp in exps:
         levels = cur.execute(
@@ -649,8 +677,37 @@ def get_all_expeditions():
         result.append({
             'id': exp['id'],
             'name': exp['name'],
+            'image_file': exp['image_file'],
             'levels': [{'level': row['level_num'], 'enemy': row['enemy_name']} for row in levels]
         })
     conn.close()
     return result
+
+def load_items(json_path):
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+def save_items(json_path, items):
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(items, f, indent=2)
+
+def add_item(json_path, item):
+    items = load_items(json_path)
+    items.append(item)
+    save_items(json_path, items)
+
+def update_item(json_path, orig_name, item):
+    items = load_items(json_path)
+    items = [i for i in items if i.get('name') != orig_name]
+    items.append(item)
+    save_items(json_path, items)
+
+def delete_item(json_path, name):
+    items = load_items(json_path)
+    items = [i for i in items if i.get('name') != name]
+    save_items(json_path, items)
+
  
