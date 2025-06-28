@@ -327,6 +327,39 @@
                 <input type="text" id="admin-expedition-name" placeholder="Expedition Name">
                 <textarea id="admin-expedition-enemies" placeholder="Enemy names comma separated" rows="2"></textarea>
                 <button id="admin-expedition-create-btn">Create Expedition</button>
+
+                <hr>
+                <h3>Create Hero/Monster</h3>
+                <select id="admin-entity-type">
+                    <option value="character">Hero</option>
+                    <option value="enemy">Monster</option>
+                </select>
+                <input type="text" id="admin-entity-name" placeholder="Name">
+                <select id="admin-entity-rarity">
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Epic">Epic</option>
+                    <option value="SSR">SSR</option>
+                    <option value="UR">UR</option>
+                    <option value="LR">LR</option>
+                </select>
+                <select id="admin-entity-element">
+                    <option value="Fire">Fire</option>
+                    <option value="Water">Water</option>
+                    <option value="Grass">Grass</option>
+                </select>
+                <input type="number" id="admin-entity-hp" placeholder="Base HP">
+                <input type="number" id="admin-entity-atk" placeholder="Base ATK">
+                <input type="number" id="admin-entity-crit-chance" placeholder="Crit Chance">
+                <input type="number" id="admin-entity-crit-damage" placeholder="Crit Damage" step="0.1">
+                <input type="file" id="admin-entity-image">
+                <button id="admin-entity-create-btn">Create</button>
+                <hr>
+                <h3>Existing Heroes</h3>
+                <div id="admin-character-list" class="admin-entity-list"></div>
+                <h3>Existing Monsters</h3>
+                <div id="admin-enemy-list" class="admin-entity-list"></div>
             </div>
 
 

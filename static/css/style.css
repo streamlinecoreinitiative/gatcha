@@ -1444,3 +1444,18 @@ button:disabled, .fantasy-button:disabled {
     margin: 5px 0;
     text-align: center;
 }
+
+.admin-entity-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+.admin-entity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.admin-entity-item button {
+    margin-left: 5px;
+}
