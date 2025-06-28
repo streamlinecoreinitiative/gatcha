@@ -620,16 +620,34 @@ def admin_update_lore():
         return jsonify({'success': False, 'message': 'Failed to write lore'})
 
 
-@app.route('/api/admin/expedition', methods=['POST'])
-def admin_create_expedition():
+@app.route('/api/admin/expedition', methods=['POST', 'PUT', 'DELETE'])
+def admin_manage_expedition():
     if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
         return jsonify({'success': False}), 403
-    data = request.json or {}
+    if request.method == 'DELETE':
+        data = request.json or {}
+        exp_id = int(data.get('id', 0))
+        db.delete_expedition(exp_id)
+        return jsonify({'success': True})
+
+    data = request.form
     name = data.get('name', '').strip()
-    enemies = data.get('enemies', [])
-    if not name or not enemies:
-        return jsonify({'success': False, 'message': 'Name and enemies required'}), 400
-    db.create_expedition(name, enemies)
+    enemies = data.get('enemies', '')
+    enemies = [e.strip() for e in enemies.split(',') if e.strip()]
+    file = request.files.get('image')
+    filename = secure_filename(file.filename) if file else None
+    image_dir = os.path.join(BASE_DIR, 'static', 'images', 'ui')
+    os.makedirs(image_dir, exist_ok=True)
+    if file:
+        file.save(os.path.join(image_dir, filename))
+
+    if request.method == 'POST':
+        if not name or not enemies:
+            return jsonify({'success': False, 'message': 'Name and enemies required'}), 400
+        db.create_expedition(name, enemies, filename)
+    else:
+        exp_id = int(data.get('id', 0))
+        db.update_expedition(exp_id, name=name or None, enemies=enemies or None, image_file=filename)
     return jsonify({'success': True})
 
 
@@ -725,6 +743,67 @@ def admin_list_entities():
     elif ent_type == 'enemy':
         return jsonify({'success': True, 'entities': enemy_definitions})
     return jsonify({'success': False, 'message': 'Invalid type'}), 400
+
+
+@app.route('/api/admin/expeditions')
+def admin_list_expeditions():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    return jsonify({'success': True, 'expeditions': db.get_all_expeditions()})
+
+
+@app.route('/api/admin/items')
+def admin_list_items():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    return jsonify({'success': True, 'items': equipment_definitions})
+
+
+@app.route('/api/admin/item', methods=['POST', 'PUT', 'DELETE'])
+def admin_manage_item():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    json_path = os.path.join(BASE_DIR, 'static', 'equipment.json')
+    if request.method == 'DELETE':
+        data = request.json or {}
+        name = data.get('name')
+        db.delete_item(json_path, name)
+        equipment_definitions[:] = db.load_items(json_path)
+        equipment_stats_map.clear()
+        equipment_stats_map.update({i['name']: i['stat_bonuses'] for i in equipment_definitions})
+        return jsonify({'success': True})
+
+    data = request.form
+    name = data.get('name', '').strip()
+    item_type = data.get('type')
+    rarity = data.get('rarity')
+    stats = data.get('stats', '{}')
+    try:
+        stats_dict = json.loads(stats)
+    except json.JSONDecodeError:
+        return jsonify({'success': False, 'message': 'Invalid stats'}), 400
+    file = request.files.get('image')
+    filename = secure_filename(file.filename) if file else None
+    image_dir = os.path.join(BASE_DIR, 'static', 'images', 'items')
+    os.makedirs(image_dir, exist_ok=True)
+    if file:
+        file.save(os.path.join(image_dir, filename))
+    entry = {
+        'name': name,
+        'type': item_type,
+        'rarity': rarity,
+        'stat_bonuses': stats_dict,
+        'image_file': filename if file else None
+    }
+    if request.method == 'POST':
+        db.add_item(json_path, entry)
+    else:
+        orig = data.get('orig_name', name)
+        db.update_item(json_path, orig, entry)
+    equipment_definitions[:] = db.load_items(json_path)
+    equipment_stats_map.clear()
+    equipment_stats_map.update({i['name']: i['stat_bonuses'] for i in equipment_definitions})
+    return jsonify({'success': True})
 
 
 @app.route('/api/expeditions')
