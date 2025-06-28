@@ -103,6 +103,7 @@ def init_db():
     add_column_if_missing(conn, 'users', 'is_admin', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'users', 'banned', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'users', 'profile_image', 'TEXT')
+    add_column_if_missing(conn, 'users', 'email_confirmed', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_data', 'gold', 'INTEGER NOT NULL DEFAULT 10000')
     add_column_if_missing(conn, 'player_data', 'pity_counter', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_data', 'premium_gems', 'INTEGER NOT NULL DEFAULT 0')
@@ -152,9 +153,17 @@ def register_user(username, email, password):
 
 def login_user(username, password):
     conn = get_db_connection()
-    user = conn.execute("SELECT id, password, banned FROM users WHERE username = ?", (username,)).fetchone()
+    user = conn.execute(
+        "SELECT id, password, banned, email_confirmed FROM users WHERE username = ?",
+        (username,)
+    ).fetchone()
     conn.close()
-    if user and verify_password_hash(user['password'], password) and user['banned'] == 0:
+    if (
+        user
+        and verify_password_hash(user['password'], password)
+        and user['banned'] == 0
+        and user.get('email_confirmed', 0) == 1
+    ):
         return user['id']
     return None
 
@@ -419,7 +428,7 @@ def sell_character(user_id, char_id):
     conn.close()
     return True, {'gold_received': gold_amount, 'new_gold': new_gold}
 
-def update_user_profile(user_id, email=None, password=None, profile_image=None):
+def update_user_profile(user_id, email=None, password=None, profile_image=None, email_confirmed=None):
     conn = get_db_connection()
     if email is not None:
         conn.execute("UPDATE users SET email = ? WHERE id = ?", (email, user_id))
@@ -427,6 +436,8 @@ def update_user_profile(user_id, email=None, password=None, profile_image=None):
         conn.execute("UPDATE users SET password = ? WHERE id = ?", (hash_password(password), user_id))
     if profile_image is not None:
         conn.execute("UPDATE users SET profile_image = ? WHERE id = ?", (profile_image, user_id))
+    if email_confirmed is not None:
+        conn.execute("UPDATE users SET email_confirmed = ? WHERE id = ?", (1 if email_confirmed else 0, user_id))
     conn.commit()
     conn.close()
 
@@ -511,9 +522,21 @@ def create_admin_if_missing():
 
 def get_user_profile(user_id):
     conn = get_db_connection()
-    row = conn.execute("SELECT email, profile_image, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+    row = conn.execute(
+        "SELECT email, profile_image, is_admin, email_confirmed FROM users WHERE id = ?",
+        (user_id,),
+    ).fetchone()
     conn.close()
-    return dict(row) if row else {'email': '', 'profile_image': None, 'is_admin': 0}
+    return (
+        dict(row)
+        if row
+        else {
+            'email': '',
+            'profile_image': None,
+            'is_admin': 0,
+            'email_confirmed': 0,
+        }
+    )
 
 def get_paypal_config():
     conn = get_db_connection()
