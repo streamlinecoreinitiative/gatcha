@@ -142,6 +142,9 @@ def init_db():
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'paypal_config', 'mode', 'TEXT NOT NULL DEFAULT "sandbox"')
     add_column_if_missing(conn, 'expeditions', 'image_file', 'TEXT')
+    add_column_if_missing(conn, 'expeditions', 'description', 'TEXT')
+    add_column_if_missing(conn, 'expeditions', 'drops', 'TEXT')
+    add_column_if_missing(conn, 'expeditions', 'image_res', 'TEXT')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
     cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
     cursor.execute('INSERT OR IGNORE INTO messages (id, motd) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.")')
@@ -622,11 +625,12 @@ def set_motd(text):
     conn.close()
 
 
-def create_expedition(name, enemies, image_file=None):
+def create_expedition(name, enemies, image_file=None, description=None, drops=None, image_res=None):
     """Create a new expedition with a list of enemy names."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO expeditions (name, image_file) VALUES (?, ?)', (name, image_file))
+    cursor.execute('INSERT INTO expeditions (name, image_file, description, drops, image_res) VALUES (?, ?, ?, ?, ?)',
+                   (name, image_file, description, drops, image_res))
     expedition_id = cursor.lastrowid
     for idx, enemy in enumerate(enemies, start=1):
         cursor.execute(
@@ -637,7 +641,7 @@ def create_expedition(name, enemies, image_file=None):
     conn.close()
     return expedition_id
 
-def update_expedition(expedition_id, name=None, enemies=None, image_file=None):
+def update_expedition(expedition_id, name=None, enemies=None, image_file=None, description=None, drops=None, image_res=None):
     """Update an existing expedition."""
     conn = get_db_connection()
     cur = conn.cursor()
@@ -645,6 +649,12 @@ def update_expedition(expedition_id, name=None, enemies=None, image_file=None):
         cur.execute('UPDATE expeditions SET name = ? WHERE id = ?', (name, expedition_id))
     if image_file is not None:
         cur.execute('UPDATE expeditions SET image_file = ? WHERE id = ?', (image_file, expedition_id))
+    if description is not None:
+        cur.execute('UPDATE expeditions SET description = ? WHERE id = ?', (description, expedition_id))
+    if drops is not None:
+        cur.execute('UPDATE expeditions SET drops = ? WHERE id = ?', (drops, expedition_id))
+    if image_res is not None:
+        cur.execute('UPDATE expeditions SET image_res = ? WHERE id = ?', (image_res, expedition_id))
     if enemies is not None:
         cur.execute('DELETE FROM expedition_levels WHERE expedition_id = ?', (expedition_id,))
         for idx, enemy in enumerate(enemies, start=1):
@@ -667,7 +677,7 @@ def get_all_expeditions():
     """Return all expeditions with their level data."""
     conn = get_db_connection()
     cur = conn.cursor()
-    exps = cur.execute('SELECT id, name, image_file FROM expeditions').fetchall()
+    exps = cur.execute('SELECT id, name, image_file, description, drops, image_res FROM expeditions').fetchall()
     result = []
     for exp in exps:
         levels = cur.execute(
@@ -678,6 +688,9 @@ def get_all_expeditions():
             'id': exp['id'],
             'name': exp['name'],
             'image_file': exp['image_file'],
+            'description': exp['description'],
+            'drops': exp['drops'],
+            'image_res': exp['image_res'],
             'levels': [{'level': row['level_num'], 'enemy': row['enemy_name']} for row in levels]
         })
     conn.close()
@@ -699,15 +712,15 @@ def add_item(json_path, item):
     items.append(item)
     save_items(json_path, items)
 
-def update_item(json_path, orig_name, item):
+def update_item(json_path, orig_code, item):
     items = load_items(json_path)
-    items = [i for i in items if i.get('name') != orig_name]
+    items = [i for i in items if i.get('code') != orig_code]
     items.append(item)
     save_items(json_path, items)
 
-def delete_item(json_path, name):
+def delete_item(json_path, code):
     items = load_items(json_path)
-    items = [i for i in items if i.get('name') != name]
+    items = [i for i in items if i.get('code') != code]
     save_items(json_path, items)
 
  

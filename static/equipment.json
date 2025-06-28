@@ -1,45 +1,124 @@
 [
-    {
-        "name": "Broken Sword",
-        "type": "Weapon",
-        "rarity": "Common",
-        "stat_bonuses": { "atk": 10 }
+  {
+    "name": "Broken Sword",
+    "type": "Weapon",
+    "rarity": "Common",
+    "stat_bonuses": {
+      "atk": 10
     },
-    {
-        "name": "Leather Vest",
-        "type": "Armor",
-        "rarity": "Common",
-        "stat_bonuses": { "hp": 50 }
+    "code": "IT001"
+  },
+  {
+    "name": "Leather Vest",
+    "type": "Armor",
+    "rarity": "Common",
+    "stat_bonuses": {
+      "hp": 50
     },
-    {
-        "name": "Iron Longsword",
-        "type": "Weapon",
-        "rarity": "Rare",
-        "stat_bonuses": { "atk": 35 }
+    "code": "IT002"
+  },
+  {
+    "name": "Iron Longsword",
+    "type": "Weapon",
+    "rarity": "Rare",
+    "stat_bonuses": {
+      "atk": 35
     },
-    {
-        "name": "Steel Platebody",
-        "type": "Armor",
-        "rarity": "Rare",
-        "stat_bonuses": { "hp": 120 }
+    "code": "IT003"
+  },
+  {
+    "name": "Steel Platebody",
+    "type": "Armor",
+    "rarity": "Rare",
+    "stat_bonuses": {
+      "hp": 120
     },
-    {
-        "name": "Excalibur",
-        "type": "Weapon",
-        "rarity": "Legendary",
-        "stat_bonuses": { "atk": 80, "crit_chance": 5 }
+    "code": "IT004"
+  },
+  {
+    "name": "Excalibur",
+    "type": "Weapon",
+    "rarity": "Legendary",
+    "stat_bonuses": {
+      "atk": 80,
+      "crit_chance": 5
     },
-    {
-        "name": "Aegis Shield",
-        "type": "Armor",
-        "rarity": "Legendary",
-        "stat_bonuses": { "hp": 250, "crit_damage": 0.25 }
+    "code": "IT005"
+  },
+  {
+    "name": "Aegis Shield",
+    "type": "Armor",
+    "rarity": "Legendary",
+    "stat_bonuses": {
+      "hp": 250,
+      "crit_damage": 0.25
     },
-    { "name": "Hunter's Bow", "type": "Weapon", "rarity": "Uncommon", "stat_bonuses": { "atk": 20, "crit_chance": 2 }, "image_file": "hunters_bow.png" },
-    { "name": "Reinforced Buckler", "type": "Shield", "rarity": "Uncommon", "stat_bonuses": { "hp": 80 }, "image_file": "reinforced_buckler.png" },
-    { "name": "Dwarven Battleaxe", "type": "Weapon", "rarity": "Rare", "stat_bonuses": { "atk": 45, "crit_damage": 0.1 }, "image_file": "dwarven_battleaxe.png" },
-    { "name": "Arcane Robe", "type": "Armor", "rarity": "Rare", "stat_bonuses": { "hp": 150, "crit_chance": 3 }, "image_file": "arcane_robe.png" },
-    { "name": "Phoenix Blade", "type": "Weapon", "rarity": "Epic", "stat_bonuses": { "atk": 90, "crit_chance": 10, "crit_damage": 0.3 }, "image_file": "phoenix_blade.png" },
-    { "name": "Dragon Scale Armor", "type": "Armor", "rarity": "Epic", "stat_bonuses": { "hp": 300, "crit_damage": 0.2 }, "image_file": "dragon_scale_armor.png" }
-
+    "code": "IT006"
+  },
+  {
+    "name": "Hunter's Bow",
+    "type": "Weapon",
+    "rarity": "Uncommon",
+    "stat_bonuses": {
+      "atk": 20,
+      "crit_chance": 2
+    },
+    "image_file": "hunters_bow.png",
+    "code": "IT007"
+  },
+  {
+    "name": "Reinforced Buckler",
+    "type": "Shield",
+    "rarity": "Uncommon",
+    "stat_bonuses": {
+      "hp": 80
+    },
+    "image_file": "reinforced_buckler.png",
+    "code": "IT008"
+  },
+  {
+    "name": "Dwarven Battleaxe",
+    "type": "Weapon",
+    "rarity": "Rare",
+    "stat_bonuses": {
+      "atk": 45,
+      "crit_damage": 0.1
+    },
+    "image_file": "dwarven_battleaxe.png",
+    "code": "IT009"
+  },
+  {
+    "name": "Arcane Robe",
+    "type": "Armor",
+    "rarity": "Rare",
+    "stat_bonuses": {
+      "hp": 150,
+      "crit_chance": 3
+    },
+    "image_file": "arcane_robe.png",
+    "code": "IT010"
+  },
+  {
+    "name": "Phoenix Blade",
+    "type": "Weapon",
+    "rarity": "Epic",
+    "stat_bonuses": {
+      "atk": 90,
+      "crit_chance": 10,
+      "crit_damage": 0.3
+    },
+    "image_file": "phoenix_blade.png",
+    "code": "IT011"
+  },
+  {
+    "name": "Dragon Scale Armor",
+    "type": "Armor",
+    "rarity": "Epic",
+    "stat_bonuses": {
+      "hp": 300,
+      "crit_damage": 0.2
+    },
+    "image_file": "dragon_scale_armor.png",
+    "code": "IT012"
+  }
 ]
