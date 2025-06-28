@@ -1388,16 +1388,19 @@ button:disabled, .fantasy-button:disabled {
     border: 1px solid #555;
     padding: 10px;
     margin: 10px 0;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
 }
 .store-package div[id^="paypal-"] {
-    text-align: center;
+    max-width: 160px;
 }
 .store-package .paypal-buttons {
-    transform: scale(0.85);
-    transform-origin: top center;
-    margin: 0 auto;
-    display: inline-block;
+    width: 100%;
+}
+.store-package .package-text {
+    flex: 1;
 }
 .best-value {
     color: gold;
