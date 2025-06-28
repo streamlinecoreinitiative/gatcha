@@ -36,3 +36,7 @@ The old JavaScript prompt for fake receipts has been removed; real purchases are
 5. Click **Save PayPal** to apply the settings.
 
 These values are stored in the database and used by the server when rendering PayPal buttons.
+
+## Email Configuration
+
+Admins may configure SMTP credentials from the **Admin Panel**. Enter the host, port, username and password under the Email section and click **Save Email**. If no settings are provided, outgoing emails will be written to `sent_emails.log`.

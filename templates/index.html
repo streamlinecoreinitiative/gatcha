@@ -305,6 +305,17 @@
                     <button id="admin-paypal-remove-btn">Remove PayPal</button>
                 </div>
                 <hr>
+                <input type="text" id="admin-email-host" placeholder="SMTP Host">
+                <input type="number" id="admin-email-port" placeholder="SMTP Port" value="587">
+                <input type="text" id="admin-email-user" placeholder="SMTP Username">
+                <input type="password" id="admin-email-pass" placeholder="SMTP Password">
+                <button id="admin-email-save-btn">Save Email</button>
+                <div id="email-display">
+                    <p>Host: <span id="email-host-display"></span></p>
+                    <p>User: <span id="email-user-display"></span></p>
+                    <p>Port: <span id="email-port-display"></span></p>
+                </div>
+                <hr>
                 <textarea id="admin-motd-text" placeholder="Message of the Day" rows="3"></textarea>
                 <button id="admin-motd-save-btn">Save MOTD</button>
                 <textarea id="admin-events-text" placeholder="Events text" rows="6"></textarea>
