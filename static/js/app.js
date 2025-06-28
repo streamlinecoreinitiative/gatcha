@@ -737,10 +737,18 @@ async function fetchPlayerDataAndUpdate() {
 }
 
 async function handleLogin() {
-    const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: usernameInput.value, password: passwordInput.value }) });
+    const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: usernameInput.value, password: passwordInput.value })
+    });
     const result = await response.json();
-    if (result.success) await initializeGame();
-    else displayMessage(`Login Failed: ${result.message}`);
+    if (result.success) {
+        await initializeGame();
+        if (result.message) displayMessage(result.message);
+    } else {
+        displayMessage(`Login Failed: ${result.message}`);
+    }
 }
 
 async function handleLogout() {

@@ -299,18 +299,16 @@ def login():
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    user_id = db.login_user(username, password)
+    user_id, confirmed = db.login_user(username, password)
     if user_id:
         session['logged_in'] = True
         session['username'] = username
         session['user_id'] = user_id
-        return jsonify({'success': True})
+        message = ''
+        if not confirmed:
+            message = 'Please confirm your email to unlock all features.'
+        return jsonify({'success': True, 'message': message})
     else:
-        uid = db.get_user_id(username)
-        if uid and db.verify_user_password(uid, password):
-            profile = db.get_user_profile(uid)
-            if profile.get('email_confirmed') != 1:
-                return jsonify({'success': False, 'message': 'Please confirm your email before logging in.'})
         return jsonify({'success': False, 'message': 'Invalid username or password.'})
 
 
