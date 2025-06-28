@@ -980,9 +980,13 @@ async function updateStoreDisplay() {
     const paypalData = await paypalResp.json();
     const clientId = paypalData.client_id;
     const paypalScript = document.getElementById('paypal-sdk');
-    if (clientId && paypalScript && !paypalScript.src) {
-        paypalScript.onload = () => updateStoreDisplay();
-        paypalScript.src = `https://www.paypal.com/sdk/js?client-id=${clientId}`;
+    if (clientId && paypalScript) {
+        const desiredSrc = `https://www.paypal.com/sdk/js?client-id=${clientId}`;
+        if (!paypalScript.src || paypalScript.src !== desiredSrc) {
+            paypalScript.onload = () => updateStoreDisplay();
+            paypalScript.src = desiredSrc;
+            return; // wait for PayPal SDK to load then rerun
+        }
     }
     storePackagesContainer.innerHTML = '';
     result.items.forEach(pkg => {
