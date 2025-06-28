@@ -153,19 +153,17 @@ def register_user(username, email, password):
 
 def login_user(username, password):
     conn = get_db_connection()
-    user = conn.execute(
+    row = conn.execute(
         "SELECT id, password, banned, email_confirmed FROM users WHERE username = ?",
         (username,)
     ).fetchone()
     conn.close()
-    if (
-        user
-        and verify_password_hash(user['password'], password)
-        and user['banned'] == 0
-        and user.get('email_confirmed', 0) == 1
-    ):
-        return user['id']
-    return None
+
+    if row and verify_password_hash(row["password"], password) and row["banned"] == 0:
+        # Return the user id along with whether their email is confirmed
+        return row["id"], row["email_confirmed"]
+
+    return None, None
 
 def get_player_data(user_id):
     import time
