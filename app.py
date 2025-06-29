@@ -631,8 +631,8 @@ def admin_manage_expedition():
         return jsonify({'success': True})
 
     data = request.form
-    code = data.get('code', '').strip()
-    code = data.get('code', '').strip()
+    # Expedition creation does not currently use a code field; remove any
+    # leftover values to avoid confusion
     name = data.get('name', '').strip()
     enemies = data.get('enemies', '')
     enemies = [e.strip() for e in enemies.split(',') if e.strip()]
@@ -1001,11 +1001,39 @@ def fight_dungeon():
         if player_data['dungeon_energy'] <= 0:
             return jsonify({'success': False, 'message': 'No dungeon energy left.'})
         db.consume_dungeon_energy(user_id)
-        ARMORY_FIXED_LEVEL = 40
-        concept = random.choice(enemy_definitions)
-        dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
-        enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
-        enemy_level = enemy['level']
+
+        data = request.get_json(silent=True) or {}
+        exp_id = data.get('expedition_id') or request.form.get('expedition_id') or request.args.get('expedition_id')
+        try:
+            exp_id = int(exp_id) if exp_id is not None else None
+        except ValueError:
+            exp_id = None
+        expedition = None
+
+        if exp_id:
+            expedition = db.get_expedition(int(exp_id))
+            if not expedition or not expedition['levels']:
+                return jsonify({'success': False, 'message': 'Invalid expedition'}), 400
+            enemy_id = expedition['levels'][0]['enemy']
+            concept = next((e for e in enemy_definitions if e.get('code') == enemy_id or e.get('name') == enemy_id), None)
+            if not concept:
+                return jsonify({'success': False, 'message': 'Enemy not found'}), 404
+            enemy = {
+                'name': concept['name'],
+                'image': f"enemies/{concept.get('image_file', 'placeholder_enemy.png')}",
+                'level': 1,
+                'element': concept.get('element', 'None'),
+                'stats': {'hp': concept.get('base_hp', 100), 'atk': concept.get('base_atk', 10)},
+                'crit_chance': concept.get('crit_chance', 0),
+                'crit_damage': concept.get('crit_damage', 1.5),
+            }
+            enemy_level = 1
+        else:
+            ARMORY_FIXED_LEVEL = 40
+            concept = random.choice(enemy_definitions)
+            dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
+            enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
+            enemy_level = enemy['level']
 
         if player_data is None:
             session.clear()
@@ -1015,11 +1043,16 @@ def fight_dungeon():
         team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
 
         enemy_image = enemy['image']
+        start_msg = ("Expedition:" if exp_id else "Dungeon:") + \
+            f" Your team faces a {stats['enemy_element']} {enemy['name']}!"
         combat_log = [
-            {'type': 'start',
-             'message': f"Dungeon: Your team faces a {stats['enemy_element']} {enemy['name']}!",
-             'enemy_image': enemy_image,
-             'element': stats['enemy_element']}]
+            {
+                'type': 'start',
+                'message': start_msg,
+                'enemy_image': enemy_image,
+                'element': stats['enemy_element']
+            }
+        ]
 
         available_attackers = [c for c in team if c]
         while team_hp > 0 and enemy_hp > 0:
@@ -1056,7 +1089,36 @@ def fight_dungeon():
         gold_won = 0
         if victory:
             combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
-            if random.random() < 0.50:
+            drop_handled = False
+            if exp_id and expedition and expedition.get('drops'):
+                for part in expedition['drops'].split(','):
+                    part = part.strip()
+                    if ':' not in part:
+                        continue
+                    code, chance_str = part.split(':', 1)
+                    try:
+                        chance = float(chance_str)
+                    except ValueError:
+                        continue
+                    if random.random() * 100 <= chance:
+                        item_def = next((i for i in equipment_definitions if i.get('code') == code or i['name'] == code), None)
+                        if item_def:
+                            item_power = calculate_item_power(enemy_level)
+                            looted_item = {
+                                'name': item_def['name'],
+                                'rarity': item_def['rarity'],
+                                'power': item_power
+                            }
+                            conn = db.get_db_connection()
+                            conn.execute(
+                                "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
+                                (user_id, looted_item['name'], looted_item['rarity'])
+                            )
+                            conn.commit()
+                            conn.close()
+                            drop_handled = True
+                            break
+            if not drop_handled and random.random() < 0.50:
                 looted_item_def = random.choice(equipment_definitions)
                 item_power = calculate_item_power(enemy_level)
                 looted_item = {
@@ -1065,8 +1127,10 @@ def fight_dungeon():
                     'power': item_power
                 }
                 conn = db.get_db_connection()
-                conn.execute("INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
-                             (user_id, looted_item['name'], looted_item['rarity']))
+                conn.execute(
+                    "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
+                    (user_id, looted_item['name'], looted_item['rarity'])
+                )
                 conn.commit()
                 conn.close()
         else:

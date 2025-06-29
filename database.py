@@ -696,6 +696,33 @@ def get_all_expeditions():
     conn.close()
     return result
 
+def get_expedition(expedition_id):
+    """Return a single expedition by id."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    exp = cur.execute(
+        'SELECT id, name, image_file, description, drops, image_res FROM expeditions WHERE id = ?',
+        (expedition_id,)
+    ).fetchone()
+    if not exp:
+        conn.close()
+        return None
+    levels = cur.execute(
+        'SELECT level_num, enemy_name FROM expedition_levels WHERE expedition_id = ? ORDER BY level_num',
+        (expedition_id,)
+    ).fetchall()
+    result = {
+        'id': exp['id'],
+        'name': exp['name'],
+        'image_file': exp['image_file'],
+        'description': exp['description'],
+        'drops': exp['drops'],
+        'image_res': exp['image_res'],
+        'levels': [{'level': row['level_num'], 'enemy': row['enemy_name']} for row in levels]
+    }
+    conn.close()
+    return result
+
 def load_items(json_path):
     try:
         with open(json_path, 'r', encoding='utf-8') as f:

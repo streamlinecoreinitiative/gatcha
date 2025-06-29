@@ -580,6 +580,7 @@ function attachEventListeners() {
             adminExpeditionImageInput.value = '';
             loadExpeditionAdminList();
             loadItemAdminList();
+            updateExpeditionDisplay();
         }
     });
 
@@ -856,7 +857,13 @@ function attachEventListeners() {
             } else { displayMessage(`Error: ${result.message}`); }
         }
         else if (target.classList.contains('dungeon-fight-button')) {
-            const response = await fetch('/api/fight_dungeon', { method: 'POST' });
+            const expId = target.dataset.expeditionId;
+            const payload = expId ? { expedition_id: parseInt(expId) } : {};
+            const response = await fetch('/api/fight_dungeon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
             const result = await response.json();
             if (result.success) {
                 gameScreen.classList.remove('active');
@@ -1194,14 +1201,14 @@ async function updateExpeditionDisplay() {
     if (!data.success) { list.innerHTML = 'Failed to load'; return; }
     list.innerHTML = '';
     data.expeditions.forEach(exp => {
-        const card = document.createElement('div');
-        card.className = 'dungeon-details-container';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'dungeon-container';
         const img = exp.image_file ? `/static/images/ui/${exp.image_file}` : '/static/images/ui/dungeon_armory.png';
         const drops = exp.drops ? `<p>Drops: ${exp.drops}</p>` : '';
         const desc = exp.description ? `<p>${exp.description}</p>` : '';
         const res = exp.image_res ? `<p>Res: ${exp.image_res}</p>` : '';
-        card.innerHTML = `<div class="dungeon-image-container"><img src="${img}" alt="${exp.name}"></div><div class="dungeon-details-container"><h3>${exp.name}</h3>${desc}${drops}${res}<button class="dungeon-fight-button" data-expedition-id="${exp.id}">Enter</button></div>`;
-        list.appendChild(card);
+        wrapper.innerHTML = `<div class="dungeon-image-container"><img src="${img}" alt="${exp.name}"></div><div class="dungeon-details-container"><h3>${exp.name}</h3>${desc}${drops}${res}<button class="dungeon-fight-button" data-expedition-id="${exp.id}">Enter</button></div>`;
+        list.appendChild(wrapper);
     });
 }
 
