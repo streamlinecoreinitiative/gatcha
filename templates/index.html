@@ -304,11 +304,13 @@
                 <button id="admin-events-save-btn">Save Events</button>
                 <hr>
                 <h3>New Expedition</h3>
-                <input type="text" id="admin-expedition-name" placeholder="Expedition Name">
-                <textarea id="admin-expedition-enemies" placeholder="Enemy codes comma separated" rows="2"></textarea>
-                <textarea id="admin-expedition-desc" placeholder="Description" rows="2"></textarea>
-                <input type="text" id="admin-expedition-drops" placeholder="itemCode:chance, ...">
-                <input type="text" id="admin-expedition-res" placeholder="Image Resolution (e.g. 400x300)">
+                <p class="expedition-help">Use enemy <strong>codes</strong> separated by commas (e.g. EN001, EN008).<br>
+                Drops follow <code>itemCode:chance</code> pairs (e.g. sword:0.5), and image resolution is <code>widthxheight</code>.</p>
+                <input type="text" id="admin-expedition-name" placeholder="Expedition Name" style="width:95%">
+                <textarea id="admin-expedition-enemies" placeholder="Enemy codes comma separated" rows="3" style="width:95%"></textarea>
+                <textarea id="admin-expedition-desc" placeholder="Description" rows="3" style="width:95%"></textarea>
+                <input type="text" id="admin-expedition-drops" placeholder="itemCode:chance, ..." style="width:95%">
+                <input type="text" id="admin-expedition-res" placeholder="Image Resolution (e.g. 400x300)" style="width:95%">
                 <input type="file" id="admin-expedition-image">
                 <button id="admin-expedition-create-btn">Create Expedition</button>
                 <div id="admin-expedition-list" class="admin-entity-list"></div>
