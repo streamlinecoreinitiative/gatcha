@@ -113,6 +113,8 @@ let loadedExpeditions = [];
 let editingEntity = null;
 let loadedItems = [];
 let editingItem = null;
+let loadedTowerLevels = [];
+let editingTowerLevel = null;
 let adminItemNameInput;
 let adminItemCodeInput;
 let adminItemTypeInput;
@@ -121,6 +123,10 @@ let adminItemStatsInput;
 let adminItemImageInput;
 let adminItemCreateBtn;
 let adminItemList;
+let adminTowerStageInput;
+let adminTowerEnemyInput;
+let adminTowerSaveBtn;
+let adminTowerList;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -298,6 +304,10 @@ function attachEventListeners() {
     adminItemImageInput = document.getElementById('admin-item-image');
     adminItemCreateBtn = document.getElementById('admin-item-create-btn');
     adminItemList = document.getElementById('admin-item-list');
+    adminTowerStageInput = document.getElementById('admin-tower-stage');
+    adminTowerEnemyInput = document.getElementById('admin-tower-enemy');
+    adminTowerSaveBtn = document.getElementById('admin-tower-save-btn');
+    adminTowerList = document.getElementById('admin-tower-list');
     newEntityTypeSelect = document.getElementById('admin-entity-type');
     newEntityNameInput = document.getElementById('admin-entity-name');
     newEntityCodeInput = document.getElementById('admin-entity-code');
@@ -658,6 +668,27 @@ function attachEventListeners() {
         }
     });
 
+    if (adminTowerSaveBtn) adminTowerSaveBtn.addEventListener('click', async () => {
+        const stage = parseInt(adminTowerStageInput.value);
+        const code = adminTowerEnemyInput.value.trim();
+        if (!stage || !code) { displayMessage('Stage and code required'); return; }
+        const method = editingTowerLevel ? 'PUT' : 'POST';
+        const resp = await fetch('/api/admin/tower_level', {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stage: stage, enemy_code: code })
+        });
+        const result = await resp.json();
+        displayMessage(result.success ? 'Level saved' : result.message || 'Update failed');
+        if (result.success) {
+            editingTowerLevel = null;
+            adminTowerSaveBtn.textContent = 'Save Level';
+            adminTowerStageInput.value = '';
+            adminTowerEnemyInput.value = '';
+            loadTowerLevelList();
+        }
+    });
+
     const performSummon = async (btn, count = 1, free = false) => {
         if (!btn) return;
         btn.disabled = true;
@@ -736,6 +767,7 @@ function attachEventListeners() {
                 loadEntityLists();
                 loadExpeditionAdminList();
                 loadItemAdminList();
+                loadTowerLevelList();
             }
             if (targetViewId === 'online-view') {
                 updateAllUsers();
@@ -848,6 +880,24 @@ function attachEventListeners() {
             const result = await resp.json();
             displayMessage(result.success ? 'Item removed' : result.message || 'Update failed');
             if (result.success) loadItemAdminList();
+        }
+        else if (target.classList.contains('edit-tower')) {
+            const stage = parseInt(target.dataset.stage);
+            const lvl = loadedTowerLevels.find(l => l.stage === stage);
+            if (lvl) {
+                adminTowerStageInput.value = lvl.stage;
+                adminTowerEnemyInput.value = lvl.enemy_code;
+                editingTowerLevel = lvl;
+                adminTowerSaveBtn.textContent = 'Update Level';
+                document.getElementById('admin-view').scrollTop = 0;
+            }
+        }
+        else if (target.classList.contains('delete-tower')) {
+            const stage = parseInt(target.dataset.stage);
+            const resp = await fetch('/api/admin/tower_level', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stage: stage }) });
+            const result = await resp.json();
+            displayMessage(result.success ? 'Level removed' : result.message || 'Update failed');
+            if (result.success) loadTowerLevelList();
         }
         else if (target.classList.contains('fight-button')) {
             const stageNum = parseInt(target.dataset.stageNum);
@@ -1439,6 +1489,22 @@ async function loadItemAdminList() {
             adminItemList.appendChild(div);
         });
         loadedItems = data.items;
+    }
+}
+
+async function loadTowerLevelList() {
+    if (!adminTowerList) return;
+    const resp = await fetch('/api/admin/tower_levels');
+    const data = await resp.json();
+    if (data.success) {
+        loadedTowerLevels = data.levels;
+        adminTowerList.innerHTML = '';
+        data.levels.forEach(lvl => {
+            const div = document.createElement('div');
+            div.className = 'admin-entity-item';
+            div.innerHTML = `<span>Stage ${lvl.stage}: ${lvl.enemy_code}</span> <button class="edit-tower" data-stage="${lvl.stage}">Edit</button> <button class="delete-tower" data-stage="${lvl.stage}">Delete</button>`;
+            adminTowerList.appendChild(div);
+        });
     }
 }
 
