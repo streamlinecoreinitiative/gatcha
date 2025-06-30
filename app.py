@@ -182,6 +182,12 @@ def grant_currency(user_id: int, amount: int) -> int:
 
 # --- HELPER FUNCTIONS ---
 def get_enemy_for_stage(stage_num):
+    custom_code = db.get_tower_level(stage_num)
+    if custom_code:
+        concept = next((e for e in enemy_definitions if e.get('code') == custom_code), None)
+        if concept:
+            archetype = "boss" if stage_num % 10 == 0 else "standard"
+            return generate_enemy(stage_num, archetype, concept)
     random.seed(stage_num)
     tier_index = min(stage_num // 10, len(ENEMY_RARITY_ORDER) - 1)
     target_rarity = ENEMY_RARITY_ORDER[tier_index]
@@ -815,6 +821,32 @@ def admin_manage_item():
     equipment_stats_map.clear()
     equipment_stats_map.update({i['name']: i['stat_bonuses'] for i in equipment_definitions})
     return jsonify({'success': True})
+
+
+@app.route('/api/admin/tower_level', methods=['POST', 'PUT', 'DELETE'])
+def admin_manage_tower_level():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    if request.method == 'DELETE':
+        data = request.json or {}
+        stage = int(data.get('stage', 0))
+        db.delete_tower_level(stage)
+        return jsonify({'success': True})
+
+    data = request.json or {}
+    stage = int(data.get('stage', 0))
+    enemy_code = data.get('enemy_code')
+    if not stage or not enemy_code:
+        return jsonify({'success': False, 'message': 'Stage and enemy code required'}), 400
+    db.set_tower_level(stage, enemy_code)
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/tower_levels')
+def admin_list_tower_levels():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    return jsonify({'success': True, 'levels': db.get_all_tower_levels()})
 
 
 @app.route('/api/expeditions')
