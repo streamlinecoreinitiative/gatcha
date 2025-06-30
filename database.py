@@ -123,6 +123,12 @@ def init_db():
             FOREIGN KEY (expedition_id) REFERENCES expeditions(id)
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tower_levels (
+            stage INTEGER PRIMARY KEY,
+            enemy_code TEXT NOT NULL
+        )
+    ''')
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
@@ -749,5 +755,41 @@ def delete_item(json_path, code):
     items = load_items(json_path)
     items = [i for i in items if i.get('code') != code]
     save_items(json_path, items)
+
+
+def set_tower_level(stage, enemy_code):
+    """Insert or update a custom tower level."""
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO tower_levels (stage, enemy_code) VALUES (?, ?) '
+        'ON CONFLICT(stage) DO UPDATE SET enemy_code = excluded.enemy_code',
+        (stage, enemy_code)
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_tower_level(stage):
+    """Remove a custom tower level."""
+    conn = get_db_connection()
+    conn.execute('DELETE FROM tower_levels WHERE stage = ?', (stage,))
+    conn.commit()
+    conn.close()
+
+
+def get_tower_level(stage):
+    """Return the enemy code for a custom tower level, or None."""
+    conn = get_db_connection()
+    row = conn.execute('SELECT enemy_code FROM tower_levels WHERE stage = ?', (stage,)).fetchone()
+    conn.close()
+    return row['enemy_code'] if row else None
+
+
+def get_all_tower_levels():
+    """Return all custom tower levels."""
+    conn = get_db_connection()
+    rows = conn.execute('SELECT stage, enemy_code FROM tower_levels ORDER BY stage').fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
 
  
