@@ -39,6 +39,13 @@ const summonButton = document.getElementById('perform-summon-button');
 const summonTenButton = document.getElementById('summon-ten-button');
 const freeSummonButton = document.getElementById('free-summon-button');
 const freeSummonTimerDisplay = document.getElementById('free-summon-timer');
+const gemGiftButton = document.getElementById('gem-gift-button');
+const gemGiftTimerDisplay = document.getElementById('gem-gift-timer');
+const platinumGiftButton = document.getElementById('platinum-gift-button');
+const platinumGiftTimerDisplay = document.getElementById('platinum-gift-timer');
+const homeNavButton = document.querySelector('.nav-button[data-view="home-view"]');
+const summonNavButton = document.querySelector('.nav-button[data-view="summon-view"]');
+const storeNavButton = document.querySelector('.nav-button[data-view="store-view"]');
 const summonResultContainer = document.getElementById('summon-result');
 const stageListContainer = document.getElementById('stage-list');
 const loreContainer = document.getElementById('lore-text-container');
@@ -181,6 +188,12 @@ function formatDuration(sec) {
     return `${s}s`;
 }
 
+function setRedDot(element, show) {
+    if (!element) return;
+    const dot = element.querySelector('.red-dot');
+    if (dot) dot.style.display = show ? 'block' : 'none';
+}
+
 let resourceTimer;
 
 function updateResourceTimers() {
@@ -217,9 +230,41 @@ function updateResourceTimers() {
         if (now >= nextFree) {
             freeSummonButton.disabled = false;
             freeSummonTimerDisplay.textContent = '';
+            setRedDot(freeSummonButton, true);
+            setRedDot(summonNavButton, true);
         } else {
             freeSummonButton.disabled = true;
             freeSummonTimerDisplay.textContent = formatDuration(nextFree - now);
+            setRedDot(freeSummonButton, false);
+            setRedDot(summonNavButton, false);
+        }
+    }
+    if (gemGiftButton && gemGiftTimerDisplay) {
+        const nextGem = (gameState.gem_gift_last || 0) + 1800;
+        if (now >= nextGem) {
+            gemGiftButton.disabled = false;
+            gemGiftTimerDisplay.textContent = '';
+            setRedDot(gemGiftButton, true);
+            setRedDot(homeNavButton, true);
+        } else {
+            gemGiftButton.disabled = true;
+            gemGiftTimerDisplay.textContent = formatDuration(nextGem - now);
+            setRedDot(gemGiftButton, false);
+            setRedDot(homeNavButton, false);
+        }
+    }
+    if (platinumGiftButton && platinumGiftTimerDisplay) {
+        const nextPlat = (gameState.platinum_last || 0) + 86400;
+        if (now >= nextPlat) {
+            platinumGiftButton.disabled = false;
+            platinumGiftTimerDisplay.textContent = '';
+            setRedDot(platinumGiftButton, true);
+            setRedDot(storeNavButton, true);
+        } else {
+            platinumGiftButton.disabled = true;
+            platinumGiftTimerDisplay.textContent = formatDuration(nextPlat - now);
+            setRedDot(platinumGiftButton, false);
+            setRedDot(storeNavButton, false);
         }
     }
 }
@@ -725,6 +770,8 @@ function attachEventListeners() {
     if (summonButton) summonButton.addEventListener('click', () => performSummon(summonButton, 1, false));
     if (summonTenButton) summonTenButton.addEventListener('click', () => performSummon(summonTenButton, 10, false));
     if (freeSummonButton) freeSummonButton.addEventListener('click', () => performSummon(freeSummonButton, 1, true));
+    if (gemGiftButton) gemGiftButton.addEventListener('click', claimGemGift);
+    if (platinumGiftButton) platinumGiftButton.addEventListener('click', claimPlatinumGift);
 
     chatSendButton.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
@@ -1191,6 +1238,20 @@ function sendMessage() {
         socket.emit('send_message', { message: chatInput.value });
         chatInput.value = '';
     }
+}
+
+async function claimGemGift() {
+    const resp = await fetch('/api/claim_gem_gift', { method: 'POST' });
+    const result = await resp.json();
+    displayMessage(result.message || (result.success ? 'Gems claimed!' : 'Gift not ready'));
+    if (result.success) await fetchPlayerDataAndUpdate();
+}
+
+async function claimPlatinumGift() {
+    const resp = await fetch('/api/claim_platinum_gift', { method: 'POST' });
+    const result = await resp.json();
+    displayMessage(result.message || (result.success ? 'Platinum claimed!' : 'Gift not ready'));
+    if (result.success) await fetchPlayerDataAndUpdate();
 }
 
 // --- UI UPDATE FUNCTIONS ---
