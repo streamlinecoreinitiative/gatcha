@@ -222,6 +222,7 @@ button:disabled, .fantasy-button:disabled {
 }
 .view {
     display: none; /* Hide views by default */
+    min-height: 100%; /* Ensure backgrounds cover full section */
 }
 .view.active {
     display: block; /* Show active view */
@@ -980,12 +981,20 @@ button:disabled, .fantasy-button:disabled {
     justify-content: center;
 }
 
+/* Center headers for equipment, heroes and expeditions */
+#equipment-view .section-header,
+#collection-view .section-header,
+#dungeons-view .section-header {
+    justify-content: center;
+}
+
 .heroes-guide {
     background: rgba(0,0,0,0.4);
     padding: 10px;
     border-radius: 5px;
     margin-bottom: 10px;
     font-size: 14px;
+    text-align: center;
 }
 
 .no-heroes {
