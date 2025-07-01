@@ -1369,9 +1369,14 @@ async function updateEquipmentDisplay() {
     const equipmentDefs = await equipmentDefsResponse.json();
     const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
     if (result.equipment.length === 0) {
+        equipmentContainer.style.display = 'flex';
+        equipmentContainer.style.justifyContent = 'center';
+        equipmentContainer.style.alignItems = 'center';
+        equipmentContainer.style.minHeight = '40vh';
         equipmentContainer.innerHTML = '<p class="empty-armory-message">Your armory is empty. Farm the Armory to find loot, it is an end game mechanic.</p>';
         return;
     }
+    equipmentContainer.removeAttribute('style');
     result.equipment.forEach(item => {
         const card = document.createElement('div');
         card.className = 'collection-card';
