@@ -301,8 +301,34 @@ const TOWER_LORE = [
         floor: 40,
         title: "The Impossible Pinnacle",
         text: "Your destiny is a vertical one. You must climb higher than any have before to seal the rift for good."
+    },
+    {
+        floor: 60,
+        title: "The Spiral Deepens",
+        text: "Here the tower bends upon itself, repeating endlessly yet growing stronger."
+    },
+    {
+        floor: 100,
+        title: "The Endless Ascent",
+        text: "Legends say no summit exists. Each hundred floors begins anew with greater trials."
     }
 ];
+
+function calculateTowerRewards(stageNum, firstClear) {
+    if (firstClear) {
+        let gems = 25 + Math.floor(stageNum / 5) * 5;
+        let gold = 100 * stageNum;
+        if (stageNum % 10 === 0) {
+            gems += 25;
+            gold *= 2;
+        }
+        return { gems, gold };
+    } else {
+        let gems = 15 + (stageNum % 10 === 0 ? 10 : 0);
+        let gold = 50 * stageNum;
+        return { gems, gold };
+    }
+}
 
 // =========================================================================
 // ==== ATTACH EVENT LISTENERS (RUNS ONLY ONCE) ====
@@ -1717,13 +1743,13 @@ function updateCampaignDisplay() {
 
         if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
-            const gemsForRepeat = 15;
+            const rewards = calculateTowerRewards(stageNum, false);
             descriptionHTML = `<p class="stage-reward repeat"><i class="fa-solid fa-gem currency-icon"></i> Farm this floor for a small reward.</p>`;
-            buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
+            buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${rewards.gems} Gems)</button>`;
         } else if (status === 'current') {
             iconPath = '/static/images/ui/stage_node_current.png';
-            const gemsForFirstClear = 25 + (Math.floor((stageNum - 1) / 5) * 5);
-            descriptionHTML = `<p class="stage-reward"><i class="fa-solid fa-gem currency-icon"></i> First Clear Reward: ${gemsForFirstClear}</p>`;
+            const rewards = calculateTowerRewards(stageNum, true);
+            descriptionHTML = `<p class="stage-reward"><i class="fa-solid fa-gem currency-icon"></i> First Clear Reward: ${rewards.gems}</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;
         }
 

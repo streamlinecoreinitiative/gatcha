@@ -1,9 +1,21 @@
 import { balanceConfig } from './balance.js';
 
 export function calculateStatsForLevel(level) {
-    const { baseStats, growthFactors } = balanceConfig;
-    const hp = Math.round(baseStats.hp * Math.pow(growthFactors.hp, level - 1));
-    const atk = Math.round(baseStats.atk * Math.pow(growthFactors.atk, level - 1));
-    const def = Math.round(baseStats.def * Math.pow(growthFactors.def, level - 1));
+    const { baseStats, levelCurve } = balanceConfig;
+    const hp = Math.round(
+        baseStats.hp *
+        Math.pow(level, levelCurve.hpExp) *
+        Math.pow(levelCurve.hpGrowth, level)
+    );
+    const atk = Math.round(
+        baseStats.atk *
+        Math.pow(level, levelCurve.atkExp) *
+        Math.pow(levelCurve.atkGrowth, level)
+    );
+    const def = Math.round(
+        baseStats.def *
+        Math.pow(level, levelCurve.defExp) *
+        Math.pow(levelCurve.defGrowth, level)
+    );
     return { hp, atk, def };
 }

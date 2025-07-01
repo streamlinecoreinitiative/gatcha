@@ -197,14 +197,31 @@ def get_enemy_for_stage(stage_num):
     if stage_num % 10 == 0:
         archetype = "boss"
     else:
-        archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
+        archetype = random.choice([
+            "standard",
+            "tank",
+            "glass_cannon",
+            "swift",
+            "healer",
+            "support",
+        ])
     enemy = generate_enemy(stage_num, archetype, concept)
     random.seed()
     return enemy
 
 
-# --- THIS IS THE CORRECTED HELPER FUNCTION ---
-# in app.py
+def get_tower_rewards(stage_num: int, first_clear: bool) -> tuple[int, int]:
+    """Return (gems, gold) for a tower floor."""
+    if first_clear:
+        gems = 25 + (stage_num // 5) * 5
+        gold = 100 * stage_num
+        if stage_num % 10 == 0:
+            gems += 25
+            gold *= 2
+    else:
+        gems = 15 + (10 if stage_num % 10 == 0 else 0)
+        gold = 50 * stage_num
+    return gems, gold
 
 def calculate_fight_stats(team, enemy):
     total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
@@ -1039,7 +1056,9 @@ def get_stage_info(stage_num):
         'atk': enemy['stats']['atk']
     }
     energy_cost = 1
-    gold_reward = 100 * stage_num
+    player_data = db.get_player_data(session['user_id'])
+    first_clear = stage_num == player_data.get('current_stage', 1)
+    _, gold_reward = get_tower_rewards(stage_num, first_clear)
     return jsonify({'success': True, 'enemy': enemy_info, 'energy_cost': energy_cost, 'gold_reward': gold_reward})
 
 
@@ -1116,20 +1135,15 @@ def fight():
         if victory:
             combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
             player_data = db.get_player_data(user_id)
-            if stage_num == player_data['current_stage']:
-                gems_won = 25 + (stage_num // 5) * 5
-                gold_won = 100 * stage_num
-                db.save_player_data(user_id,
-                                    gems=player_data['gems'] + gems_won,
-                                    gold=player_data['gold'] + gold_won,
-                                    current_stage=player_data['current_stage'] + 1)
-            else:
-                gems_won = 15
-                gold_won = 50 * stage_num
-                db.save_player_data(user_id,
-                                    gems=player_data['gems'] + gems_won,
-                                    gold=player_data['gold'] + gold_won,
-                                    current_stage=player_data['current_stage'])
+            first_clear = stage_num == player_data['current_stage']
+            gems_won, gold_won = get_tower_rewards(stage_num, first_clear)
+            next_stage = player_data['current_stage'] + 1 if first_clear else player_data['current_stage']
+            db.save_player_data(
+                user_id,
+                gems=player_data['gems'] + gems_won,
+                gold=player_data['gold'] + gold_won,
+                current_stage=next_stage,
+            )
         else:
             combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
         refresh_online_progress(user_id)
