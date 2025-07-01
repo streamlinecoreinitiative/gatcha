@@ -657,6 +657,15 @@ button:disabled, .fantasy-button:disabled {
     font-size: 18px;
 }
 
+/* small profile image for highscores */
+.score-profile {
+    width: 24px;
+    height: 24px;
+    margin-right: 6px;
+    vertical-align: middle;
+    object-fit: contain;
+}
+
 /* V3: Combat Log with Portraits */
 .log-entry {
     display: flex;
@@ -1470,6 +1479,18 @@ button:disabled, .fantasy-button:disabled {
 /* Center equipment view text */
 #equipment-container p {
     text-align: center;
+}
+
+.empty-armory-message {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.profile-image-label {
+    display: block;
+    margin: 5px 0;
+    font-size: 14px;
+    color: #ccc;
 }
 
 .tos-check {

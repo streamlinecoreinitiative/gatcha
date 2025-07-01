@@ -167,7 +167,7 @@ def init_db():
     create_admin_if_missing()
     conn.close()
 
-def register_user(username, email, password):
+def register_user(username, email, password, profile_image=None):
     if not username or not password:
         return "Username and password are required."
     conn = get_db_connection()
@@ -175,8 +175,8 @@ def register_user(username, email, password):
         cursor = conn.cursor()
         hashed_pw = hash_password(password)
         cursor.execute(
-            "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-            (username, email, hashed_pw)
+            "INSERT INTO users (username, email, password, profile_image) VALUES (?, ?, ?, ?)",
+            (username, email, hashed_pw, profile_image)
         )
         user_id = cursor.lastrowid
         import time
@@ -410,7 +410,7 @@ def set_player_team(user_id, team_ids):
 def get_all_users_with_runs():
     conn = get_db_connection()
     rows = conn.execute(
-        'SELECT users.username, player_data.current_stage, player_data.dungeon_runs '
+        'SELECT users.username, users.profile_image, player_data.current_stage, player_data.dungeon_runs '
         'FROM users JOIN player_data ON users.id = player_data.user_id '
         'WHERE users.is_admin = 0'
     ).fetchall()

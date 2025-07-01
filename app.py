@@ -346,7 +346,10 @@ def register():
         return jsonify({'success': False, 'message': 'Email already registered'})
     if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,}$', password):
         return jsonify({'success': False, 'message': 'Password must be at least 10 characters with letters and numbers'})
-    result = db.register_user(data.get('username'), email, password)
+    # Choose a random character portrait as the default profile image
+    available_images = [c.get('image_file') for c in character_definitions if c.get('image_file')]
+    default_image = random.choice(available_images) if available_images else None
+    result = db.register_user(data.get('username'), email, password, profile_image=default_image)
     if result == "Success":
         user_id = db.get_user_id(data.get('username'))
         token = secrets.token_urlsafe(16)

@@ -1244,6 +1244,12 @@ function openProfileModal() {
     profileNewPasswordInput.value = '';
     profileConfirmPasswordInput.value = '';
     profileImageSelect.innerHTML = '';
+    const ph = document.createElement('option');
+    ph.value = '';
+    ph.disabled = true;
+    ph.textContent = 'Select profile character';
+    if (!gameState.profile_image) ph.selected = true;
+    profileImageSelect.appendChild(ph);
     masterCharacterList.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.image_file;
@@ -1329,7 +1335,7 @@ async function updateEquipmentDisplay() {
     const equipmentDefs = await equipmentDefsResponse.json();
     const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
     if (result.equipment.length === 0) {
-        equipmentContainer.innerHTML = '<p>Your armory is empty. Farm the Armory to find loot, it is an end game mechanic.</p>';
+        equipmentContainer.innerHTML = '<p class="empty-armory-message">Your armory is empty. Farm the Armory to find loot, it is an end game mechanic.</p>';
         return;
     }
     result.equipment.forEach(item => {
@@ -1382,13 +1388,15 @@ async function updateAllUsers() {
     towerSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        div.textContent = `${idx + 1}. ${u.username} - Floor ${u.current_stage}`;
+        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
+        div.innerHTML = `${img}${idx + 1}. ${u.username} - Floor ${u.current_stage}`;
         towerScoresContainer.appendChild(div);
     });
     dungeonSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        div.textContent = `${idx + 1}. ${u.username} - Runs ${u.dungeon_runs}`;
+        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
+        div.innerHTML = `${img}${idx + 1}. ${u.username} - Runs ${u.dungeon_runs}`;
         dungeonScoresContainer.appendChild(div);
     });
 }
