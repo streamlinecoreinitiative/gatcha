@@ -477,6 +477,8 @@ def get_player_data():
         'energy_last': player_data.get('energy_last'),
         'dungeon_last': player_data.get('dungeon_last'),
         'free_last': player_data.get('free_last'),
+        'gem_gift_last': player_data.get('gem_gift_last'),
+        'platinum_last': player_data.get('platinum_last'),
         'energy_cap': 10,
         'dungeon_cap': 5
     }
@@ -941,6 +943,36 @@ def summon():
         save_args['free_last'] = now
     db.save_player_data(user_id, **save_args)
     return jsonify({'success': True, 'characters': characters})
+
+
+@app.route('/api/claim_gem_gift', methods=['POST'])
+def claim_gem_gift():
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    user_id = session['user_id']
+    player_data = db.get_player_data(user_id)
+    now = int(time.time())
+    last = player_data.get('gem_gift_last', 0)
+    if now - last < 1800:
+        return jsonify({'success': False, 'message': 'Gift not ready'})
+    new_gems = player_data['gems'] + 50
+    db.save_player_data(user_id, gems=new_gems, gem_gift_last=now)
+    return jsonify({'success': True, 'gems': new_gems})
+
+
+@app.route('/api/claim_platinum_gift', methods=['POST'])
+def claim_platinum_gift():
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    user_id = session['user_id']
+    player_data = db.get_player_data(user_id)
+    now = int(time.time())
+    last = player_data.get('platinum_last', 0)
+    if now - last < 86400:
+        return jsonify({'success': False, 'message': 'Gift not ready'})
+    new_amt = player_data.get('premium_gems', 0) + 10
+    db.save_player_data(user_id, premium_gems=new_amt, platinum_last=now)
+    return jsonify({'success': True, 'platinum': new_amt})
 
 
 @app.route('/api/stage_info/<int:stage_num>', methods=['GET'])
