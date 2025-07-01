@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded. V5.5 Finalizing...");
     attachEventListeners();
+    loadBackgrounds();
     initializeGame();
 });
 
@@ -134,6 +135,10 @@ let adminTowerStageInput;
 let adminTowerEnemyInput;
 let adminTowerSaveBtn;
 let adminTowerList;
+let adminGiveItemInput;
+let bgSectionSelect;
+let bgImageInput;
+let bgUploadBtn;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -353,6 +358,10 @@ function attachEventListeners() {
     adminTowerEnemyInput = document.getElementById('admin-tower-enemy');
     adminTowerSaveBtn = document.getElementById('admin-tower-save-btn');
     adminTowerList = document.getElementById('admin-tower-list');
+    adminGiveItemInput = document.getElementById('admin-item-give');
+    bgSectionSelect = document.getElementById('bg-section-select');
+    bgImageInput = document.getElementById('bg-image-input');
+    bgUploadBtn = document.getElementById('bg-upload-btn');
     newEntityTypeSelect = document.getElementById('admin-entity-type');
     newEntityNameInput = document.getElementById('admin-entity-name');
     newEntityCodeInput = document.getElementById('admin-entity-code');
@@ -546,7 +555,8 @@ function attachEventListeners() {
             platinum: parseInt(document.getElementById('admin-platinum').value) || null,
             gold: parseInt(document.getElementById('admin-gold').value) || null,
             character_name: document.getElementById('admin-character-name').value,
-            character_id: parseInt(document.getElementById('admin-character-name').value)
+            character_id: parseInt(document.getElementById('admin-character-name').value),
+            item_code: adminGiveItemInput ? adminGiveItemInput.value : ''
         };
         const response = await fetch('/api/admin/user_action', {
             method: 'POST',
@@ -732,6 +742,17 @@ function attachEventListeners() {
             adminTowerEnemyInput.value = '';
             loadTowerLevelList();
         }
+    });
+
+    if (bgUploadBtn) bgUploadBtn.addEventListener('click', async () => {
+        if (!bgImageInput.files[0]) return;
+        const form = new FormData();
+        form.append('section', bgSectionSelect.value);
+        form.append('image', bgImageInput.files[0]);
+        const resp = await fetch('/api/admin/background', { method: 'POST', body: form });
+        const result = await resp.json();
+        displayMessage(result.success ? 'Background updated' : result.message || 'Update failed');
+        if (result.success) loadBackgrounds();
     });
 
     const performSummon = async (btn, count = 1, free = false) => {
@@ -1566,6 +1587,20 @@ async function loadTowerLevelList() {
             div.innerHTML = `<span>Stage ${lvl.stage}: ${lvl.enemy_code}</span> <button class="edit-tower" data-stage="${lvl.stage}">Edit</button> <button class="delete-tower" data-stage="${lvl.stage}">Delete</button>`;
             adminTowerList.appendChild(div);
         });
+    }
+}
+
+async function loadBackgrounds() {
+    const resp = await fetch('/api/backgrounds');
+    const data = await resp.json();
+    if (data.success) {
+        for (const [section, file] of Object.entries(data.backgrounds)) {
+            const el = document.getElementById(section);
+            if (el) {
+                el.style.backgroundImage = `url('/static/images/backgrounds/${file}')`;
+                el.style.backgroundSize = 'cover';
+            }
+        }
     }
 }
 

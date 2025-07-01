@@ -273,12 +273,15 @@
                     <option value="unban">Unban</option>
                     <option value="add_hero">Add Hero</option>
                     <option value="remove_hero">Remove Hero</option>
+                    <option value="give_item">Give Item</option>
+                    <option value="give_item_all">Give Item to All</option>
                 </select>
                 <input type="number" id="admin-gems" placeholder="Gems">
                 <input type="number" id="admin-energy" placeholder="Energy">
                 <input type="number" id="admin-platinum" placeholder="Platinum">
                 <input type="number" id="admin-gold" placeholder="Gold">
                 <input type="text" id="admin-character-name" placeholder="Hero name or ID">
+                <input type="text" id="admin-item-give" placeholder="Item code">
                 <button id="admin-submit-btn">Execute</button>
                 <hr>
                 <input type="text" id="admin-paypal-client-id" placeholder="PayPal Client ID">
@@ -381,6 +384,21 @@
                 <input type="text" id="admin-tower-enemy" placeholder="Enemy Code">
                 <button id="admin-tower-save-btn">Save Level</button>
                 <div id="admin-tower-list" class="admin-entity-list"></div>
+                <hr>
+                <h3>Section Backgrounds</h3>
+                <select id="bg-section-select">
+                    <option value="login-screen">Login</option>
+                    <option value="home-view">Home</option>
+                    <option value="collection-view">Heroes</option>
+                    <option value="equipment-view">Equipment</option>
+                    <option value="summon-view">Summon</option>
+                    <option value="campaign-view">The Tower</option>
+                    <option value="dungeons-view">Expeditions</option>
+                    <option value="online-view">Players</option>
+                    <option value="store-view">Store</option>
+                </select>
+                <input type="file" id="bg-image-input">
+                <button id="bg-upload-btn">Upload</button>
             </div>
 
 
