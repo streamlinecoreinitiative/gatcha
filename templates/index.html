@@ -97,6 +97,10 @@
         <div id="main-content">
             <!-- Home View -->
             <div id="home-view" class="view active">
+                <div class="daily-gift" id="gem-gift">
+                    <button id="gem-gift-button" class="gift-btn">Claim 50 Gems<span class="red-dot"></span></button>
+                    <span id="gem-gift-timer"></span>
+                </div>
                 <div class="section-header">
                     <h2>Your Active Team</h2>
                     <button class="tutorial-btn" data-tutorial="This home screen shows your active team and important progress information.">?</button>
@@ -115,14 +119,6 @@
         </ul>
         <p id="dungeon-run-info">Dungeon Runs: <span id="dungeon-run-count">0</span></p>
         <p id="tower-progress-info">Tower Floor: <span id="tower-floor-count">1</span></p>
-    </div>
-    <div class="daily-gift" id="gem-gift">
-        <button id="gem-gift-button" class="gift-btn">Claim 50 Gems<span class="red-dot"></span></button>
-        <span id="gem-gift-timer"></span>
-    </div>
-    <div class="daily-gift" id="platinum-gift">
-        <button id="platinum-gift-button" class="gift-btn">Daily Platinum Chest<span class="red-dot"></span></button>
-        <span id="platinum-gift-timer"></span>
     </div>
     <!-- ===================================== -->
 
@@ -196,6 +192,10 @@
                 <div class="section-header">
                     <h2>Platinum Shop</h2>
                     <button class="tutorial-btn" data-tutorial="Purchase Platinum or energy here. Transactions are verified server-side.">?</button>
+                </div>
+                <div class="daily-gift" id="platinum-gift">
+                    <button id="platinum-gift-button" class="gift-btn">Daily Platinum Chest<span class="red-dot"></span></button>
+                    <span id="platinum-gift-timer"></span>
                 </div>
                 <div id="store-packages" class="store-container"></div>
             </div>
