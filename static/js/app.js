@@ -1599,6 +1599,8 @@ async function loadBackgrounds() {
             if (el) {
                 el.style.backgroundImage = `url('/static/images/backgrounds/${file}')`;
                 el.style.backgroundSize = 'cover';
+                el.style.backgroundPosition = 'center';
+                el.style.backgroundRepeat = 'no-repeat';
             }
         }
     }
