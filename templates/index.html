@@ -320,6 +320,19 @@
                 <textarea id="admin-events-text" placeholder="Events text" rows="6"></textarea>
                 <button id="admin-events-save-btn">Save Events</button>
                 <hr>
+                <h3>Game Settings</h3>
+                <input type="number" id="admin-energy-cap" placeholder="Energy Cap">
+                <input type="number" id="admin-dungeon-cap" placeholder="Dungeon Cap">
+                <input type="number" id="admin-energy-regen" placeholder="Energy Regen (sec)">
+                <input type="number" id="admin-dungeon-regen" placeholder="Dungeon Regen (sec)">
+                <button id="admin-game-config-save-btn">Save Settings</button>
+                <div id="game-config-display">
+                    <p>Energy Cap: <span id="display-energy-cap"></span></p>
+                    <p>Dungeon Cap: <span id="display-dungeon-cap"></span></p>
+                    <p>Energy Regen: <span id="display-energy-regen"></span></p>
+                    <p>Dungeon Regen: <span id="display-dungeon-regen"></span></p>
+                </div>
+                <hr>
                 <h3>New Expedition</h3>
                 <p class="expedition-help">Use enemy <strong>codes</strong> separated by commas (e.g. EN001, EN008).<br>
                 Drops follow <code>itemCode:chance</code> pairs (e.g. sword:0.5), and image resolution is <code>widthxheight</code>.</p>

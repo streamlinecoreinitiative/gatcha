@@ -135,6 +135,15 @@ def init_db():
             image_file TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS game_settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            energy_cap INTEGER NOT NULL DEFAULT 10,
+            dungeon_cap INTEGER NOT NULL DEFAULT 5,
+            energy_regen INTEGER NOT NULL DEFAULT 300,
+            dungeon_regen INTEGER NOT NULL DEFAULT 900
+        )
+    ''')
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
@@ -159,6 +168,7 @@ def init_db():
     add_column_if_missing(conn, 'expeditions', 'description', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'drops', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'image_res', 'TEXT')
+    cursor.execute('INSERT OR IGNORE INTO game_settings (id, energy_cap, dungeon_cap, energy_regen, dungeon_regen) VALUES (1, 10, 5, 300, 900)')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
     cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
     cursor.execute('INSERT OR IGNORE INTO messages (id, motd) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.")')
@@ -227,27 +237,33 @@ def get_player_data(user_id):
 
     now = int(time.time())
 
-    # --- Energy regeneration (1 per 5 minutes, cap 10 unless above from purchases) ---
-    energy = player_dict.get("energy", 10)
+    settings = get_game_settings()
+    energy_cap = settings['energy_cap']
+    dungeon_cap = settings['dungeon_cap']
+    energy_regen = settings['energy_regen']
+    dungeon_regen = settings['dungeon_regen']
+
+    # --- Energy regeneration ---
+    energy = player_dict.get("energy", energy_cap)
     last = player_dict.get("energy_last", now)
-    if energy < 10:
-        gained = (now - last) // 300  # 5 minutes per energy
+    if energy < energy_cap:
+        gained = (now - last) // energy_regen
         if gained > 0:
-            energy = min(10, energy + gained)
-            last += gained * 300
+            energy = min(energy_cap, energy + gained)
+            last += gained * energy_regen
             conn.execute(
                 "UPDATE player_data SET energy = ?, energy_last = ? WHERE user_id = ?",
                 (energy, last, user_id),
             )
 
-    # --- Dungeon energy regeneration (1 per 15 minutes, cap 5) ---
-    dungeon_energy = player_dict.get("dungeon_energy", 5)
+    # --- Dungeon energy regeneration ---
+    dungeon_energy = player_dict.get("dungeon_energy", dungeon_cap)
     dungeon_last = player_dict.get("dungeon_last", now)
-    if dungeon_energy < 5:
-        gained = (now - dungeon_last) // 900  # 15 minutes per energy
+    if dungeon_energy < dungeon_cap:
+        gained = (now - dungeon_last) // dungeon_regen
         if gained > 0:
-            dungeon_energy = min(5, dungeon_energy + gained)
-            dungeon_last += gained * 900
+            dungeon_energy = min(dungeon_cap, dungeon_energy + gained)
+            dungeon_last += gained * dungeon_regen
             conn.execute(
                 "UPDATE player_data SET dungeon_energy = ?, dungeon_last = ? WHERE user_id = ?",
                 (dungeon_energy, dungeon_last, user_id),
@@ -260,6 +276,10 @@ def get_player_data(user_id):
     player_dict["energy_last"] = last
     player_dict["dungeon_energy"] = dungeon_energy
     player_dict["dungeon_last"] = dungeon_last
+    player_dict["energy_cap"] = energy_cap
+    player_dict["dungeon_cap"] = dungeon_cap
+    player_dict["energy_regen"] = energy_regen
+    player_dict["dungeon_regen"] = dungeon_regen
     player_dict["free_last"] = player_dict.get("free_last", 0)
     player_dict["gem_gift_last"] = player_dict.get("gem_gift_last", 0)
     player_dict["platinum_last"] = player_dict.get("platinum_last", 0)
@@ -850,5 +870,34 @@ def get_all_backgrounds():
     rows = conn.execute('SELECT section, image_file FROM backgrounds').fetchall()
     conn.close()
     return {row['section']: row['image_file'] for row in rows}
+
+
+def get_game_settings():
+    conn = get_db_connection()
+    row = conn.execute('SELECT energy_cap, dungeon_cap, energy_regen, dungeon_regen FROM game_settings WHERE id = 1').fetchone()
+    conn.close()
+    if row:
+        return {
+            'energy_cap': row['energy_cap'],
+            'dungeon_cap': row['dungeon_cap'],
+            'energy_regen': row['energy_regen'],
+            'dungeon_regen': row['dungeon_regen']
+        }
+    return {'energy_cap': 10, 'dungeon_cap': 5, 'energy_regen': 300, 'dungeon_regen': 900}
+
+
+def update_game_settings(energy_cap=None, dungeon_cap=None, energy_regen=None, dungeon_regen=None):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    if energy_cap is not None:
+        cur.execute('UPDATE game_settings SET energy_cap = ? WHERE id = 1', (energy_cap,))
+    if dungeon_cap is not None:
+        cur.execute('UPDATE game_settings SET dungeon_cap = ? WHERE id = 1', (dungeon_cap,))
+    if energy_regen is not None:
+        cur.execute('UPDATE game_settings SET energy_regen = ? WHERE id = 1', (energy_regen,))
+    if dungeon_regen is not None:
+        cur.execute('UPDATE game_settings SET dungeon_regen = ? WHERE id = 1', (dungeon_regen,))
+    conn.commit()
+    conn.close()
 
  
