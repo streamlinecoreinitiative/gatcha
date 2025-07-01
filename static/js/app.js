@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded. V5.5 Finalizing...");
     attachEventListeners();
+    if (languageSelect) translatePage(languageSelect.value);
     loadBackgrounds();
     initializeGame();
 });
@@ -20,6 +21,7 @@ const usernameInput = document.getElementById('username-input');
 const passwordInput = document.getElementById('password-input');
 const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
+const languageSelect = document.getElementById('language-select');
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
@@ -393,6 +395,12 @@ function attachEventListeners() {
     infoCloseBtn = document.getElementById('info-close-btn');
     welcomeModal = document.getElementById('welcome-modal');
     welcomeCloseBtn = document.getElementById('welcome-close-btn');
+
+    if (languageSelect) {
+        languageSelect.addEventListener('change', () => {
+            translatePage(languageSelect.value);
+        });
+    }
 
     loginButton.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });

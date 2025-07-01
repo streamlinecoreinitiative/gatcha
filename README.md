@@ -18,6 +18,7 @@ This repository contains a Flask-based gacha game.
 - **Improved Registration** includes email validation and a password reset flow.
 - **Security Update** now stores passwords hashed and requires acceptance of a Terms of Service during registration.
 - **UI Updates** provide refreshed hero modals and combat log readability.
+- **AI Translation** automatically translates interface text using `/api/translate` and a language picker.
 
 ## PayPal Integration
 
