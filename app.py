@@ -525,6 +525,19 @@ def admin_user_action():
         gold = data.get('gold')
         for uid in db.get_all_user_ids():
             db.adjust_resources(uid, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
+    elif action == 'give_item':
+        item_code = data.get('item_code')
+        item_def = next((i for i in equipment_definitions if i.get('code') == item_code or i['name'] == item_code), None)
+        if not item_def:
+            return jsonify({'success': False, 'message': 'Item not found'}), 404
+        db.give_equipment_to_player(target_id, item_def)
+    elif action == 'give_item_all':
+        item_code = data.get('item_code')
+        item_def = next((i for i in equipment_definitions if i.get('code') == item_code or i['name'] == item_code), None)
+        if not item_def:
+            return jsonify({'success': False, 'message': 'Item not found'}), 404
+        for uid in db.get_all_user_ids():
+            db.give_equipment_to_player(uid, item_def)
     elif action == 'add_hero':
         char_name = data.get('character_name')
         char_def = next((c for c in character_definitions if c['name'] == char_name), None)
@@ -636,6 +649,27 @@ def admin_email_config():
         username=data.get('username'),
         password=data.get('password')
     )
+    return jsonify({'success': True})
+
+
+@app.route('/api/backgrounds')
+def list_backgrounds():
+    return jsonify({'success': True, 'backgrounds': db.get_all_backgrounds()})
+
+
+@app.route('/api/admin/background', methods=['POST'])
+def admin_set_background():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    section = request.form.get('section')
+    file = request.files.get('image')
+    if not section or not file:
+        return jsonify({'success': False, 'message': 'Section and image required'}), 400
+    filename = secure_filename(file.filename)
+    image_dir = os.path.join(BASE_DIR, 'static', 'images', 'backgrounds')
+    os.makedirs(image_dir, exist_ok=True)
+    file.save(os.path.join(image_dir, filename))
+    db.set_background(section, filename)
     return jsonify({'success': True})
 
 

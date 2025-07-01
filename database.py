@@ -129,6 +129,12 @@ def init_db():
             enemy_code TEXT NOT NULL
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS backgrounds (
+            section TEXT PRIMARY KEY,
+            image_file TEXT
+        )
+    ''')
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
@@ -807,5 +813,42 @@ def get_all_tower_levels():
     rows = conn.execute('SELECT stage, enemy_code FROM tower_levels ORDER BY stage').fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+
+def give_equipment_to_player(user_id, item_def):
+    """Add an equipment item to a player's inventory."""
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
+        (user_id, item_def['name'], item_def['rarity'])
+    )
+    conn.commit()
+    conn.close()
+
+
+def set_background(section, image_file):
+    """Set the background image for a given section."""
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO backgrounds (section, image_file) VALUES (?, ?) '
+        'ON CONFLICT(section) DO UPDATE SET image_file = excluded.image_file',
+        (section, image_file)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_background(section):
+    conn = get_db_connection()
+    row = conn.execute('SELECT image_file FROM backgrounds WHERE section = ?', (section,)).fetchone()
+    conn.close()
+    return row['image_file'] if row else None
+
+
+def get_all_backgrounds():
+    conn = get_db_connection()
+    rows = conn.execute('SELECT section, image_file FROM backgrounds').fetchall()
+    conn.close()
+    return {row['section']: row['image_file'] for row in rows}
 
  
