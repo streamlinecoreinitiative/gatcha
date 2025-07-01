@@ -1262,17 +1262,29 @@ function sendMessage() {
 }
 
 async function claimGemGift() {
+    const before = gameState.gems || 0;
     const resp = await fetch('/api/claim_gem_gift', { method: 'POST' });
     const result = await resp.json();
-    displayMessage(result.message || (result.success ? 'Gems claimed!' : 'Gift not ready'));
-    if (result.success) await fetchPlayerDataAndUpdate();
+    if (result.success) {
+        const gained = (result.gems || 0) - before;
+        displayMessage(`You received ${gained} Gems! Come back in 30m for more.`);
+        await fetchPlayerDataAndUpdate();
+    } else {
+        displayMessage(result.message || 'Gift not ready');
+    }
 }
 
 async function claimPlatinumGift() {
+    const before = gameState.premium_gems || 0;
     const resp = await fetch('/api/claim_platinum_gift', { method: 'POST' });
     const result = await resp.json();
-    displayMessage(result.message || (result.success ? 'Platinum claimed!' : 'Gift not ready'));
-    if (result.success) await fetchPlayerDataAndUpdate();
+    if (result.success) {
+        const gained = (result.platinum || 0) - before;
+        displayMessage(`You received ${gained} Platinum! Come back in 24h for more.`);
+        await fetchPlayerDataAndUpdate();
+    } else {
+        displayMessage(result.message || 'Gift not ready');
+    }
 }
 
 // --- UI UPDATE FUNCTIONS ---
