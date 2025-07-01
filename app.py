@@ -159,12 +159,35 @@ def verify_paypal_order(order_id: str, expected_amount: float) -> bool:
         with request.urlopen(order_req, timeout=10) as resp:
             order_info = json.load(resp)
 
-        if order_info.get("status") != "COMPLETED":
+        status = order_info.get("status")
+        if status == "APPROVED":
+            capture_req = request.Request(
+                f"{base}/v2/checkout/orders/{order_id}/capture",
+                data=b"{}",
+                method="POST",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+            )
+            with request.urlopen(capture_req, timeout=10) as resp:
+                order_info = json.load(resp)
+            status = order_info.get("status")
+
+        if status != "COMPLETED":
             return False
 
-        amt = order_info.get("purchase_units", [{}])[0].get("amount", {}).get(
-            "value"
+        amt = (
+            order_info.get("purchase_units", [{}])[0]
+            .get("payments", {})
+            .get("captures", [{}])[0]
+            .get("amount", {})
+            .get("value")
         )
+        if amt is None:
+            amt = order_info.get("purchase_units", [{}])[0].get("amount", {}).get(
+                "value"
+            )
         if amt is None:
             return False
         return abs(float(amt) - float(expected_amount)) < 0.01
@@ -509,6 +532,7 @@ def get_player_data():
         'is_admin': profile.get('is_admin', 0),
         'profile_image': profile.get('profile_image'),
         'email': profile.get('email'),
+        'user_id': user_id,
         'energy_last': player_data.get('energy_last'),
         'dungeon_last': player_data.get('dungeon_last'),
         'free_last': player_data.get('free_last'),
@@ -650,6 +674,41 @@ def paypal_complete():
     if not verify_paypal_order(order_id, package['price']):
         return jsonify({'success': False, 'message': 'PayPal verification failed'}), 400
     user_id = session['user_id']
+    new_balance = grant_currency(user_id, package['amount'])
+    return jsonify({'success': True, 'new_balance': new_balance})
+
+
+@app.route('/api/paypal_webhook', methods=['POST'])
+def paypal_webhook():
+    """Handle PayPal webhooks for completed orders."""
+    event = request.json or {}
+    event_type = event.get('event_type')
+    if event_type not in ('CHECKOUT.ORDER.COMPLETED', 'PAYMENT.CAPTURE.COMPLETED'):
+        return jsonify({'success': True})
+
+    resource = event.get('resource', {})
+    custom_id = resource.get('custom_id')
+    if not custom_id:
+        pu = resource.get('purchase_units', [])
+        if pu:
+            custom_id = pu[0].get('custom_id')
+    if not custom_id:
+        return jsonify({'success': False}), 400
+
+    try:
+        user_part, pkg_id = custom_id.split(':', 1)
+        user_id = int(user_part)
+    except Exception:
+        return jsonify({'success': False}), 400
+
+    package = next((p for p in STORE_PACKAGES if p['id'] == pkg_id and p.get('amount')), None)
+    if not package:
+        return jsonify({'success': False}), 400
+
+    order_id = resource.get('id')
+    if not order_id or not verify_paypal_order(order_id, package['price']):
+        return jsonify({'success': False}), 400
+
     new_balance = grant_currency(user_id, package['amount'])
     return jsonify({'success': True, 'new_balance': new_balance})
 

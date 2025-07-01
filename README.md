@@ -24,8 +24,10 @@ This repository contains a Flask-based gacha game.
 
 The store can now process payments via PayPal. Configure your PayPal client ID and secret from the Admin Panel. Once configured, PayPal buttons appear in the store for premium currency purchases. Admins may switch between **Sandbox** and **Live** mode as needed.
 
-During checkout the client sends a PayPal `order_id` to `/api/paypal_complete`.
-The server verifies the order with PayPal's API and uses `grant_currency()` to credit Platinum to the player.
+During checkout the client captures the order and sends its `order_id` to `/api/paypal_complete`.
+The server verifies the purchase with PayPal's API and credits Platinum to the player.
+If the client fails to report the purchase, PayPal will notify `/api/paypal_webhook` and the
+server will automatically grant the currency based on the webhook data.
 
 The old JavaScript prompt for fake receipts has been removed; real purchases are now handled entirely through PayPal Checkout.
 
@@ -35,6 +37,8 @@ The old JavaScript prompt for fake receipts has been removed; real purchases are
 3. Fill in `PayPal Client ID` and `PayPal Secret` fields.
 4. Choose either **Sandbox** or **Live** mode.
 5. Click **Save PayPal** to apply the settings.
+6. Add a PayPal webhook for `https://<your-domain>/api/paypal_webhook` and
+   subscribe to checkout order events.
 
 These values are stored in the database and used by the server when rendering PayPal buttons.
 
