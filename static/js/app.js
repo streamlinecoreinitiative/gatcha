@@ -1544,15 +1544,22 @@ async function updateStoreDisplay() {
                 div.appendChild(btnDiv);
                 window.paypal.Buttons({
                     style: { height: 30 },
-                    createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: pkg.price.toFixed(2) } }] }),
+                    createOrder: (data, actions) => actions.order.create({
+                        purchase_units: [{
+                            amount: { value: pkg.price.toFixed(2) },
+                            custom_id: `${gameState.user_id}:${pkg.id}`
+                        }]
+                    }),
                     onApprove: (data, actions) => {
-                        return fetch('/api/paypal_complete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ package_id: pkg.id, order_id: data.orderID })
+                        return actions.order.capture().then(() => {
+                            return fetch('/api/paypal_complete', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ package_id: pkg.id, order_id: data.orderID })
+                            });
                         }).then(res => res.json()).then(res => {
                             displayMessage(res.success ? 'Purchase successful!' : 'Purchase failed');
-                            if(res.success) fetchPlayerDataAndUpdate();
+                            if (res.success) fetchPlayerDataAndUpdate();
                         });
                     }
                 }).render(`#paypal-${pkg.id}`);
