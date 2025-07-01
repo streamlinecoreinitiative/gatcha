@@ -248,6 +248,11 @@ button:disabled, .fantasy-button:disabled {
     object-fit: cover;
     border-radius: 5px;
 }
+.team-slot h4 {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 
 /* Bottom Navigation Bar */
 #nav-bar {
@@ -1476,4 +1481,34 @@ button:disabled, .fantasy-button:disabled {
 #admin-view textarea,
 #admin-view select {
     width: 95%;
+}
+
+/* --- Mobile & Portrait Adjustments --- */
+@media screen and (max-width: 600px), screen and (orientation: portrait) {
+    body, .screen {
+        height: auto;
+        min-height: 100vh;
+    }
+    #nav-bar {
+        height: 60px;
+    }
+    .nav-button {
+        font-size: 16px;
+    }
+    .team-container {
+        flex-wrap: wrap;
+    }
+    .team-slot {
+        width: 45%;
+        padding: 8px;
+    }
+    .team-slot img {
+        width: 100%;
+        height: auto;
+    }
+    #message-box {
+        bottom: 110px;
+        font-size: 14px;
+        max-width: 90%;
+    }
 }
