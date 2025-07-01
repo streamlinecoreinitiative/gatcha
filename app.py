@@ -271,6 +271,39 @@ def calculate_fight_stats(team, enemy):
     }
 
 
+def get_scaled_character_stats(character):
+    """Return a character's scaled stats including equipment bonuses."""
+    if not character:
+        return None
+    try:
+        level = character.get('level', 1)
+        level_mult = 1 + 0.10 * (level - 1)
+        hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
+        atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
+        crit_chance = character.get('crit_chance', 0)
+        crit_damage = character.get('crit_damage', 1.5)
+        for item in character.get('equipped', []):
+            if isinstance(item, dict):
+                item_name = item.get('equipment_name')
+                if item_name and item_name in equipment_stats_map:
+                    item_stats = equipment_stats_map[item_name]
+                    hp += item_stats.get('hp', 0)
+                    atk += item_stats.get('atk', 0)
+                    crit_chance += item_stats.get('crit_chance', 0)
+                    crit_damage += item_stats.get('crit_damage', 0)
+        return {
+            'name': character.get('name', 'Hero'),
+            'element': character.get('element', 'None'),
+            'hp': hp,
+            'atk': atk,
+            'crit_chance': crit_chance,
+            'crit_damage': crit_damage,
+        }
+    except (KeyError, TypeError) as e:
+        print(f"FATAL: Could not calculate stats for a character. Error: {e}. Data: {character}")
+        return None
+
+
 # --- CORE ROUTES ---
 @app.route('/')
 def index(): return render_template('index.html')
@@ -959,13 +992,17 @@ def fight():
                        'enemy_image': enemy_image,
                        'element': stats['enemy_element']}]
 
-        available_attackers = [c for c in team if c]
+        available_attackers = [get_scaled_character_stats(c) for c in team if c]
+        available_attackers = [a for a in available_attackers if a]
+        available_attackers.sort(key=lambda h: h['atk'], reverse=True)
+        attacker_index = 0
         while team_hp > 0 and enemy_hp > 0:
-            attacker = random.choice(available_attackers)
-            player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
-            is_player_crit = random.random() * 100 < stats['team_crit_chance']
+            attacker = available_attackers[attacker_index % len(available_attackers)]
+            attacker_index += 1
+            player_damage = attacker['atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+            is_player_crit = random.random() * 100 < attacker['crit_chance']
             if is_player_crit:
-                player_damage *= stats['team_crit_damage']
+                player_damage *= attacker['crit_damage']
             enemy_hp -= player_damage
             combat_log.append({
                 'type': 'player_attack',
@@ -1086,13 +1123,17 @@ def fight_dungeon():
             }
         ]
 
-        available_attackers = [c for c in team if c]
+        available_attackers = [get_scaled_character_stats(c) for c in team if c]
+        available_attackers = [a for a in available_attackers if a]
+        available_attackers.sort(key=lambda h: h['atk'], reverse=True)
+        attacker_index = 0
         while team_hp > 0 and enemy_hp > 0:
-            attacker = random.choice(available_attackers)
-            player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
-            is_player_crit = random.random() * 100 < stats['team_crit_chance']
+            attacker = available_attackers[attacker_index % len(available_attackers)]
+            attacker_index += 1
+            player_damage = attacker['atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+            is_player_crit = random.random() * 100 < attacker['crit_chance']
             if is_player_crit:
-                player_damage *= stats['team_crit_damage']
+                player_damage *= attacker['crit_damage']
             enemy_hp -= player_damage
             combat_log.append({
                 'type': 'player_attack',
