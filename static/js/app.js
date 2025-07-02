@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded. V5.5 Finalizing...");
     attachEventListeners();
-    if (languageSelect) translatePage(languageSelect.value);
+    translatePage(currentLanguage);
     loadBackgrounds();
     initializeGame();
 });
@@ -21,7 +21,8 @@ const usernameInput = document.getElementById('username-input');
 const passwordInput = document.getElementById('password-input');
 const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
-const languageSelect = document.getElementById('language-select');
+const languageFlags = document.querySelectorAll('.language-flag');
+let currentLanguage = localStorage.getItem('language') || 'en';
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
@@ -141,6 +142,15 @@ let adminGiveItemInput;
 let bgSectionSelect;
 let bgImageInput;
 let bgUploadBtn;
+let adminEnergyCapInput;
+let adminDungeonCapInput;
+let adminEnergyRegenInput;
+let adminDungeonRegenInput;
+let adminGameConfigSaveBtn;
+let displayEnergyCap;
+let displayDungeonCap;
+let displayEnergyRegen;
+let displayDungeonRegen;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -163,6 +173,8 @@ let infoText;
 let infoCloseBtn;
 let welcomeModal;
 let welcomeCloseBtn;
+let screenBackgrounds = {};
+let currentView = 'login-screen';
 
 function displayMessage(text) {
     if (!messageBox) return;
@@ -186,6 +198,15 @@ function formatDetails(obj) {
     }).join(', ');
 }
 
+function applyBodyBackground(section) {
+    const file = screenBackgrounds[section];
+    if (file) {
+        document.body.style.backgroundImage = `url('/static/images/backgrounds/${file}'), url('https://www.transparenttextures.com/patterns/dark-leather.png')`;
+    } else {
+        document.body.style.backgroundImage = `url('/static/images/ui/ui_background.png'), url('https://www.transparenttextures.com/patterns/dark-leather.png')`;
+    }
+}
+
 function formatDuration(sec) {
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
@@ -201,6 +222,16 @@ function setRedDot(element, show) {
     if (dot) dot.style.display = show ? 'block' : 'none';
 }
 
+function setActiveLanguageFlag() {
+    if (!languageFlags) return;
+    languageFlags.forEach(f => f.classList.remove('active'));
+    languageFlags.forEach(f => {
+        if (f.dataset.lang === currentLanguage) {
+            f.classList.add('active');
+        }
+    });
+}
+
 let resourceTimer;
 
 function updateResourceTimers() {
@@ -208,7 +239,8 @@ function updateResourceTimers() {
     const now = Math.floor(Date.now() / 1000);
     if (energyTimerDisplay) {
         if (gameState.energy < gameState.energy_cap) {
-            const next = gameState.energy_last + 300; // 5 minutes per energy
+            const regen = gameState.energy_regen || 300;
+            const next = gameState.energy_last + regen;
             const remain = next - now;
             if (remain <= 0) {
                 fetchPlayerDataAndUpdate();
@@ -221,7 +253,8 @@ function updateResourceTimers() {
     }
     if (dungeonTimerDisplay) {
         if (gameState.dungeon_energy < gameState.dungeon_cap) {
-            const next = gameState.dungeon_last + 900; // 15 minutes per energy
+            const regen = gameState.dungeon_regen || 900;
+            const next = gameState.dungeon_last + regen;
             const remain = next - now;
             if (remain <= 0) {
                 fetchPlayerDataAndUpdate();
@@ -390,6 +423,15 @@ function attachEventListeners() {
     bgSectionSelect = document.getElementById('bg-section-select');
     bgImageInput = document.getElementById('bg-image-input');
     bgUploadBtn = document.getElementById('bg-upload-btn');
+    adminEnergyCapInput = document.getElementById('admin-energy-cap');
+    adminDungeonCapInput = document.getElementById('admin-dungeon-cap');
+    adminEnergyRegenInput = document.getElementById('admin-energy-regen');
+    adminDungeonRegenInput = document.getElementById('admin-dungeon-regen');
+    adminGameConfigSaveBtn = document.getElementById('admin-game-config-save-btn');
+    displayEnergyCap = document.getElementById('display-energy-cap');
+    displayDungeonCap = document.getElementById('display-dungeon-cap');
+    displayEnergyRegen = document.getElementById('display-energy-regen');
+    displayDungeonRegen = document.getElementById('display-dungeon-regen');
     newEntityTypeSelect = document.getElementById('admin-entity-type');
     newEntityNameInput = document.getElementById('admin-entity-name');
     newEntityCodeInput = document.getElementById('admin-entity-code');
@@ -422,10 +464,16 @@ function attachEventListeners() {
     welcomeModal = document.getElementById('welcome-modal');
     welcomeCloseBtn = document.getElementById('welcome-close-btn');
 
-    if (languageSelect) {
-        languageSelect.addEventListener('change', () => {
-            translatePage(languageSelect.value);
+    if (languageFlags) {
+        languageFlags.forEach(flag => {
+            flag.addEventListener('click', () => {
+                currentLanguage = flag.dataset.lang;
+                localStorage.setItem('language', currentLanguage);
+                setActiveLanguageFlag();
+                translatePage(currentLanguage);
+            });
         });
+        setActiveLanguageFlag();
     }
 
     loginButton.addEventListener('click', handleLogin);
@@ -526,16 +574,21 @@ function attachEventListeners() {
     const iconMessages = {
         'gems-icon': 'Gems - Earned from events and dungeons. Spend them at the Summoning Altar or purchase more in the Store.',
         'platinum-icon': 'Platinum - Purchased with real money. Use it for energy refills and special packs.',
-        'gold-icon': 'Gold - Earned from battles and selling heroes. Spend it to level up heroes and equipment.',
-        'energy-icon': 'Energy - Regenerates every 5 minutes or with Platinum. Required for Tower battles.',
-        'dungeon-icon': 'Dungeon Energy - Regenerates every 15 minutes or with Platinum. Required for Armory expeditions.'
+        'gold-icon': 'Gold - Earned from battles and selling heroes. Spend it to level up heroes and equipment.'
     };
 
     document.querySelectorAll('#currency-info .currency-icon').forEach(icon => {
         icon.classList.add('clickable');
         icon.addEventListener('click', () => {
-            const msg = iconMessages[icon.id] || '';
-            if (infoText) infoText.textContent = msg;
+            let msg = iconMessages[icon.id];
+            if (icon.id === 'energy-icon') {
+                const mins = Math.floor((gameState.energy_regen || 300) / 60);
+                msg = `Energy - Regenerates every ${mins} minutes or with Platinum. Required for Tower battles.`;
+            } else if (icon.id === 'dungeon-icon') {
+                const mins = Math.floor((gameState.dungeon_regen || 900) / 60);
+                msg = `Dungeon Energy - Regenerates every ${mins} minutes or with Platinum. Required for Armory expeditions.`;
+            }
+            if (infoText) infoText.textContent = msg || '';
             if (infoModal) infoModal.classList.add('active');
         });
     });
@@ -658,6 +711,22 @@ function attachEventListeners() {
         });
         const result = await response.json();
         displayMessage(result.success ? 'Events updated' : 'Update failed');
+    });
+    if (adminGameConfigSaveBtn) adminGameConfigSaveBtn.addEventListener('click', async () => {
+        const payload = {
+            energy_cap: parseInt(adminEnergyCapInput.value) || null,
+            dungeon_cap: parseInt(adminDungeonCapInput.value) || null,
+            energy_regen: parseInt(adminEnergyRegenInput.value) || null,
+            dungeon_regen: parseInt(adminDungeonRegenInput.value) || null
+        };
+        const response = await fetch('/api/admin/game_config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'Settings saved' : 'Update failed');
+        if (result.success) loadGameConfig();
     });
     if (adminExpeditionCreateBtn) adminExpeditionCreateBtn.addEventListener('click', async () => {
         const form = new FormData();
@@ -843,6 +912,8 @@ function attachEventListeners() {
             const targetViewId = button.dataset.view;
             mainContent.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
             document.getElementById(targetViewId)?.classList.add('active');
+            currentView = targetViewId;
+            applyBodyBackground(currentView);
             if (targetViewId !== 'summon-view') {
                 summonResultContainer.innerHTML = '';
                 summonResultContainer.classList.remove('show');
@@ -866,6 +937,7 @@ function attachEventListeners() {
                 loadEmailConfig();
                 loadMotd();
                 loadEventsText();
+                loadGameConfig();
                 loadEntityLists();
                 loadExpeditionAdminList();
                 loadItemAdminList();
@@ -1155,6 +1227,8 @@ async function initializeGame() {
     if (loggedIn) {
         loginScreen.classList.remove('active');
         gameScreen.classList.add('active');
+        currentView = 'home-view';
+        applyBodyBackground(currentView);
         if (chatContainer) chatContainer.classList.remove('hidden');
         connectSocket();
         if (!localStorage.getItem('welcomeShown') && welcomeModal) {
@@ -1164,6 +1238,8 @@ async function initializeGame() {
         loginScreen.classList.add('active');
         gameScreen.classList.remove('active');
         if (chatContainer) chatContainer.classList.add('hidden');
+        currentView = 'login-screen';
+        applyBodyBackground(currentView);
     }
 }
 
@@ -1179,6 +1255,9 @@ async function fetchPlayerDataAndUpdate() {
                 loadEmailConfig();
                 loadMotd();
                 loadEventsText();
+                loadGameConfig();
+            } else {
+                loadGameConfig();
             }
             updateUI(); 
             return true; 
@@ -1208,6 +1287,8 @@ async function handleLogout() {
     gameState = {};
     loginScreen.classList.add('active');
     gameScreen.classList.remove('active');
+    currentView = 'login-screen';
+    applyBodyBackground(currentView);
     if (chatContainer) chatContainer.classList.add('hidden');
     usernameInput.value = '';
     passwordInput.value = '';
@@ -1480,6 +1561,22 @@ async function loadEmailConfig() {
     }
 }
 
+async function loadGameConfig() {
+    if (!adminEnergyCapInput) return;
+    const resp = await fetch('/api/admin/game_config');
+    const result = await resp.json();
+    if (result.success && result.config) {
+        adminEnergyCapInput.value = result.config.energy_cap;
+        adminDungeonCapInput.value = result.config.dungeon_cap;
+        adminEnergyRegenInput.value = result.config.energy_regen;
+        adminDungeonRegenInput.value = result.config.dungeon_regen;
+        if (displayEnergyCap) displayEnergyCap.textContent = result.config.energy_cap;
+        if (displayDungeonCap) displayDungeonCap.textContent = result.config.dungeon_cap;
+        if (displayEnergyRegen) displayEnergyRegen.textContent = result.config.energy_regen;
+        if (displayDungeonRegen) displayDungeonRegen.textContent = result.config.dungeon_regen;
+    }
+}
+
 async function loadMotd() {
     if (!adminMotdInput) return;
     const resp = await fetch('/api/motd');
@@ -1660,6 +1757,7 @@ async function loadBackgrounds() {
     const resp = await fetch('/api/backgrounds');
     const data = await resp.json();
     if (data.success) {
+        screenBackgrounds = data.backgrounds || {};
         for (const [section, file] of Object.entries(data.backgrounds)) {
             const el = document.getElementById(section);
             if (el) {
@@ -1669,6 +1767,7 @@ async function loadBackgrounds() {
                 el.style.backgroundRepeat = 'no-repeat';
             }
         }
+        applyBodyBackground(currentView);
     }
 }
 
