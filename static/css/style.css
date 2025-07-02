@@ -214,6 +214,25 @@ button:disabled, .fantasy-button:disabled {
     padding: 5px 15px;
 }
 
+/* Language Flags */
+.language-flags {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.language-flag {
+    cursor: pointer;
+    font-size: 22px;
+    user-select: none;
+}
+
+.language-flag.active {
+    outline: 1px solid #fff;
+    border-radius: 3px;
+}
+
 /* Main Content Area */
 #main-content {
     flex-grow: 1; /* Take up remaining space */

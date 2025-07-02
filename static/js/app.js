@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded. V5.5 Finalizing...");
     attachEventListeners();
-    if (languageSelect) translatePage(languageSelect.value);
+    translatePage(currentLanguage);
     loadBackgrounds();
     initializeGame();
 });
@@ -21,7 +21,8 @@ const usernameInput = document.getElementById('username-input');
 const passwordInput = document.getElementById('password-input');
 const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
-const languageSelect = document.getElementById('language-select');
+const languageFlags = document.querySelectorAll('.language-flag');
+let currentLanguage = localStorage.getItem('language') || 'en';
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
@@ -208,6 +209,16 @@ function setRedDot(element, show) {
     if (!element) return;
     const dot = element.querySelector('.red-dot');
     if (dot) dot.style.display = show ? 'block' : 'none';
+}
+
+function setActiveLanguageFlag() {
+    if (!languageFlags) return;
+    languageFlags.forEach(f => f.classList.remove('active'));
+    languageFlags.forEach(f => {
+        if (f.dataset.lang === currentLanguage) {
+            f.classList.add('active');
+        }
+    });
 }
 
 let resourceTimer;
@@ -442,10 +453,16 @@ function attachEventListeners() {
     welcomeModal = document.getElementById('welcome-modal');
     welcomeCloseBtn = document.getElementById('welcome-close-btn');
 
-    if (languageSelect) {
-        languageSelect.addEventListener('change', () => {
-            translatePage(languageSelect.value);
+    if (languageFlags) {
+        languageFlags.forEach(flag => {
+            flag.addEventListener('click', () => {
+                currentLanguage = flag.dataset.lang;
+                localStorage.setItem('language', currentLanguage);
+                setActiveLanguageFlag();
+                translatePage(currentLanguage);
+            });
         });
+        setActiveLanguageFlag();
     }
 
     loginButton.addEventListener('click', handleLogin);

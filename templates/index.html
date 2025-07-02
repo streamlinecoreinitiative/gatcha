@@ -19,12 +19,12 @@
     <!-- This screen shows before the user logs in -->
     <div id="login-screen" class="screen active">
         <div id="login-wrapper">
-            <select id="language-select">
-                <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-                <option value="de">Deutsch</option>
-            </select>
+            <div id="language-flags">
+                <span class="language-flag" data-lang="en">🇬🇧</span>
+                <span class="language-flag" data-lang="es">🇪🇸</span>
+                <span class="language-flag" data-lang="fr">🇫🇷</span>
+                <span class="language-flag" data-lang="de">🇩🇪</span>
+            </div>
             <div class="login-lore-box">
                 <h2 data-i18n>Welcome to Aethelgard</h2>
                 <p data-i18n>
@@ -82,6 +82,12 @@
                 <img id="user-icon" src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon clickable">
                 <span id="player-name" class="clickable"></span>
                 <button id="logout-button">Logout</button>
+                <div id="language-flags-top" class="language-flags">
+                    <span class="language-flag" data-lang="en">🇬🇧</span>
+                    <span class="language-flag" data-lang="es">🇪🇸</span>
+                    <span class="language-flag" data-lang="fr">🇫🇷</span>
+                    <span class="language-flag" data-lang="de">🇩🇪</span>
+                </div>
             </div>
             <div id="currency-info">
                 <i id="gems-icon" class="fa-solid fa-gem currency-icon clickable"></i>
@@ -543,6 +549,12 @@
         <input type="password" id="profile-confirm-password" placeholder="Confirm New Password">
         <label for="profile-image-select" class="profile-image-label">Select Profile Character</label>
         <select id="profile-image-select"></select>
+        <div id="profile-language-flags">
+            <span class="language-flag" data-lang="en">🇬🇧</span>
+            <span class="language-flag" data-lang="es">🇪🇸</span>
+            <span class="language-flag" data-lang="fr">🇫🇷</span>
+            <span class="language-flag" data-lang="de">🇩🇪</span>
+        </div>
         <p class="tos-link"><a href="/tos" target="_blank">View Terms and Conditions</a></p>
         <div class="modal-buttons">
             <button id="profile-save-btn">Save</button>
