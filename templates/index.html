@@ -18,12 +18,20 @@
 
     <!-- This screen shows before the user logs in -->
     <div id="login-screen" class="screen active">
+        <div id="language-flags">
+            <button data-lang="en" class="language-flag">🇺🇸</button>
+            <button data-lang="es" class="language-flag">🇪🇸</button>
+            <button data-lang="pt" class="language-flag">🇧🇷</button>
+            <button data-lang="ja" class="language-flag">🇯🇵</button>
+            <button data-lang="zh" class="language-flag">🇨🇳</button>
+        </div>
         <div id="login-wrapper">
             <select id="language-select">
-                <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-                <option value="de">Deutsch</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="es">🇪🇸 Español</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="zh">🇨🇳 中文</option>
             </select>
             <div class="login-lore-box">
                 <h2 data-i18n>Welcome to Aethelgard</h2>
@@ -530,6 +538,14 @@
         <input type="password" id="profile-confirm-password" placeholder="Confirm New Password">
         <label for="profile-image-select" class="profile-image-label">Select Profile Character</label>
         <select id="profile-image-select"></select>
+        <label for="profile-language-select" class="profile-image-label">Language</label>
+        <select id="profile-language-select">
+            <option value="en">🇺🇸 English</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="pt">🇧🇷 Português</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="zh">🇨🇳 中文</option>
+        </select>
         <p class="tos-link"><a href="/tos" target="_blank">View Terms and Conditions</a></p>
         <div class="modal-buttons">
             <button id="profile-save-btn">Save</button>

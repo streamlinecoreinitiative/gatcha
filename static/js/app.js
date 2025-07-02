@@ -3,7 +3,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded. V5.5 Finalizing...");
     attachEventListeners();
-    if (languageSelect) translatePage(languageSelect.value);
+    const savedLang = localStorage.getItem('language') || 'en';
+    setLanguage(savedLang);
     loadBackgrounds();
     initializeGame();
 });
@@ -22,6 +23,7 @@ const passwordInput = document.getElementById('password-input');
 const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
 const languageSelect = document.getElementById('language-select');
+const languageFlagButtons = document.querySelectorAll('#language-flags button');
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
@@ -74,6 +76,7 @@ let profileCurrentPasswordInput;
 let profileNewPasswordInput;
 let profileConfirmPasswordInput;
 let profileImageSelect;
+let profileLanguageSelect;
 let profileSaveBtn;
 let profileCancelBtn;
 let adminSubmitBtn;
@@ -199,6 +202,15 @@ function setRedDot(element, show) {
     if (!element) return;
     const dot = element.querySelector('.red-dot');
     if (dot) dot.style.display = show ? 'block' : 'none';
+}
+
+function setLanguage(lang) {
+    localStorage.setItem('language', lang);
+    if (languageSelect) languageSelect.value = lang;
+    languageFlagButtons.forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.lang === lang);
+    });
+    translatePage(lang);
 }
 
 let resourceTimer;
@@ -345,6 +357,7 @@ function attachEventListeners() {
     profileNewPasswordInput = document.getElementById('profile-new-password');
     profileConfirmPasswordInput = document.getElementById('profile-confirm-password');
     profileImageSelect = document.getElementById('profile-image-select');
+    profileLanguageSelect = document.getElementById('profile-language-select');
     profileSaveBtn = document.getElementById('profile-save-btn');
     profileCancelBtn = document.getElementById('profile-cancel-btn');
     adminSubmitBtn = document.getElementById('admin-submit-btn');
@@ -424,9 +437,13 @@ function attachEventListeners() {
 
     if (languageSelect) {
         languageSelect.addEventListener('change', () => {
-            translatePage(languageSelect.value);
+            setLanguage(languageSelect.value);
         });
     }
+
+    languageFlagButtons.forEach(btn => {
+        btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+    });
 
     loginButton.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
@@ -554,6 +571,9 @@ function attachEventListeners() {
         });
         const result = await response.json();
         if (result.success) {
+            if (profileLanguageSelect) {
+                setLanguage(profileLanguageSelect.value);
+            }
             let passChanged = false;
             if (profileCurrentPasswordInput.value || profileNewPasswordInput.value || profileConfirmPasswordInput.value) {
                 const passResp = await fetch('/api/change_password', {
@@ -1291,6 +1311,9 @@ function openProfileModal() {
         if (gameState.profile_image === c.image_file) opt.selected = true;
         profileImageSelect.appendChild(opt);
     });
+    if (profileLanguageSelect) {
+        profileLanguageSelect.value = localStorage.getItem('language') || 'en';
+    }
     profileModal.classList.add('active');
 }
 
