@@ -325,6 +325,9 @@ button:disabled, .fantasy-button:disabled {
 .daily-gift {
     text-align: center;
     margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .daily-gift img {
@@ -337,6 +340,8 @@ button:disabled, .fantasy-button:disabled {
     position: relative;
     padding: 10px 20px;
     font-size: 18px;
+    display: block;
+    margin: 0 auto;
 }
 
 
