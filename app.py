@@ -538,8 +538,10 @@ def get_player_data():
         'free_last': player_data.get('free_last'),
         'gem_gift_last': player_data.get('gem_gift_last'),
         'platinum_last': player_data.get('platinum_last'),
-        'energy_cap': 10,
-        'dungeon_cap': 5
+        'energy_cap': player_data.get('energy_cap', 10),
+        'dungeon_cap': player_data.get('dungeon_cap', 5),
+        'energy_regen': player_data.get('energy_regen', 300),
+        'dungeon_regen': player_data.get('dungeon_regen', 900)
     }
     return jsonify({'success': True, 'data': full_data})
 
@@ -742,6 +744,22 @@ def admin_email_config():
         port=data.get('port'),
         username=data.get('username'),
         password=data.get('password')
+    )
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/game_settings', methods=['GET', 'POST'])
+def admin_game_settings():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    if request.method == 'GET':
+        return jsonify({'success': True, 'settings': db.get_game_settings()})
+    data = request.json or {}
+    db.update_game_settings(
+        energy_cap=data.get('energy_cap'),
+        dungeon_cap=data.get('dungeon_cap'),
+        energy_regen=data.get('energy_regen'),
+        dungeon_regen=data.get('dungeon_regen')
     )
     return jsonify({'success': True})
 
