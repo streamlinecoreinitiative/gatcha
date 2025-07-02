@@ -173,6 +173,8 @@ let infoText;
 let infoCloseBtn;
 let welcomeModal;
 let welcomeCloseBtn;
+let screenBackgrounds = {};
+let currentView = 'login-screen';
 
 function displayMessage(text) {
     if (!messageBox) return;
@@ -194,6 +196,15 @@ function formatDetails(obj) {
         const val = typeof v === 'object' && v !== null ? JSON.stringify(v) : v;
         return `${k}: ${val}`;
     }).join(', ');
+}
+
+function applyBodyBackground(section) {
+    const file = screenBackgrounds[section];
+    if (file) {
+        document.body.style.backgroundImage = `url('/static/images/backgrounds/${file}'), url('https://www.transparenttextures.com/patterns/dark-leather.png')`;
+    } else {
+        document.body.style.backgroundImage = `url('/static/images/ui/ui_background.png'), url('https://www.transparenttextures.com/patterns/dark-leather.png')`;
+    }
 }
 
 function formatDuration(sec) {
@@ -901,6 +912,8 @@ function attachEventListeners() {
             const targetViewId = button.dataset.view;
             mainContent.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
             document.getElementById(targetViewId)?.classList.add('active');
+            currentView = targetViewId;
+            applyBodyBackground(currentView);
             if (targetViewId !== 'summon-view') {
                 summonResultContainer.innerHTML = '';
                 summonResultContainer.classList.remove('show');
@@ -1214,6 +1227,8 @@ async function initializeGame() {
     if (loggedIn) {
         loginScreen.classList.remove('active');
         gameScreen.classList.add('active');
+        currentView = 'home-view';
+        applyBodyBackground(currentView);
         if (chatContainer) chatContainer.classList.remove('hidden');
         connectSocket();
         if (!localStorage.getItem('welcomeShown') && welcomeModal) {
@@ -1223,6 +1238,8 @@ async function initializeGame() {
         loginScreen.classList.add('active');
         gameScreen.classList.remove('active');
         if (chatContainer) chatContainer.classList.add('hidden');
+        currentView = 'login-screen';
+        applyBodyBackground(currentView);
     }
 }
 
@@ -1270,6 +1287,8 @@ async function handleLogout() {
     gameState = {};
     loginScreen.classList.add('active');
     gameScreen.classList.remove('active');
+    currentView = 'login-screen';
+    applyBodyBackground(currentView);
     if (chatContainer) chatContainer.classList.add('hidden');
     usernameInput.value = '';
     passwordInput.value = '';
@@ -1738,6 +1757,7 @@ async function loadBackgrounds() {
     const resp = await fetch('/api/backgrounds');
     const data = await resp.json();
     if (data.success) {
+        screenBackgrounds = data.backgrounds || {};
         for (const [section, file] of Object.entries(data.backgrounds)) {
             const el = document.getElementById(section);
             if (el) {
@@ -1747,6 +1767,7 @@ async function loadBackgrounds() {
                 el.style.backgroundRepeat = 'no-repeat';
             }
         }
+        applyBodyBackground(currentView);
     }
 }
 

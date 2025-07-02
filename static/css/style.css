@@ -1060,6 +1060,12 @@ button:disabled, .fantasy-button:disabled {
     color: #ccc;
 }
 
+.forgot-info {
+    font-size: 14px;
+    margin: 5px 0 10px;
+    color: #ccc;
+}
+
 #intel-start-fight-btn {
     background-color: #c0392b; /* Red for fight */
 }
