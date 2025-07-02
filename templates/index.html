@@ -19,20 +19,26 @@
     <!-- This screen shows before the user logs in -->
     <div id="login-screen" class="screen active">
         <div id="login-wrapper">
+            <select id="language-select">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+            </select>
             <div class="login-lore-box">
-                <h2>Welcome to Aethelgard</h2>
-                <p>
+                <h2 data-i18n>Welcome to Aethelgard</h2>
+                <p data-i18n>
                     After the Great Shattering, the endless Spire of Chaos appeared,
                     unleashing void-touched horrors. Only the Star-forged Maidens you
                     summon can survive its corruption. Ascend the tower floor by floor
                     to seal the rift and save our world.
                 </p>
-                <p>
+                <p data-i18n>
                     This is a side project from a couple of humble developers who
                     wanted a lightweight game to enjoy during breaks. Gather heroes,
                     climb the tower and compare your progress with other players.
                 </p>
-                <p>Thank you for playing and sharing this journey with us!</p>
+                <p data-i18n>Thank you for playing and sharing this journey with us!</p>
             </div>
             <div class="login-container">
                 <img src="{{ url_for('static', filename='images/ui/game_logo.png') }}" alt="Game Logo" class="game-logo">
@@ -40,10 +46,10 @@
                 <input type="text" id="username-input" placeholder="Username">
                 <input type="password" id="password-input" placeholder="Password">
                 <div class="button-group">
-                    <button id="login-button">Login</button>
-                    <button id="register-button">Register</button>
+                    <button id="login-button" data-i18n>Login</button>
+                    <button id="register-button" data-i18n>Register</button>
                 </div>
-                <a href="#" id="forgot-password-link">Forgot Password?</a>
+                <a href="#" id="forgot-password-link" data-i18n>Forgot Password?</a>
 
         <!-- === NEW VIDEO PLACEHOLDER === -->
         <div class="video-container">
@@ -100,6 +106,10 @@
                 <div class="section-header">
                     <h2>Your Active Team</h2>
                     <button class="tutorial-btn" data-tutorial="This home screen shows your active team and important progress information.">?</button>
+                </div>
+                <div class="daily-gift" id="gem-gift">
+                    <button id="gem-gift-button" class="gift-btn">Claim 50 Gems<span class="red-dot"></span></button>
+                    <span id="gem-gift-timer"></span>
                 </div>
                 <div id="team-display" class="team-container"></div>
 
@@ -176,7 +186,7 @@
                     <div class="summon-buttons">
                         <button id="perform-summon-button">Summon</button>
                         <button id="summon-ten-button">Summon x10</button>
-                        <button id="free-summon-button">Daily Free Summon</button>
+                        <button id="free-summon-button">Daily Free Summon<span class="red-dot"></span></button>
                         <span id="free-summon-timer"></span>
                     </div>
                     <div id="summon-result" class="summon-result-box"></div>
@@ -188,6 +198,10 @@
                 <div class="section-header">
                     <h2>Platinum Shop</h2>
                     <button class="tutorial-btn" data-tutorial="Purchase Platinum or energy here. Transactions are verified server-side.">?</button>
+                </div>
+                <div class="daily-gift" id="platinum-gift">
+                    <button id="platinum-gift-button" class="gift-btn">Daily Platinum Chest<span class="red-dot"></span></button>
+                    <span id="platinum-gift-timer"></span>
                 </div>
                 <div id="store-packages" class="store-container"></div>
             </div>
@@ -265,12 +279,15 @@
                     <option value="unban">Unban</option>
                     <option value="add_hero">Add Hero</option>
                     <option value="remove_hero">Remove Hero</option>
+                    <option value="give_item">Give Item</option>
+                    <option value="give_item_all">Give Item to All</option>
                 </select>
                 <input type="number" id="admin-gems" placeholder="Gems">
                 <input type="number" id="admin-energy" placeholder="Energy">
                 <input type="number" id="admin-platinum" placeholder="Platinum">
                 <input type="number" id="admin-gold" placeholder="Gold">
                 <input type="text" id="admin-character-name" placeholder="Hero name or ID">
+                <input type="text" id="admin-item-give" placeholder="Item code">
                 <button id="admin-submit-btn">Execute</button>
                 <hr>
                 <input type="text" id="admin-paypal-client-id" placeholder="PayPal Client ID">
@@ -373,6 +390,21 @@
                 <input type="text" id="admin-tower-enemy" placeholder="Enemy Code">
                 <button id="admin-tower-save-btn">Save Level</button>
                 <div id="admin-tower-list" class="admin-entity-list"></div>
+                <hr>
+                <h3>Section Backgrounds</h3>
+                <select id="bg-section-select">
+                    <option value="login-screen">Login</option>
+                    <option value="home-view">Home</option>
+                    <option value="collection-view">Heroes</option>
+                    <option value="equipment-view">Equipment</option>
+                    <option value="summon-view">Summon</option>
+                    <option value="campaign-view">The Tower</option>
+                    <option value="dungeons-view">Expeditions</option>
+                    <option value="online-view">Players</option>
+                    <option value="store-view">Store</option>
+                </select>
+                <input type="file" id="bg-image-input">
+                <button id="bg-upload-btn">Upload</button>
             </div>
 
 
@@ -380,15 +412,15 @@
 
         <!-- BOTTOM NAVIGATION BAR -->
         <div id="nav-bar">
-            <button class="nav-button" data-view="home-view">Home</button>
+            <button class="nav-button" data-view="home-view">Home<span class="red-dot"></span></button>
             <button class="nav-button" data-view="collection-view">Heroes</button>
             <button class="nav-button" data-view="equipment-view">Equipment</button>
-            <button class="nav-button" data-view="summon-view">Summon</button>
+            <button class="nav-button" data-view="summon-view">Summon<span class="red-dot"></span></button>
             <button class="nav-button" data-view="campaign-view">The Tower</button>
             <button class="nav-button" data-view="dungeons-view">Expeditions</button>
             <button class="nav-button" data-view="online-view">Players</button>
             <button class="nav-button admin-only" data-view="admin-view">Admin</button>
-            <button class="nav-button" data-view="store-view">Store</button>
+            <button class="nav-button" data-view="store-view">Store<span class="red-dot"></span></button>
         </div>
 
     </div>
@@ -448,7 +480,8 @@
 
     <div id="message-box"></div>
 
-    <!-- Link to our JavaScript file -->
+    <!-- Language and core scripts -->
+    <script src="{{ url_for('static', filename='js/translate.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
     <!-- ======================================================= -->
@@ -467,8 +500,6 @@
             </div>
         </div>
     </div>
-
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
 <div id="hero-detail-overlay" class="modal-overlay">
     <div id="hero-detail-content" class="modal-content">
@@ -497,6 +528,7 @@
         <input type="password" id="profile-current-password" placeholder="Current Password">
         <input type="password" id="profile-new-password" placeholder="New Password">
         <input type="password" id="profile-confirm-password" placeholder="Confirm New Password">
+        <label for="profile-image-select" class="profile-image-label">Select Profile Character</label>
         <select id="profile-image-select"></select>
         <p class="tos-link"><a href="/tos" target="_blank">View Terms and Conditions</a></p>
         <div class="modal-buttons">

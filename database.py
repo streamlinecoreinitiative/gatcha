@@ -129,6 +129,12 @@ def init_db():
             enemy_code TEXT NOT NULL
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS backgrounds (
+            section TEXT PRIMARY KEY,
+            image_file TEXT
+        )
+    ''')
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
@@ -144,6 +150,8 @@ def init_db():
     add_column_if_missing(conn, 'player_data', 'dungeon_energy', 'INTEGER NOT NULL DEFAULT 5')
     add_column_if_missing(conn, 'player_data', 'dungeon_last', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_data', 'free_last', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'player_data', 'gem_gift_last', 'INTEGER NOT NULL DEFAULT 0')
+    add_column_if_missing(conn, 'player_data', 'platinum_last', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'player_characters', 'level', 'INTEGER NOT NULL DEFAULT 1')
     add_column_if_missing(conn, 'player_characters', 'dupe_level', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'paypal_config', 'mode', 'TEXT NOT NULL DEFAULT "sandbox"')
@@ -159,7 +167,7 @@ def init_db():
     create_admin_if_missing()
     conn.close()
 
-def register_user(username, email, password):
+def register_user(username, email, password, profile_image=None):
     if not username or not password:
         return "Username and password are required."
     conn = get_db_connection()
@@ -167,15 +175,15 @@ def register_user(username, email, password):
         cursor = conn.cursor()
         hashed_pw = hash_password(password)
         cursor.execute(
-            "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-            (username, email, hashed_pw)
+            "INSERT INTO users (username, email, password, profile_image) VALUES (?, ?, ?, ?)",
+            (username, email, hashed_pw, profile_image)
         )
         user_id = cursor.lastrowid
         import time
         now = int(time.time())
         cursor.execute(
-            "INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter, free_last) "
-            "VALUES (?, ?, 0, ?, 1, 0, 10, ?, 5, ?, 0, 0)",
+            "INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter, free_last, gem_gift_last, platinum_last) "
+            "VALUES (?, ?, 0, ?, 1, 0, 10, ?, 5, ?, 0, 0, 0, 0)",
             (user_id, 150, 10000, now, now)
         )
         # Initialize empty team slots
@@ -253,6 +261,8 @@ def get_player_data(user_id):
     player_dict["dungeon_energy"] = dungeon_energy
     player_dict["dungeon_last"] = dungeon_last
     player_dict["free_last"] = player_dict.get("free_last", 0)
+    player_dict["gem_gift_last"] = player_dict.get("gem_gift_last", 0)
+    player_dict["platinum_last"] = player_dict.get("platinum_last", 0)
     player_dict["collection"] = [dict(row) for row in collection_rows]
 
     return player_dict
@@ -269,6 +279,8 @@ def save_player_data(
     dungeon_energy=None,
     dungeon_last=None,
     free_last=None,
+    gem_gift_last=None,
+    platinum_last=None,
 ):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -309,6 +321,16 @@ def save_player_data(
         cursor.execute(
             "UPDATE player_data SET free_last = ? WHERE user_id = ?",
             (free_last, user_id),
+        )
+    if gem_gift_last is not None:
+        cursor.execute(
+            "UPDATE player_data SET gem_gift_last = ? WHERE user_id = ?",
+            (gem_gift_last, user_id),
+        )
+    if platinum_last is not None:
+        cursor.execute(
+            "UPDATE player_data SET platinum_last = ? WHERE user_id = ?",
+            (platinum_last, user_id),
         )
     conn.commit()
     conn.close()
@@ -388,7 +410,7 @@ def set_player_team(user_id, team_ids):
 def get_all_users_with_runs():
     conn = get_db_connection()
     rows = conn.execute(
-        'SELECT users.username, player_data.current_stage, player_data.dungeon_runs '
+        'SELECT users.username, users.profile_image, player_data.current_stage, player_data.dungeon_runs '
         'FROM users JOIN player_data ON users.id = player_data.user_id '
         'WHERE users.is_admin = 0'
     ).fetchall()
@@ -549,7 +571,7 @@ def create_admin_if_missing():
         admin_id = cursor.lastrowid
         import time
         now = int(time.time())
-        cursor.execute("INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter, free_last) VALUES (?, 1000, 0, 10000, 1, 0, 10, ?, 5, ?, 0, 0)", (admin_id, now, now))
+        cursor.execute("INSERT INTO player_data (user_id, gems, premium_gems, gold, current_stage, dungeon_runs, energy, energy_last, dungeon_energy, dungeon_last, pity_counter, free_last, gem_gift_last, platinum_last) VALUES (?, 1000, 0, 10000, 1, 0, 10, ?, 5, ?, 0, 0, 0, 0)", (admin_id, now, now))
         for i in range(1, 4):
             cursor.execute("INSERT INTO player_team (user_id, slot_num, character_db_id) VALUES (?, ?, NULL)", (admin_id, i))
         conn.commit()
@@ -791,5 +813,42 @@ def get_all_tower_levels():
     rows = conn.execute('SELECT stage, enemy_code FROM tower_levels ORDER BY stage').fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+
+def give_equipment_to_player(user_id, item_def):
+    """Add an equipment item to a player's inventory."""
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
+        (user_id, item_def['name'], item_def['rarity'])
+    )
+    conn.commit()
+    conn.close()
+
+
+def set_background(section, image_file):
+    """Set the background image for a given section."""
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO backgrounds (section, image_file) VALUES (?, ?) '
+        'ON CONFLICT(section) DO UPDATE SET image_file = excluded.image_file',
+        (section, image_file)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_background(section):
+    conn = get_db_connection()
+    row = conn.execute('SELECT image_file FROM backgrounds WHERE section = ?', (section,)).fetchone()
+    conn.close()
+    return row['image_file'] if row else None
+
+
+def get_all_backgrounds():
+    conn = get_db_connection()
+    rows = conn.execute('SELECT section, image_file FROM backgrounds').fetchall()
+    conn.close()
+    return {row['section']: row['image_file'] for row in rows}
 
  

@@ -222,6 +222,7 @@ button:disabled, .fantasy-button:disabled {
 }
 .view {
     display: none; /* Hide views by default */
+    min-height: 100%; /* Ensure backgrounds cover full section */
 }
 .view.active {
     display: block; /* Show active view */
@@ -268,6 +269,7 @@ button:disabled, .fantasy-button:disabled {
     background-color: transparent;
     color: #e0e0e0; /* Use the same softer white */
     font-size: 20px; /* Make it a bit bigger and more prominent */
+    position: relative;
 
     /* --- THE FIX --- */
     font-family: 'Consolas', monospace;
@@ -280,6 +282,28 @@ button:disabled, .fantasy-button:disabled {
 }
 .nav-button.active {
     background-color: #444;
+}
+
+.red-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 10px;
+    height: 10px;
+    background: red;
+    border-radius: 50%;
+    display: none;
+}
+
+.daily-gift {
+    text-align: center;
+    margin: 10px 0;
+}
+
+.gift-btn {
+    position: relative;
+    padding: 10px 20px;
+    font-size: 18px;
 }
 
 
@@ -633,6 +657,15 @@ button:disabled, .fantasy-button:disabled {
     font-size: 18px;
 }
 
+/* small profile image for highscores */
+.score-profile {
+    width: 24px;
+    height: 24px;
+    margin-right: 6px;
+    vertical-align: middle;
+    object-fit: contain;
+}
+
 /* V3: Combat Log with Portraits */
 .log-entry {
     display: flex;
@@ -957,12 +990,20 @@ button:disabled, .fantasy-button:disabled {
     justify-content: center;
 }
 
+/* Center headers for equipment, heroes and expeditions */
+#equipment-view .section-header,
+#collection-view .section-header,
+#dungeons-view .section-header {
+    justify-content: center;
+}
+
 .heroes-guide {
     background: rgba(0,0,0,0.4);
     padding: 10px;
     border-radius: 5px;
     margin-bottom: 10px;
     font-size: 14px;
+    text-align: center;
 }
 
 .no-heroes {
@@ -1438,6 +1479,19 @@ button:disabled, .fantasy-button:disabled {
 /* Center equipment view text */
 #equipment-container p {
     text-align: center;
+}
+
+.empty-armory-message {
+    text-align: center;
+    padding: 20px 0;
+    margin: 0;
+}
+
+.profile-image-label {
+    display: block;
+    margin: 5px 0;
+    font-size: 14px;
+    color: #ccc;
 }
 
 .tos-check {

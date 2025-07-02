@@ -13,6 +13,7 @@ import string
 import secrets
 from balance import generate_enemy, calculate_item_power
 from werkzeug.utils import secure_filename
+from deep_translator import GoogleTranslator
 
 
 def load_all_definitions(file_path):
@@ -158,12 +159,35 @@ def verify_paypal_order(order_id: str, expected_amount: float) -> bool:
         with request.urlopen(order_req, timeout=10) as resp:
             order_info = json.load(resp)
 
-        if order_info.get("status") != "COMPLETED":
+        status = order_info.get("status")
+        if status == "APPROVED":
+            capture_req = request.Request(
+                f"{base}/v2/checkout/orders/{order_id}/capture",
+                data=b"{}",
+                method="POST",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+            )
+            with request.urlopen(capture_req, timeout=10) as resp:
+                order_info = json.load(resp)
+            status = order_info.get("status")
+
+        if status != "COMPLETED":
             return False
 
-        amt = order_info.get("purchase_units", [{}])[0].get("amount", {}).get(
-            "value"
+        amt = (
+            order_info.get("purchase_units", [{}])[0]
+            .get("payments", {})
+            .get("captures", [{}])[0]
+            .get("amount", {})
+            .get("value")
         )
+        if amt is None:
+            amt = order_info.get("purchase_units", [{}])[0].get("amount", {}).get(
+                "value"
+            )
         if amt is None:
             return False
         return abs(float(amt) - float(expected_amount)) < 0.01
@@ -196,14 +220,31 @@ def get_enemy_for_stage(stage_num):
     if stage_num % 10 == 0:
         archetype = "boss"
     else:
-        archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
+        archetype = random.choice([
+            "standard",
+            "tank",
+            "glass_cannon",
+            "swift",
+            "healer",
+            "support",
+        ])
     enemy = generate_enemy(stage_num, archetype, concept)
     random.seed()
     return enemy
 
 
-# --- THIS IS THE CORRECTED HELPER FUNCTION ---
-# in app.py
+def get_tower_rewards(stage_num: int, first_clear: bool) -> tuple[int, int]:
+    """Return (gems, gold) for a tower floor."""
+    if first_clear:
+        gems = 25 + (stage_num // 5) * 5
+        gold = 100 * stage_num
+        if stage_num % 10 == 0:
+            gems += 25
+            gold *= 2
+    else:
+        gems = 15 + (10 if stage_num % 10 == 0 else 0)
+        gold = 50 * stage_num
+    return gems, gold
 
 def calculate_fight_stats(team, enemy):
     total_team_hp, total_team_atk, team_crit_chance, team_crit_damage = 0, 0, 0, 1.5
@@ -271,6 +312,39 @@ def calculate_fight_stats(team, enemy):
     }
 
 
+def get_scaled_character_stats(character):
+    """Return a character's scaled stats including equipment bonuses."""
+    if not character:
+        return None
+    try:
+        level = character.get('level', 1)
+        level_mult = 1 + 0.10 * (level - 1)
+        hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
+        atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
+        crit_chance = character.get('crit_chance', 0)
+        crit_damage = character.get('crit_damage', 1.5)
+        for item in character.get('equipped', []):
+            if isinstance(item, dict):
+                item_name = item.get('equipment_name')
+                if item_name and item_name in equipment_stats_map:
+                    item_stats = equipment_stats_map[item_name]
+                    hp += item_stats.get('hp', 0)
+                    atk += item_stats.get('atk', 0)
+                    crit_chance += item_stats.get('crit_chance', 0)
+                    crit_damage += item_stats.get('crit_damage', 0)
+        return {
+            'name': character.get('name', 'Hero'),
+            'element': character.get('element', 'None'),
+            'hp': hp,
+            'atk': atk,
+            'crit_chance': crit_chance,
+            'crit_damage': crit_damage,
+        }
+    except (KeyError, TypeError) as e:
+        print(f"FATAL: Could not calculate stats for a character. Error: {e}. Data: {character}")
+        return None
+
+
 # --- CORE ROUTES ---
 @app.route('/')
 def index(): return render_template('index.html')
@@ -294,6 +368,20 @@ def get_motd():
     return jsonify({'success': True, 'motd': db.get_motd()})
 
 
+@app.route('/api/translate', methods=['POST'])
+def translate_text():
+    data = request.json or {}
+    text = data.get('text', '')
+    target = data.get('target', '')
+    if not text or not target:
+        return jsonify({'success': False, 'message': 'text and target required'})
+    try:
+        translated = GoogleTranslator(source='auto', target=target).translate(text)
+        return jsonify({'success': True, 'translation': translated})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
 @app.route('/tos')
 def terms_of_service():
     """Display the Terms of Service page."""
@@ -313,7 +401,10 @@ def register():
         return jsonify({'success': False, 'message': 'Email already registered'})
     if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,}$', password):
         return jsonify({'success': False, 'message': 'Password must be at least 10 characters with letters and numbers'})
-    result = db.register_user(data.get('username'), email, password)
+    # Choose a random character portrait as the default profile image
+    available_images = [c.get('image_file') for c in character_definitions if c.get('image_file')]
+    default_image = random.choice(available_images) if available_images else None
+    result = db.register_user(data.get('username'), email, password, profile_image=default_image)
     if result == "Success":
         user_id = db.get_user_id(data.get('username'))
         token = secrets.token_urlsafe(16)
@@ -441,9 +532,12 @@ def get_player_data():
         'is_admin': profile.get('is_admin', 0),
         'profile_image': profile.get('profile_image'),
         'email': profile.get('email'),
+        'user_id': user_id,
         'energy_last': player_data.get('energy_last'),
         'dungeon_last': player_data.get('dungeon_last'),
         'free_last': player_data.get('free_last'),
+        'gem_gift_last': player_data.get('gem_gift_last'),
+        'platinum_last': player_data.get('platinum_last'),
         'energy_cap': 10,
         'dungeon_cap': 5
     }
@@ -490,6 +584,19 @@ def admin_user_action():
         gold = data.get('gold')
         for uid in db.get_all_user_ids():
             db.adjust_resources(uid, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
+    elif action == 'give_item':
+        item_code = data.get('item_code')
+        item_def = next((i for i in equipment_definitions if i.get('code') == item_code or i['name'] == item_code), None)
+        if not item_def:
+            return jsonify({'success': False, 'message': 'Item not found'}), 404
+        db.give_equipment_to_player(target_id, item_def)
+    elif action == 'give_item_all':
+        item_code = data.get('item_code')
+        item_def = next((i for i in equipment_definitions if i.get('code') == item_code or i['name'] == item_code), None)
+        if not item_def:
+            return jsonify({'success': False, 'message': 'Item not found'}), 404
+        for uid in db.get_all_user_ids():
+            db.give_equipment_to_player(uid, item_def)
     elif action == 'add_hero':
         char_name = data.get('character_name')
         char_def = next((c for c in character_definitions if c['name'] == char_name), None)
@@ -571,6 +678,41 @@ def paypal_complete():
     return jsonify({'success': True, 'new_balance': new_balance})
 
 
+@app.route('/api/paypal_webhook', methods=['POST'])
+def paypal_webhook():
+    """Handle PayPal webhooks for completed orders."""
+    event = request.json or {}
+    event_type = event.get('event_type')
+    if event_type not in ('CHECKOUT.ORDER.COMPLETED', 'PAYMENT.CAPTURE.COMPLETED'):
+        return jsonify({'success': True})
+
+    resource = event.get('resource', {})
+    custom_id = resource.get('custom_id')
+    if not custom_id:
+        pu = resource.get('purchase_units', [])
+        if pu:
+            custom_id = pu[0].get('custom_id')
+    if not custom_id:
+        return jsonify({'success': False}), 400
+
+    try:
+        user_part, pkg_id = custom_id.split(':', 1)
+        user_id = int(user_part)
+    except Exception:
+        return jsonify({'success': False}), 400
+
+    package = next((p for p in STORE_PACKAGES if p['id'] == pkg_id and p.get('amount')), None)
+    if not package:
+        return jsonify({'success': False}), 400
+
+    order_id = resource.get('id')
+    if not order_id or not verify_paypal_order(order_id, package['price']):
+        return jsonify({'success': False}), 400
+
+    new_balance = grant_currency(user_id, package['amount'])
+    return jsonify({'success': True, 'new_balance': new_balance})
+
+
 @app.route('/api/admin/paypal_config', methods=['GET', 'POST'])
 def admin_paypal_config():
     if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
@@ -601,6 +743,27 @@ def admin_email_config():
         username=data.get('username'),
         password=data.get('password')
     )
+    return jsonify({'success': True})
+
+
+@app.route('/api/backgrounds')
+def list_backgrounds():
+    return jsonify({'success': True, 'backgrounds': db.get_all_backgrounds()})
+
+
+@app.route('/api/admin/background', methods=['POST'])
+def admin_set_background():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    section = request.form.get('section')
+    file = request.files.get('image')
+    if not section or not file:
+        return jsonify({'success': False, 'message': 'Section and image required'}), 400
+    filename = secure_filename(file.filename)
+    image_dir = os.path.join(BASE_DIR, 'static', 'images', 'backgrounds')
+    os.makedirs(image_dir, exist_ok=True)
+    file.save(os.path.join(image_dir, filename))
+    db.set_background(section, filename)
     return jsonify({'success': True})
 
 
@@ -910,6 +1073,36 @@ def summon():
     return jsonify({'success': True, 'characters': characters})
 
 
+@app.route('/api/claim_gem_gift', methods=['POST'])
+def claim_gem_gift():
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    user_id = session['user_id']
+    player_data = db.get_player_data(user_id)
+    now = int(time.time())
+    last = player_data.get('gem_gift_last', 0)
+    if now - last < 1800:
+        return jsonify({'success': False, 'message': 'Gift not ready'})
+    new_gems = player_data['gems'] + 50
+    db.save_player_data(user_id, gems=new_gems, gem_gift_last=now)
+    return jsonify({'success': True, 'gems': new_gems})
+
+
+@app.route('/api/claim_platinum_gift', methods=['POST'])
+def claim_platinum_gift():
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    user_id = session['user_id']
+    player_data = db.get_player_data(user_id)
+    now = int(time.time())
+    last = player_data.get('platinum_last', 0)
+    if now - last < 86400:
+        return jsonify({'success': False, 'message': 'Gift not ready'})
+    new_amt = player_data.get('premium_gems', 0) + 10
+    db.save_player_data(user_id, premium_gems=new_amt, platinum_last=now)
+    return jsonify({'success': True, 'platinum': new_amt})
+
+
 @app.route('/api/stage_info/<int:stage_num>', methods=['GET'])
 def get_stage_info(stage_num):
     if not session.get('logged_in'): return jsonify({'success': False, 'message': 'Not logged in'}), 401
@@ -922,7 +1115,9 @@ def get_stage_info(stage_num):
         'atk': enemy['stats']['atk']
     }
     energy_cost = 1
-    gold_reward = 100 * stage_num
+    player_data = db.get_player_data(session['user_id'])
+    first_clear = stage_num == player_data.get('current_stage', 1)
+    _, gold_reward = get_tower_rewards(stage_num, first_clear)
     return jsonify({'success': True, 'enemy': enemy_info, 'energy_cost': energy_cost, 'gold_reward': gold_reward})
 
 
@@ -959,13 +1154,17 @@ def fight():
                        'enemy_image': enemy_image,
                        'element': stats['enemy_element']}]
 
-        available_attackers = [c for c in team if c]
+        available_attackers = [get_scaled_character_stats(c) for c in team if c]
+        available_attackers = [a for a in available_attackers if a]
+        available_attackers.sort(key=lambda h: h['atk'], reverse=True)
+        attacker_index = 0
         while team_hp > 0 and enemy_hp > 0:
-            attacker = random.choice(available_attackers)
-            player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
-            is_player_crit = random.random() * 100 < stats['team_crit_chance']
+            attacker = available_attackers[attacker_index % len(available_attackers)]
+            attacker_index += 1
+            player_damage = attacker['atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+            is_player_crit = random.random() * 100 < attacker['crit_chance']
             if is_player_crit:
-                player_damage *= stats['team_crit_damage']
+                player_damage *= attacker['crit_damage']
             enemy_hp -= player_damage
             combat_log.append({
                 'type': 'player_attack',
@@ -995,20 +1194,15 @@ def fight():
         if victory:
             combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
             player_data = db.get_player_data(user_id)
-            if stage_num == player_data['current_stage']:
-                gems_won = 25 + (stage_num // 5) * 5
-                gold_won = 100 * stage_num
-                db.save_player_data(user_id,
-                                    gems=player_data['gems'] + gems_won,
-                                    gold=player_data['gold'] + gold_won,
-                                    current_stage=player_data['current_stage'] + 1)
-            else:
-                gems_won = 15
-                gold_won = 50 * stage_num
-                db.save_player_data(user_id,
-                                    gems=player_data['gems'] + gems_won,
-                                    gold=player_data['gold'] + gold_won,
-                                    current_stage=player_data['current_stage'])
+            first_clear = stage_num == player_data['current_stage']
+            gems_won, gold_won = get_tower_rewards(stage_num, first_clear)
+            next_stage = player_data['current_stage'] + 1 if first_clear else player_data['current_stage']
+            db.save_player_data(
+                user_id,
+                gems=player_data['gems'] + gems_won,
+                gold=player_data['gold'] + gold_won,
+                current_stage=next_stage,
+            )
         else:
             combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
         refresh_online_progress(user_id)
@@ -1086,13 +1280,17 @@ def fight_dungeon():
             }
         ]
 
-        available_attackers = [c for c in team if c]
+        available_attackers = [get_scaled_character_stats(c) for c in team if c]
+        available_attackers = [a for a in available_attackers if a]
+        available_attackers.sort(key=lambda h: h['atk'], reverse=True)
+        attacker_index = 0
         while team_hp > 0 and enemy_hp > 0:
-            attacker = random.choice(available_attackers)
-            player_damage = stats['team_atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
-            is_player_crit = random.random() * 100 < stats['team_crit_chance']
+            attacker = available_attackers[attacker_index % len(available_attackers)]
+            attacker_index += 1
+            player_damage = attacker['atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+            is_player_crit = random.random() * 100 < attacker['crit_chance']
             if is_player_crit:
-                player_damage *= stats['team_crit_damage']
+                player_damage *= attacker['crit_damage']
             enemy_hp -= player_damage
             combat_log.append({
                 'type': 'player_attack',

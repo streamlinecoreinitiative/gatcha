@@ -3,6 +3,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded. V5.5 Finalizing...");
     attachEventListeners();
+    if (languageSelect) translatePage(languageSelect.value);
+    loadBackgrounds();
     initializeGame();
 });
 
@@ -19,6 +21,7 @@ const usernameInput = document.getElementById('username-input');
 const passwordInput = document.getElementById('password-input');
 const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
+const languageSelect = document.getElementById('language-select');
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
@@ -39,6 +42,13 @@ const summonButton = document.getElementById('perform-summon-button');
 const summonTenButton = document.getElementById('summon-ten-button');
 const freeSummonButton = document.getElementById('free-summon-button');
 const freeSummonTimerDisplay = document.getElementById('free-summon-timer');
+const gemGiftButton = document.getElementById('gem-gift-button');
+const gemGiftTimerDisplay = document.getElementById('gem-gift-timer');
+const platinumGiftButton = document.getElementById('platinum-gift-button');
+const platinumGiftTimerDisplay = document.getElementById('platinum-gift-timer');
+const homeNavButton = document.querySelector('.nav-button[data-view="home-view"]');
+const summonNavButton = document.querySelector('.nav-button[data-view="summon-view"]');
+const storeNavButton = document.querySelector('.nav-button[data-view="store-view"]');
 const summonResultContainer = document.getElementById('summon-result');
 const stageListContainer = document.getElementById('stage-list');
 const loreContainer = document.getElementById('lore-text-container');
@@ -127,6 +137,10 @@ let adminTowerStageInput;
 let adminTowerEnemyInput;
 let adminTowerSaveBtn;
 let adminTowerList;
+let adminGiveItemInput;
+let bgSectionSelect;
+let bgImageInput;
+let bgUploadBtn;
 let heroImageOverlay;
 let heroImageLarge;
 let messageBox;
@@ -181,6 +195,12 @@ function formatDuration(sec) {
     return `${s}s`;
 }
 
+function setRedDot(element, show) {
+    if (!element) return;
+    const dot = element.querySelector('.red-dot');
+    if (dot) dot.style.display = show ? 'block' : 'none';
+}
+
 let resourceTimer;
 
 function updateResourceTimers() {
@@ -217,9 +237,41 @@ function updateResourceTimers() {
         if (now >= nextFree) {
             freeSummonButton.disabled = false;
             freeSummonTimerDisplay.textContent = '';
+            setRedDot(freeSummonButton, true);
+            setRedDot(summonNavButton, true);
         } else {
             freeSummonButton.disabled = true;
             freeSummonTimerDisplay.textContent = formatDuration(nextFree - now);
+            setRedDot(freeSummonButton, false);
+            setRedDot(summonNavButton, false);
+        }
+    }
+    if (gemGiftButton && gemGiftTimerDisplay) {
+        const nextGem = (gameState.gem_gift_last || 0) + 1800;
+        if (now >= nextGem) {
+            gemGiftButton.disabled = false;
+            gemGiftTimerDisplay.textContent = '';
+            setRedDot(gemGiftButton, true);
+            setRedDot(homeNavButton, true);
+        } else {
+            gemGiftButton.disabled = true;
+            gemGiftTimerDisplay.textContent = formatDuration(nextGem - now);
+            setRedDot(gemGiftButton, false);
+            setRedDot(homeNavButton, false);
+        }
+    }
+    if (platinumGiftButton && platinumGiftTimerDisplay) {
+        const nextPlat = (gameState.platinum_last || 0) + 86400;
+        if (now >= nextPlat) {
+            platinumGiftButton.disabled = false;
+            platinumGiftTimerDisplay.textContent = '';
+            setRedDot(platinumGiftButton, true);
+            setRedDot(storeNavButton, true);
+        } else {
+            platinumGiftButton.disabled = true;
+            platinumGiftTimerDisplay.textContent = formatDuration(nextPlat - now);
+            setRedDot(platinumGiftButton, false);
+            setRedDot(storeNavButton, false);
         }
     }
 }
@@ -249,8 +301,34 @@ const TOWER_LORE = [
         floor: 40,
         title: "The Impossible Pinnacle",
         text: "Your destiny is a vertical one. You must climb higher than any have before to seal the rift for good."
+    },
+    {
+        floor: 60,
+        title: "The Spiral Deepens",
+        text: "Here the tower bends upon itself, repeating endlessly yet growing stronger."
+    },
+    {
+        floor: 100,
+        title: "The Endless Ascent",
+        text: "Legends say no summit exists. Each hundred floors begins anew with greater trials."
     }
 ];
+
+function calculateTowerRewards(stageNum, firstClear) {
+    if (firstClear) {
+        let gems = 25 + Math.floor(stageNum / 5) * 5;
+        let gold = 100 * stageNum;
+        if (stageNum % 10 === 0) {
+            gems += 25;
+            gold *= 2;
+        }
+        return { gems, gold };
+    } else {
+        let gems = 15 + (stageNum % 10 === 0 ? 10 : 0);
+        let gold = 50 * stageNum;
+        return { gems, gold };
+    }
+}
 
 // =========================================================================
 // ==== ATTACH EVENT LISTENERS (RUNS ONLY ONCE) ====
@@ -308,6 +386,10 @@ function attachEventListeners() {
     adminTowerEnemyInput = document.getElementById('admin-tower-enemy');
     adminTowerSaveBtn = document.getElementById('admin-tower-save-btn');
     adminTowerList = document.getElementById('admin-tower-list');
+    adminGiveItemInput = document.getElementById('admin-item-give');
+    bgSectionSelect = document.getElementById('bg-section-select');
+    bgImageInput = document.getElementById('bg-image-input');
+    bgUploadBtn = document.getElementById('bg-upload-btn');
     newEntityTypeSelect = document.getElementById('admin-entity-type');
     newEntityNameInput = document.getElementById('admin-entity-name');
     newEntityCodeInput = document.getElementById('admin-entity-code');
@@ -339,6 +421,12 @@ function attachEventListeners() {
     infoCloseBtn = document.getElementById('info-close-btn');
     welcomeModal = document.getElementById('welcome-modal');
     welcomeCloseBtn = document.getElementById('welcome-close-btn');
+
+    if (languageSelect) {
+        languageSelect.addEventListener('change', () => {
+            translatePage(languageSelect.value);
+        });
+    }
 
     loginButton.addEventListener('click', handleLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
@@ -501,7 +589,8 @@ function attachEventListeners() {
             platinum: parseInt(document.getElementById('admin-platinum').value) || null,
             gold: parseInt(document.getElementById('admin-gold').value) || null,
             character_name: document.getElementById('admin-character-name').value,
-            character_id: parseInt(document.getElementById('admin-character-name').value)
+            character_id: parseInt(document.getElementById('admin-character-name').value),
+            item_code: adminGiveItemInput ? adminGiveItemInput.value : ''
         };
         const response = await fetch('/api/admin/user_action', {
             method: 'POST',
@@ -689,6 +778,17 @@ function attachEventListeners() {
         }
     });
 
+    if (bgUploadBtn) bgUploadBtn.addEventListener('click', async () => {
+        if (!bgImageInput.files[0]) return;
+        const form = new FormData();
+        form.append('section', bgSectionSelect.value);
+        form.append('image', bgImageInput.files[0]);
+        const resp = await fetch('/api/admin/background', { method: 'POST', body: form });
+        const result = await resp.json();
+        displayMessage(result.success ? 'Background updated' : result.message || 'Update failed');
+        if (result.success) loadBackgrounds();
+    });
+
     const performSummon = async (btn, count = 1, free = false) => {
         if (!btn) return;
         btn.disabled = true;
@@ -725,6 +825,8 @@ function attachEventListeners() {
     if (summonButton) summonButton.addEventListener('click', () => performSummon(summonButton, 1, false));
     if (summonTenButton) summonTenButton.addEventListener('click', () => performSummon(summonTenButton, 10, false));
     if (freeSummonButton) freeSummonButton.addEventListener('click', () => performSummon(freeSummonButton, 1, true));
+    if (gemGiftButton) gemGiftButton.addEventListener('click', claimGemGift);
+    if (platinumGiftButton) platinumGiftButton.addEventListener('click', claimPlatinumGift);
 
     chatSendButton.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
@@ -1176,6 +1278,12 @@ function openProfileModal() {
     profileNewPasswordInput.value = '';
     profileConfirmPasswordInput.value = '';
     profileImageSelect.innerHTML = '';
+    const ph = document.createElement('option');
+    ph.value = '';
+    ph.disabled = true;
+    ph.textContent = 'Select profile character';
+    if (!gameState.profile_image) ph.selected = true;
+    profileImageSelect.appendChild(ph);
     masterCharacterList.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.image_file;
@@ -1190,6 +1298,32 @@ function sendMessage() {
     if (chatInput.value.trim() !== '') {
         socket.emit('send_message', { message: chatInput.value });
         chatInput.value = '';
+    }
+}
+
+async function claimGemGift() {
+    const before = gameState.gems || 0;
+    const resp = await fetch('/api/claim_gem_gift', { method: 'POST' });
+    const result = await resp.json();
+    if (result.success) {
+        const gained = (result.gems || 0) - before;
+        displayMessage(`You received ${gained} Gems! Come back in 30m for more.`);
+        await fetchPlayerDataAndUpdate();
+    } else {
+        displayMessage(result.message || 'Gift not ready');
+    }
+}
+
+async function claimPlatinumGift() {
+    const before = gameState.premium_gems || 0;
+    const resp = await fetch('/api/claim_platinum_gift', { method: 'POST' });
+    const result = await resp.json();
+    if (result.success) {
+        const gained = (result.platinum || 0) - before;
+        displayMessage(`You received ${gained} Platinum! Come back in 24h for more.`);
+        await fetchPlayerDataAndUpdate();
+    } else {
+        displayMessage(result.message || 'Gift not ready');
     }
 }
 
@@ -1235,9 +1369,14 @@ async function updateEquipmentDisplay() {
     const equipmentDefs = await equipmentDefsResponse.json();
     const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
     if (result.equipment.length === 0) {
-        equipmentContainer.innerHTML = '<p>Your armory is empty. Farm the Armory to find loot, it is an end game mechanic.</p>';
+        equipmentContainer.style.display = 'flex';
+        equipmentContainer.style.justifyContent = 'center';
+        equipmentContainer.style.alignItems = 'center';
+        equipmentContainer.style.minHeight = '40vh';
+        equipmentContainer.innerHTML = '<p class="empty-armory-message">Your armory is empty. Farm the Armory to find loot, it is an end game mechanic.</p>';
         return;
     }
+    equipmentContainer.removeAttribute('style');
     result.equipment.forEach(item => {
         const card = document.createElement('div');
         card.className = 'collection-card';
@@ -1288,13 +1427,15 @@ async function updateAllUsers() {
     towerSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        div.textContent = `${idx + 1}. ${u.username} - Floor ${u.current_stage}`;
+        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
+        div.innerHTML = `${img}${idx + 1}. ${u.username} - Floor ${u.current_stage}`;
         towerScoresContainer.appendChild(div);
     });
     dungeonSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        div.textContent = `${idx + 1}. ${u.username} - Runs ${u.dungeon_runs}`;
+        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
+        div.innerHTML = `${img}${idx + 1}. ${u.username} - Runs ${u.dungeon_runs}`;
         dungeonScoresContainer.appendChild(div);
     });
 }
@@ -1408,15 +1549,22 @@ async function updateStoreDisplay() {
                 div.appendChild(btnDiv);
                 window.paypal.Buttons({
                     style: { height: 30 },
-                    createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: pkg.price.toFixed(2) } }] }),
+                    createOrder: (data, actions) => actions.order.create({
+                        purchase_units: [{
+                            amount: { value: pkg.price.toFixed(2) },
+                            custom_id: `${gameState.user_id}:${pkg.id}`
+                        }]
+                    }),
                     onApprove: (data, actions) => {
-                        return fetch('/api/paypal_complete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ package_id: pkg.id, order_id: data.orderID })
+                        return actions.order.capture().then(() => {
+                            return fetch('/api/paypal_complete', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ package_id: pkg.id, order_id: data.orderID })
+                            });
                         }).then(res => res.json()).then(res => {
                             displayMessage(res.success ? 'Purchase successful!' : 'Purchase failed');
-                            if(res.success) fetchPlayerDataAndUpdate();
+                            if (res.success) fetchPlayerDataAndUpdate();
                         });
                     }
                 }).render(`#paypal-${pkg.id}`);
@@ -1508,6 +1656,22 @@ async function loadTowerLevelList() {
     }
 }
 
+async function loadBackgrounds() {
+    const resp = await fetch('/api/backgrounds');
+    const data = await resp.json();
+    if (data.success) {
+        for (const [section, file] of Object.entries(data.backgrounds)) {
+            const el = document.getElementById(section);
+            if (el) {
+                el.style.backgroundImage = `url('/static/images/backgrounds/${file}')`;
+                el.style.backgroundSize = 'cover';
+                el.style.backgroundPosition = 'center';
+                el.style.backgroundRepeat = 'no-repeat';
+            }
+        }
+    }
+}
+
 function updateTeamDisplay() {
     teamDisplayContainer.innerHTML = '';
     for (let i = 0; i < 3; i++) {
@@ -1591,13 +1755,13 @@ function updateCampaignDisplay() {
 
         if (status === 'farmable') {
             iconPath = '/static/images/ui/stage_node_cleared.png';
-            const gemsForRepeat = 15;
+            const rewards = calculateTowerRewards(stageNum, false);
             descriptionHTML = `<p class="stage-reward repeat"><i class="fa-solid fa-gem currency-icon"></i> Farm this floor for a small reward.</p>`;
-            buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${gemsForRepeat} Gems)</button>`;
+            buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${rewards.gems} Gems)</button>`;
         } else if (status === 'current') {
             iconPath = '/static/images/ui/stage_node_current.png';
-            const gemsForFirstClear = 25 + (Math.floor((stageNum - 1) / 5) * 5);
-            descriptionHTML = `<p class="stage-reward"><i class="fa-solid fa-gem currency-icon"></i> First Clear Reward: ${gemsForFirstClear}</p>`;
+            const rewards = calculateTowerRewards(stageNum, true);
+            descriptionHTML = `<p class="stage-reward"><i class="fa-solid fa-gem currency-icon"></i> First Clear Reward: ${rewards.gems}</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;
         }
 

@@ -120,3 +120,6 @@ Recent Updates:
 - Heroes have an Equip button, while clicking their portrait shows a larger image.
 - Enemies scale correctly with floor level so higher stages are truly challenging.
 - The Online screen lists all registered players with their total dungeon runs.
+
+Whispers from the deep:
+Rumors say the Spire has no peak. Each century of floors resets the cycle, its guardians reborn stronger than before. Many have climbed past the hundredth floor only to find the tower rearranged, daring them to press on. Those who return speak of warped halls and echoes of battles long past. The climb truly has no end.
