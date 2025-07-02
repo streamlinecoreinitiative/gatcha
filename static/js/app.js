@@ -23,7 +23,7 @@ const passwordInput = document.getElementById('password-input');
 const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
 const languageSelect = document.getElementById('language-select');
-const languageFlagButtons = document.querySelectorAll('.language-flag');
+let languageFlagButtons;
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
@@ -444,6 +444,8 @@ function attachEventListeners() {
     infoCloseBtn = document.getElementById('info-close-btn');
     welcomeModal = document.getElementById('welcome-modal');
     welcomeCloseBtn = document.getElementById('welcome-close-btn');
+
+    languageFlagButtons = document.querySelectorAll('.language-flag');
 
     if (languageSelect) {
         languageSelect.addEventListener('change', () => {
@@ -1794,7 +1796,7 @@ function updateCollectionDisplay() {
         const canMerge = heroCounts[hero.character_name] >= mergeCost;
         const isInTeam = teamDBIds.includes(hero.id);
         const stats = getScaledStats(hero);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level})</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level}g)</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
