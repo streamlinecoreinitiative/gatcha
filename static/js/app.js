@@ -1413,6 +1413,8 @@ function updateUI() {
     updateTopPlayer();
     updateMotd();
     startResourceTimers();
+    const lang = localStorage.getItem('language') || 'en';
+    translatePage(lang);
 }
 
 async function updateEquipmentDisplay() {
