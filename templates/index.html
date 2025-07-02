@@ -105,6 +105,13 @@
                 <span id="dungeon-energy-count"></span>/<span id="dungeon-max">5</span>
                 <span id="dungeon-timer"></span>
             </div>
+            <div id="top-language-flags" class="language-flags">
+                <button data-lang="en" class="language-flag">🇺🇸</button>
+                <button data-lang="es" class="language-flag">🇪🇸</button>
+                <button data-lang="pt" class="language-flag">🇧🇷</button>
+                <button data-lang="ja" class="language-flag">🇯🇵</button>
+                <button data-lang="zh" class="language-flag">🇨🇳</button>
+            </div>
         </div>
 
         <!-- MAIN CONTENT AREA: Views will be dynamically displayed here -->
@@ -116,6 +123,7 @@
                     <button class="tutorial-btn" data-tutorial="This home screen shows your active team and important progress information.">?</button>
                 </div>
                 <div class="daily-gift" id="gem-gift">
+                    <img src="{{ url_for('static', filename='images/ui/chest.png') }}" alt="Chest" />
                     <button id="gem-gift-button" class="gift-btn">Claim 50 Gems<span class="red-dot"></span></button>
                     <span id="gem-gift-timer"></span>
                 </div>
@@ -208,6 +216,7 @@
                     <button class="tutorial-btn" data-tutorial="Purchase Platinum or energy here. Transactions are verified server-side.">?</button>
                 </div>
                 <div class="daily-gift" id="platinum-gift">
+                    <img src="{{ url_for('static', filename='images/ui/chest.png') }}" alt="Chest" />
                     <button id="platinum-gift-button" class="gift-btn">Daily Platinum Chest<span class="red-dot"></span></button>
                     <span id="platinum-gift-timer"></span>
                 </div>
@@ -413,6 +422,14 @@
                 </select>
                 <input type="file" id="bg-image-input">
                 <button id="bg-upload-btn">Upload</button>
+
+                <hr>
+                <h3>Game Settings</h3>
+                <input type="number" id="admin-energy-cap" placeholder="Energy Cap">
+                <input type="number" id="admin-dungeon-cap" placeholder="Dungeon Cap">
+                <input type="number" id="admin-energy-regen" placeholder="Energy Regen (sec)">
+                <input type="number" id="admin-dungeon-regen" placeholder="Dungeon Regen (sec)">
+                <button id="admin-game-save-btn">Save Settings</button>
             </div>
 
 
@@ -539,12 +556,19 @@
         <label for="profile-image-select" class="profile-image-label">Select Profile Character</label>
         <select id="profile-image-select"></select>
         <label for="profile-language-select" class="profile-image-label">Language</label>
-        <select id="profile-language-select">
-            <option value="en">🇺🇸 English</option>
-            <option value="es">🇪🇸 Español</option>
-            <option value="pt">🇧🇷 Português</option>
-            <option value="ja">🇯🇵 日本語</option>
-            <option value="zh">🇨🇳 中文</option>
+        <div id="profile-language-flags" class="language-flags">
+            <button data-lang="en" class="language-flag">🇺🇸</button>
+            <button data-lang="es" class="language-flag">🇪🇸</button>
+            <button data-lang="pt" class="language-flag">🇧🇷</button>
+            <button data-lang="ja" class="language-flag">🇯🇵</button>
+            <button data-lang="zh" class="language-flag">🇨🇳</button>
+        </div>
+        <select id="profile-language-select" style="display:none">
+            <option value="en">en</option>
+            <option value="es">es</option>
+            <option value="pt">pt</option>
+            <option value="ja">ja</option>
+            <option value="zh">zh</option>
         </select>
         <p class="tos-link"><a href="/tos" target="_blank">View Terms and Conditions</a></p>
         <div class="modal-buttons">
@@ -578,6 +602,7 @@
 <div id="forgot-password-modal" class="modal-overlay">
     <div class="modal-content">
         <h3>Reset Password</h3>
+        <p>An email will be sent with instructions to reset your password.</p>
         <input type="email" id="forgot-email" placeholder="Email">
         <div id="forgot-error" class="modal-error"></div>
         <div class="modal-buttons">

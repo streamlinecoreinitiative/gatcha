@@ -88,15 +88,14 @@ button:disabled, .fantasy-button:disabled {
     right: 10px;
 }
 
-#language-flags .language-flag {
+.language-flags .language-flag {
     background: none;
     border: none;
     font-size: 24px;
     margin-left: 5px;
     cursor: pointer;
 }
-
-#language-flags .language-flag.selected {
+.language-flags .language-flag.selected {
     outline: 2px solid #f1c40f;
     border-radius: 4px;
 }
@@ -234,6 +233,10 @@ button:disabled, .fantasy-button:disabled {
 #currency-info img {
     height: 50px;
 }
+#top-language-flags {
+    display: flex;
+    align-items: center;
+}
 #logout-button {
     padding: 5px 15px;
 }
@@ -322,6 +325,12 @@ button:disabled, .fantasy-button:disabled {
 .daily-gift {
     text-align: center;
     margin: 10px 0;
+}
+
+.daily-gift img {
+    width: 80px;
+    display: block;
+    margin: 0 auto 5px;
 }
 
 .gift-btn {

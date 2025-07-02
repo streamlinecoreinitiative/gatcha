@@ -23,7 +23,7 @@ const passwordInput = document.getElementById('password-input');
 const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
 const languageSelect = document.getElementById('language-select');
-const languageFlagButtons = document.querySelectorAll('#language-flags button');
+const languageFlagButtons = document.querySelectorAll('.language-flag');
 const playerNameDisplay = document.getElementById('player-name');
 const gemCountDisplay = document.getElementById('gem-count');
 const goldCountDisplay = document.getElementById('gold-count');
@@ -78,6 +78,11 @@ let profileConfirmPasswordInput;
 let profileImageSelect;
 let profileLanguageSelect;
 let profileSaveBtn;
+let gameEnergyCapInput;
+let gameDungeonCapInput;
+let gameEnergyRegenInput;
+let gameDungeonRegenInput;
+let gameSettingsSaveBtn;
 let profileCancelBtn;
 let adminSubmitBtn;
 let paypalClientIdInput;
@@ -220,7 +225,7 @@ function updateResourceTimers() {
     const now = Math.floor(Date.now() / 1000);
     if (energyTimerDisplay) {
         if (gameState.energy < gameState.energy_cap) {
-            const next = gameState.energy_last + 300; // 5 minutes per energy
+            const next = gameState.energy_last + gameState.energy_regen;
             const remain = next - now;
             if (remain <= 0) {
                 fetchPlayerDataAndUpdate();
@@ -233,7 +238,7 @@ function updateResourceTimers() {
     }
     if (dungeonTimerDisplay) {
         if (gameState.dungeon_energy < gameState.dungeon_cap) {
-            const next = gameState.dungeon_last + 900; // 15 minutes per energy
+            const next = gameState.dungeon_last + gameState.dungeon_regen;
             const remain = next - now;
             if (remain <= 0) {
                 fetchPlayerDataAndUpdate();
@@ -403,6 +408,11 @@ function attachEventListeners() {
     bgSectionSelect = document.getElementById('bg-section-select');
     bgImageInput = document.getElementById('bg-image-input');
     bgUploadBtn = document.getElementById('bg-upload-btn');
+    gameEnergyCapInput = document.getElementById('admin-energy-cap');
+    gameDungeonCapInput = document.getElementById('admin-dungeon-cap');
+    gameEnergyRegenInput = document.getElementById('admin-energy-regen');
+    gameDungeonRegenInput = document.getElementById('admin-dungeon-regen');
+    gameSettingsSaveBtn = document.getElementById('admin-game-save-btn');
     newEntityTypeSelect = document.getElementById('admin-entity-type');
     newEntityNameInput = document.getElementById('admin-entity-name');
     newEntityCodeInput = document.getElementById('admin-entity-code');
@@ -442,7 +452,10 @@ function attachEventListeners() {
     }
 
     languageFlagButtons.forEach(btn => {
-        btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+        btn.addEventListener('click', () => {
+            setLanguage(btn.dataset.lang);
+            if (profileLanguageSelect) profileLanguageSelect.value = btn.dataset.lang;
+        });
     });
 
     loginButton.addEventListener('click', handleLogin);
@@ -809,6 +822,22 @@ function attachEventListeners() {
         if (result.success) loadBackgrounds();
     });
 
+    if (gameSettingsSaveBtn) gameSettingsSaveBtn.addEventListener('click', async () => {
+        const resp = await fetch('/api/admin/game_settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                energy_cap: parseInt(gameEnergyCapInput.value) || 0,
+                dungeon_cap: parseInt(gameDungeonCapInput.value) || 0,
+                energy_regen: parseInt(gameEnergyRegenInput.value) || 0,
+                dungeon_regen: parseInt(gameDungeonRegenInput.value) || 0
+            })
+        });
+        const result = await resp.json();
+        displayMessage(result.success ? 'Settings saved' : result.message || 'Update failed');
+        if (result.success) loadGameSettings();
+    });
+
     const performSummon = async (btn, count = 1, free = false) => {
         if (!btn) return;
         btn.disabled = true;
@@ -863,6 +892,7 @@ function attachEventListeners() {
             const targetViewId = button.dataset.view;
             mainContent.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
             document.getElementById(targetViewId)?.classList.add('active');
+            applyBodyBackground(targetViewId);
             if (targetViewId !== 'summon-view') {
                 summonResultContainer.innerHTML = '';
                 summonResultContainer.classList.remove('show');
@@ -890,6 +920,7 @@ function attachEventListeners() {
                 loadExpeditionAdminList();
                 loadItemAdminList();
                 loadTowerLevelList();
+                loadGameSettings();
             }
             if (targetViewId === 'online-view') {
                 updateAllUsers();
@@ -1216,6 +1247,7 @@ async function handleLogin() {
     const result = await response.json();
     if (result.success) {
         await initializeGame();
+        applyBodyBackground('home-view');
         if (result.message) displayMessage(result.message);
     } else {
         displayMessage(`Login Failed: ${result.message}`);
@@ -1228,6 +1260,7 @@ async function handleLogout() {
     gameState = {};
     loginScreen.classList.add('active');
     gameScreen.classList.remove('active');
+    applyBodyBackground('login-screen');
     if (chatContainer) chatContainer.classList.add('hidden');
     usernameInput.value = '';
     passwordInput.value = '';
@@ -1517,6 +1550,18 @@ async function loadEventsText() {
     if (result.success) adminEventsText.value = result.data || '';
 }
 
+async function loadGameSettings() {
+    if (!gameEnergyCapInput) return;
+    const resp = await fetch('/api/admin/game_settings');
+    const result = await resp.json();
+    if (result.success && result.settings) {
+        gameEnergyCapInput.value = result.settings.energy_cap;
+        gameDungeonCapInput.value = result.settings.dungeon_cap;
+        gameEnergyRegenInput.value = result.settings.energy_regen;
+        gameDungeonRegenInput.value = result.settings.dungeon_regen;
+    }
+}
+
 async function updateMotd() {
     const resp = await fetch('/api/motd');
     const result = await resp.json();
@@ -1679,10 +1724,23 @@ async function loadTowerLevelList() {
     }
 }
 
+let backgroundMap = {};
+
+function applyBodyBackground(section) {
+    const file = backgroundMap[section] || backgroundMap['game-screen'] || backgroundMap['login-screen'];
+    if (file) {
+        document.body.style.backgroundImage = `url('/static/images/backgrounds/${file}')`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundRepeat = 'no-repeat';
+    }
+}
+
 async function loadBackgrounds() {
     const resp = await fetch('/api/backgrounds');
     const data = await resp.json();
     if (data.success) {
+        backgroundMap = data.backgrounds;
         for (const [section, file] of Object.entries(data.backgrounds)) {
             const el = document.getElementById(section);
             if (el) {
@@ -1692,6 +1750,8 @@ async function loadBackgrounds() {
                 el.style.backgroundRepeat = 'no-repeat';
             }
         }
+        const active = document.querySelector('#main-content .view.active');
+        applyBodyBackground(active ? active.id : 'login-screen');
     }
 }
 
