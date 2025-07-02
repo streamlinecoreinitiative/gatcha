@@ -4,6 +4,7 @@ function markTranslatable() {
     const gameNodes = document.querySelectorAll('#game-screen *');
     [...loginNodes, ...gameNodes].forEach(el => {
         if (adminView && adminView.contains(el)) return;
+        if (el.classList.contains('language-flag')) return;
         if (!el.children.length && el.textContent.trim()) {
             el.setAttribute('data-i18n', '');
             if (!el.dataset.orig) el.dataset.orig = el.textContent;
