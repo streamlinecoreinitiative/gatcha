@@ -1366,7 +1366,11 @@ function openProfileModal() {
     });
     if (profileLanguageSelect) {
         const stored = localStorage.getItem('language');
-        profileLanguageSelect.value = stored === 'ja' ? 'ja' : 'es';
+        if (stored === 'ja' || stored === 'es' || stored === 'en') {
+            profileLanguageSelect.value = stored;
+        } else {
+            profileLanguageSelect.value = 'en';
+        }
     }
     profileModal.classList.add('active');
 }
