@@ -45,3 +45,7 @@ These values are stored in the database and used by the server when rendering Pa
 ## Email Configuration
 
 Admins may configure SMTP credentials from the **Admin Panel**. Enter the host, port, username and password under the Email section and click **Save Email**. If no settings are provided, outgoing emails will be written to `sent_emails.log`.
+
+## Database Configuration
+
+The application can use either the bundled SQLite file or a PostgreSQL database. To connect to PostgreSQL set the `DATABASE_URL` environment variable to your connection string before starting the app. When `DATABASE_URL` is present the code connects using `psycopg2`; otherwise it falls back to `database.db`.
