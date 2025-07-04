@@ -13,7 +13,6 @@ import string
 import secrets
 from balance import generate_enemy, calculate_item_power
 from werkzeug.utils import secure_filename
-from deep_translator import GoogleTranslator
 
 
 def load_all_definitions(file_path):
@@ -367,19 +366,6 @@ def get_lore():
 def get_motd():
     return jsonify({'success': True, 'motd': db.get_motd()})
 
-
-@app.route('/api/translate', methods=['POST'])
-def translate_text():
-    data = request.json or {}
-    text = data.get('text', '')
-    target = data.get('target', '')
-    if not text or not target:
-        return jsonify({'success': False, 'message': 'text and target required'})
-    try:
-        translated = GoogleTranslator(source='auto', target=target).translate(text)
-        return jsonify({'success': True, 'translation': translated})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
 
 
 @app.route('/tos')
