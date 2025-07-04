@@ -4,9 +4,67 @@ import os
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 
+try:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+except ImportError:  # psycopg2 not installed for local SQLite usage
+    psycopg2 = None
+    RealDictCursor = None
+
 DATABASE_NAME = "database.db"
+USING_POSTGRES = False
+
+
+class _PGCursorWrapper:
+    """Wrapper that converts '?' placeholders to '%s'."""
+
+    def __init__(self, cursor):
+        self._cursor = cursor
+        self.lastrowid = None
+
+    def execute(self, query, params=None):
+        q = query.replace("?", "%s")
+        self._cursor.execute(q, params or [])
+        return self
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    def __getattr__(self, attr):
+        return getattr(self._cursor, attr)
+
+
+class _PGConnectionWrapper:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def cursor(self):
+        return _PGCursorWrapper(self._conn.cursor())
+
+    def execute(self, query, params=None):
+        cur = self.cursor()
+        cur.execute(query, params)
+        return cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
 
 def get_db_connection():
+    global USING_POSTGRES
+    db_url = os.getenv("DATABASE_URL")
+    if db_url and psycopg2:
+        conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
+        conn.autocommit = True
+        USING_POSTGRES = True
+        return _PGConnectionWrapper(conn)
+
     conn = sqlite3.connect(DATABASE_NAME)
     conn.row_factory = sqlite3.Row
     return conn
@@ -22,12 +80,12 @@ def verify_password_hash(stored: str, provided: str) -> bool:
     return check_password_hash(stored, provided)
 
 def add_column_if_missing(conn, table, column, definition):
-    cur = conn.cursor()
-    cur.execute(f"PRAGMA table_info({table})")
-    cols = [row[1] for row in cur.fetchall()]
-    if column not in cols:
-        cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+    try:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
         conn.commit()
+    except Exception:
+        # Column already exists or cannot be added; ignore errors
+        pass
 
 def init_db():
     conn = get_db_connection()
@@ -184,11 +242,14 @@ def register_user(username, email, password, profile_image=None):
     try:
         cursor = conn.cursor()
         hashed_pw = hash_password(password)
-        cursor.execute(
-            "INSERT INTO users (username, email, password, profile_image) VALUES (?, ?, ?, ?)",
-            (username, email, hashed_pw, profile_image)
-        )
-        user_id = cursor.lastrowid
+        sql = "INSERT INTO users (username, email, password, profile_image) VALUES (?, ?, ?, ?)"
+        if USING_POSTGRES:
+            sql += " RETURNING id"
+        cursor.execute(sql, (username, email, hashed_pw, profile_image))
+        if USING_POSTGRES:
+            user_id = cursor.fetchone()["id"]
+        else:
+            user_id = cursor.lastrowid
         import time
         now = int(time.time())
         settings = get_game_settings()
@@ -594,9 +655,14 @@ def create_admin_if_missing():
     row = conn.execute("SELECT id FROM users WHERE username = 'admin'").fetchone()
     if not row:
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO users (username, email, password, is_admin) VALUES ('admin', 'admin@example.com', ?, 1)",
-                       (hash_password('adminpass'),))
-        admin_id = cursor.lastrowid
+        sql = "INSERT INTO users (username, email, password, is_admin) VALUES ('admin', 'admin@example.com', ?, 1)"
+        if USING_POSTGRES:
+            sql += " RETURNING id"
+        cursor.execute(sql, (hash_password('adminpass'),))
+        if USING_POSTGRES:
+            admin_id = cursor.fetchone()["id"]
+        else:
+            admin_id = cursor.lastrowid
         import time
         now = int(time.time())
         settings = get_game_settings()
@@ -695,9 +761,14 @@ def create_expedition(name, enemies, image_file=None, description=None, drops=No
     """Create a new expedition with a list of enemy names."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO expeditions (name, image_file, description, drops, image_res) VALUES (?, ?, ?, ?, ?)',
-                   (name, image_file, description, drops, image_res))
-    expedition_id = cursor.lastrowid
+    sql = 'INSERT INTO expeditions (name, image_file, description, drops, image_res) VALUES (?, ?, ?, ?, ?)'
+    if USING_POSTGRES:
+        sql += ' RETURNING id'
+    cursor.execute(sql, (name, image_file, description, drops, image_res))
+    if USING_POSTGRES:
+        expedition_id = cursor.fetchone()['id']
+    else:
+        expedition_id = cursor.lastrowid
     for idx, enemy in enumerate(enemies, start=1):
         cursor.execute(
             'INSERT INTO expedition_levels (expedition_id, level_num, enemy_name) VALUES (?, ?, ?)',
