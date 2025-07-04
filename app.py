@@ -34,7 +34,6 @@ paypalrestsdk.configure({
     'client_id': paypal_conf.get('client_id'),
     'client_secret': paypal_conf.get('client_secret')
 })
-refresh_store_prices()
 
 # Base URL for links in emails
 BASE_URL = os.getenv('BASE_URL', 'https://towerchronicles.xyz')
@@ -82,6 +81,8 @@ def refresh_store_prices():
     for pkg in STORE_PACKAGES:
         if 'amount' in pkg and pkg['id'] in prices:
             pkg['price'] = prices[pkg['id']]
+
+refresh_store_prices()
 
 # Simple email helper - attempts SMTP then falls back to logging
 def send_email(to_addr, subject, body):
