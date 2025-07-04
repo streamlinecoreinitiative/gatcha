@@ -2,6 +2,8 @@
 import sqlite3
 import os
 import json
+import secrets
+import time
 from werkzeug.security import generate_password_hash, check_password_hash
 
 try:
@@ -160,6 +162,20 @@ def init_db():
         )
     ''')
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS store_prices (
+            package_id TEXT PRIMARY KEY,
+            price REAL NOT NULL
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS password_resets (
+            token TEXT PRIMARY KEY,
+            email TEXT NOT NULL,
+            new_password TEXT NOT NULL,
+            expires INTEGER NOT NULL
+        )
+    ''')
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY CHECK (id = 1),
             motd TEXT,
@@ -228,6 +244,11 @@ def init_db():
     add_column_if_missing(conn, 'expeditions', 'drops', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'image_res', 'TEXT')
     add_column_if_missing(conn, 'messages', 'bug_link', 'TEXT')
+    cursor.execute('''
+        INSERT OR IGNORE INTO store_prices (package_id, price) VALUES
+            ('pack_small', 0.99),
+            ('pack_medium', 4.99)
+    ''')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
     cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
     cursor.execute('INSERT OR IGNORE INTO messages (id, motd, bug_link) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.", "https://github.com/your_username/your_repo/issues")')
@@ -720,6 +741,53 @@ def update_paypal_config(client_id=None, client_secret=None, mode=None):
         conn.execute('UPDATE paypal_config SET mode = ? WHERE id = 1', (mode,))
     conn.commit()
     conn.close()
+
+def get_store_prices():
+    conn = get_db_connection()
+    rows = conn.execute('SELECT package_id, price FROM store_prices').fetchall()
+    conn.close()
+    return {row['package_id']: row['price'] for row in rows}
+
+def update_store_price(package_id, price):
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO store_prices (package_id, price) VALUES (?, ?) '
+        'ON CONFLICT(package_id) DO UPDATE SET price = excluded.price',
+        (package_id, price)
+    )
+    conn.commit()
+    conn.close()
+
+def create_password_reset(email, new_password):
+    token = secrets.token_urlsafe(16)
+    expires = int(time.time()) + 3600
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO password_resets (token, email, new_password, expires) VALUES (?, ?, ?, ?)',
+        (token, email, new_password, expires)
+    )
+    conn.commit()
+    conn.close()
+    return token
+
+def pop_password_reset(token):
+    conn = get_db_connection()
+    row = conn.execute('SELECT email, new_password, expires FROM password_resets WHERE token = ?', (token,)).fetchone()
+    if row:
+        conn.execute('DELETE FROM password_resets WHERE token = ?', (token,))
+        conn.commit()
+        conn.close()
+        if row['expires'] >= int(time.time()):
+            return row['email'], row['new_password']
+    else:
+        conn.close()
+    return None
+
+def get_username_by_email(email):
+    conn = get_db_connection()
+    row = conn.execute('SELECT username FROM users WHERE email = ?', (email,)).fetchone()
+    conn.close()
+    return row['username'] if row else None
 
 def get_email_config():
     conn = get_db_connection()

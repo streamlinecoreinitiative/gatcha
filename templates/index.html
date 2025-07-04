@@ -314,7 +314,14 @@
                     <p>Client ID: <span id="paypal-client-display"></span></p>
                     <p>Secret: <span id="paypal-secret-display"></span></p>
                     <p>Mode: <span id="paypal-mode-display"></span></p>
-                    <button id="admin-paypal-remove-btn">Remove PayPal</button>
+                <button id="admin-paypal-remove-btn">Remove PayPal</button>
+                </div>
+                <input type="number" step="0.01" id="admin-price-pack-small" placeholder="Small Pack Price">
+                <input type="number" step="0.01" id="admin-price-pack-medium" placeholder="Medium Pack Price">
+                <button id="admin-price-save-btn">Save Prices</button>
+                <div id="price-display">
+                    <p>Small: $<span id="price-small-display"></span></p>
+                    <p>Medium: $<span id="price-medium-display"></span></p>
                 </div>
                 <hr>
                 <input type="text" id="admin-email-host" placeholder="SMTP Host">

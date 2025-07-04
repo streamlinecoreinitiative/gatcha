@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded. V5.5 Finalizing...");
     attachEventListeners();
     const savedLang = localStorage.getItem('language') || 'en';
-    setLanguage(savedLang);
+    setLanguage(savedLang, {reload: false});
     loadBackgrounds();
     initializeGame();
 });
@@ -94,6 +94,11 @@ let paypalClientDisplay;
 let paypalSecretDisplay;
 let paypalModeInput;
 let paypalModeDisplay;
+let priceSmallInput;
+let priceMediumInput;
+let priceSaveBtn;
+let priceSmallDisplay;
+let priceMediumDisplay;
 let emailHostInput;
 let emailPortInput;
 let emailUserInput;
@@ -213,13 +218,15 @@ function setRedDot(element, show) {
     if (dot) dot.style.display = show ? 'block' : 'none';
 }
 
-function setLanguage(lang) {
+function setLanguage(lang, opts = {reload: true}) {
     localStorage.setItem('language', lang);
     if (languageSelect) languageSelect.value = lang;
     languageFlagButtons.forEach(btn => {
         btn.classList.toggle('selected', btn.dataset.lang === lang);
     });
-    translatePage(lang);
+    translatePage(lang).then(() => {
+        if (opts.reload) window.location.reload();
+    });
 }
 
 let resourceTimer;
@@ -377,6 +384,11 @@ function attachEventListeners() {
     paypalSecretDisplay = document.getElementById('paypal-secret-display');
     paypalModeInput = document.getElementById('admin-paypal-mode');
     paypalModeDisplay = document.getElementById('paypal-mode-display');
+    priceSmallInput = document.getElementById('admin-price-pack-small');
+    priceMediumInput = document.getElementById('admin-price-pack-medium');
+    priceSaveBtn = document.getElementById('admin-price-save-btn');
+    priceSmallDisplay = document.getElementById('price-small-display');
+    priceMediumDisplay = document.getElementById('price-medium-display');
     emailHostInput = document.getElementById('admin-email-host');
     emailPortInput = document.getElementById('admin-email-port');
     emailUserInput = document.getElementById('admin-email-user');
@@ -455,13 +467,13 @@ function attachEventListeners() {
 
     if (languageSelect) {
         languageSelect.addEventListener('change', () => {
-            setLanguage(languageSelect.value);
+            setLanguage(languageSelect.value, {reload: true});
         });
     }
 
     languageFlagButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            setLanguage(btn.dataset.lang);
+            setLanguage(btn.dataset.lang, {reload: true});
             if (profileLanguageSelect) profileLanguageSelect.value = btn.dataset.lang;
         });
     });
@@ -593,7 +605,7 @@ function attachEventListeners() {
         const result = await response.json();
         if (result.success) {
             if (profileLanguageSelect) {
-                setLanguage(profileLanguageSelect.value);
+                setLanguage(profileLanguageSelect.value, {reload: true});
             }
             let passChanged = false;
             if (profileCurrentPasswordInput.value || profileNewPasswordInput.value || profileConfirmPasswordInput.value) {
@@ -651,6 +663,20 @@ function attachEventListeners() {
         displayMessage(result.success ? 'PayPal settings saved' : 'Update failed');
         if (result.success) loadPaypalConfig();
         // Refresh the store so PayPal buttons appear without a full page reload
+        updateStoreDisplay();
+    });
+    if (priceSaveBtn) priceSaveBtn.addEventListener('click', async () => {
+        const response = await fetch('/api/admin/store_prices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pack_small: parseFloat(priceSmallInput.value) || 0,
+                pack_medium: parseFloat(priceMediumInput.value) || 0
+            })
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'Prices updated' : 'Update failed');
+        if (result.success) loadStorePrices();
         updateStoreDisplay();
     });
     const emailSaveBtn = document.getElementById('admin-email-save-btn');
@@ -1247,6 +1273,7 @@ async function fetchPlayerDataAndUpdate() {
             if (gameState.is_admin) {
                 loadPaypalConfig();
                 loadEmailConfig();
+                loadStorePrices();
                 loadMotd();
                 loadEventsText();
                 loadBugLink();
@@ -1547,6 +1574,20 @@ async function loadPaypalConfig() {
         if (paypalSecretDisplay) paypalSecretDisplay.textContent = result.config.client_secret || '';
         if (paypalModeInput) paypalModeInput.value = result.config.mode || 'sandbox';
         if (paypalModeDisplay) paypalModeDisplay.textContent = result.config.mode || 'sandbox';
+    }
+}
+
+async function loadStorePrices() {
+    if (!priceSmallInput || !priceMediumInput) return;
+    const resp = await fetch('/api/admin/store_prices');
+    const result = await resp.json();
+    if (result.success && result.prices) {
+        const small = result.prices.pack_small;
+        const med = result.prices.pack_medium;
+        priceSmallInput.value = small !== undefined ? small : '';
+        priceMediumInput.value = med !== undefined ? med : '';
+        if (priceSmallDisplay) priceSmallDisplay.textContent = small !== undefined ? small : '';
+        if (priceMediumDisplay) priceMediumDisplay.textContent = med !== undefined ? med : '';
     }
 }
 
