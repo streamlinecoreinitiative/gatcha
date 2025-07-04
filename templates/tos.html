@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Terms and Conditions</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/translate.js') }}"></script>
 </head>
 <body>
     <div class="content">
@@ -29,5 +30,11 @@
 
         <p>Last updated: June 27, 2025</p>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const lang = localStorage.getItem('language') || 'en';
+            translatePage(lang);
+        });
+    </script>
 </body>
 </html>
