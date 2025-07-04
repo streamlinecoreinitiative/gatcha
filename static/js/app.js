@@ -36,6 +36,8 @@ const energyTimerDisplay = document.getElementById('energy-timer');
 const dungeonTimerDisplay = document.getElementById('dungeon-timer');
 const logoutButton = document.getElementById('logout-button');
 const bugButton = document.getElementById('report-bug-button');
+const bugLinkAnchor = document.getElementById('bug-report-link');
+let bugReportLink = 'https://github.com/your_username/your_repo/issues';
 const mainContent = document.getElementById('main-content');
 const teamDisplayContainer = document.getElementById('team-display');
 const dungeonRunCount = document.getElementById('dungeon-run-count');
@@ -103,6 +105,8 @@ let adminMotdInput;
 let adminMotdSaveBtn;
 let adminEventsText;
 let adminEventsSaveBtn;
+let adminBugLinkInput;
+let adminBugLinkSaveBtn;
 let adminExpeditionNameInput;
 let adminExpeditionEnemiesInput;
 let adminExpeditionDescInput;
@@ -384,6 +388,8 @@ function attachEventListeners() {
     adminMotdSaveBtn = document.getElementById('admin-motd-save-btn');
     adminEventsText = document.getElementById('admin-events-text');
     adminEventsSaveBtn = document.getElementById('admin-events-save-btn');
+    adminBugLinkInput = document.getElementById('admin-bug-link');
+    adminBugLinkSaveBtn = document.getElementById('admin-bug-link-save-btn');
     adminExpeditionNameInput = document.getElementById('admin-expedition-name');
     adminExpeditionEnemiesInput = document.getElementById('admin-expedition-enemies');
     adminExpeditionDescInput = document.getElementById('admin-expedition-desc');
@@ -542,7 +548,7 @@ function attachEventListeners() {
     logoutButton.addEventListener('click', handleLogout);
     if (bugButton) {
         bugButton.addEventListener('click', () => {
-            window.open('https://github.com/your_username/your_repo/issues', '_blank');
+            window.open(bugReportLink, '_blank');
         });
     }
 
@@ -693,6 +699,16 @@ function attachEventListeners() {
         });
         const result = await response.json();
         displayMessage(result.success ? 'Events updated' : 'Update failed');
+    });
+    if (adminBugLinkSaveBtn) adminBugLinkSaveBtn.addEventListener('click', async () => {
+        const response = await fetch('/api/admin/bug_link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: adminBugLinkInput.value })
+        });
+        const result = await response.json();
+        displayMessage(result.success ? 'Bug link updated' : 'Update failed');
+        if (result.success) updateBugLink();
     });
     if (adminExpeditionCreateBtn) adminExpeditionCreateBtn.addEventListener('click', async () => {
         const form = new FormData();
@@ -1204,6 +1220,7 @@ async function initializeGame() {
     const gameDataResponse = await fetch('/api/game_data');
     if (gameDataResponse.ok) masterCharacterList = (await gameDataResponse.json()).characters;
     updateMotd();
+    updateBugLink();
     const loggedIn = await fetchPlayerDataAndUpdate();
     if (loggedIn) {
         loginScreen.classList.remove('active');
@@ -1232,6 +1249,7 @@ async function fetchPlayerDataAndUpdate() {
                 loadEmailConfig();
                 loadMotd();
                 loadEventsText();
+                loadBugLink();
             }
             updateUI(); 
             return true; 
@@ -1347,7 +1365,8 @@ function openProfileModal() {
         profileImageSelect.appendChild(opt);
     });
     if (profileLanguageSelect) {
-        profileLanguageSelect.value = localStorage.getItem('language') || 'en';
+        const stored = localStorage.getItem('language');
+        profileLanguageSelect.value = stored === 'ja' ? 'ja' : 'es';
     }
     profileModal.classList.add('active');
 }
@@ -1412,6 +1431,7 @@ function updateUI() {
     updateExpeditionDisplay();
     updateTopPlayer();
     updateMotd();
+    updateBugLink();
     startResourceTimers();
     const lang = localStorage.getItem('language') || 'en';
     translatePage(lang);
@@ -1554,6 +1574,13 @@ async function loadEventsText() {
     if (result.success) adminEventsText.value = result.data || '';
 }
 
+async function loadBugLink() {
+    if (!adminBugLinkInput) return;
+    const resp = await fetch('/api/bug_link');
+    const result = await resp.json();
+    if (result.success) adminBugLinkInput.value = result.url || '';
+}
+
 async function loadGameSettings() {
     if (!gameEnergyCapInput) return;
     const resp = await fetch('/api/admin/game_settings');
@@ -1572,6 +1599,15 @@ async function updateMotd() {
     if (result.success) {
         const box = document.querySelector('#motd-container p');
         if (box) box.textContent = result.motd;
+    }
+}
+
+async function updateBugLink() {
+    const resp = await fetch('/api/bug_link');
+    const result = await resp.json();
+    if (result.success) {
+        bugReportLink = result.url || bugReportLink;
+        if (bugLinkAnchor) bugLinkAnchor.href = bugReportLink;
     }
 }
 
