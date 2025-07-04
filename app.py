@@ -34,6 +34,7 @@ paypalrestsdk.configure({
     'client_id': paypal_conf.get('client_id'),
     'client_secret': paypal_conf.get('client_secret')
 })
+refresh_store_prices()
 
 # Base URL for links in emails
 BASE_URL = os.getenv('BASE_URL', 'https://towerchronicles.xyz')
@@ -76,6 +77,12 @@ STORE_PACKAGES = [
     {"id": "energy_dungeon", "dungeon_energy": 5, "platinum_cost": 50}
 ]
 
+def refresh_store_prices():
+    prices = db.get_store_prices()
+    for pkg in STORE_PACKAGES:
+        if 'amount' in pkg and pkg['id'] in prices:
+            pkg['price'] = prices[pkg['id']]
+
 # Simple email helper - attempts SMTP then falls back to logging
 def send_email(to_addr, subject, body):
     """Send an email using SMTP credentials stored in the database."""
@@ -100,8 +107,7 @@ def send_email(to_addr, subject, body):
         with open('sent_emails.log', 'a', encoding='utf-8') as f:
             f.write(f"TO: {to_addr}\nSUBJECT: {subject}\n{body}\n---\n")
 
-# In-memory store for pending password resets {token: (email, new_password)}
-PASSWORD_RESETS = {}
+# Password reset tokens stored in DB
 # In-memory store for pending email confirmations {token: user_id}
 EMAIL_CONFIRMATIONS = {}
 
@@ -401,10 +407,11 @@ def register():
         token = secrets.token_urlsafe(16)
         EMAIL_CONFIRMATIONS[token] = user_id
         confirm_link = BASE_URL.rstrip('/') + '/confirm_email/' + token
+        username = data.get('username')
         send_email(
             email,
             "Confirm Your Registration",
-            f"Please confirm your account by visiting: {confirm_link}",
+            f"Hello {username},\n\nPlease confirm your account by visiting: {confirm_link}",
         )
         return jsonify({'success': True, 'message': 'Registration successful. A confirmation email was sent, but you can log in now.'})
     return jsonify({'success': False, 'message': result})
@@ -442,22 +449,23 @@ def forgot_password():
         return jsonify({'success': False, 'message': 'Invalid email format'})
     if not db.email_exists(email):
         return jsonify({'success': False, 'message': 'Email not found'})
-    token = secrets.token_urlsafe(16)
     new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-    PASSWORD_RESETS[token] = (email, new_password)
+    token = db.create_password_reset(email, new_password)
+    username = db.get_username_by_email(email) or ''
     confirm_link = BASE_URL.rstrip('/') + '/confirm_reset/' + token
-    send_email(email, 'Confirm Password Reset', f'Please confirm your reset by visiting: {confirm_link}')
+    send_email(email, 'Confirm Password Reset', f'Hello {username},\n\nPlease confirm your reset by visiting: {confirm_link}')
     return jsonify({'success': True, 'message': 'Confirmation email sent'})
 
 
 @app.route('/confirm_reset/<token>')
 def confirm_reset(token):
-    info = PASSWORD_RESETS.pop(token, None)
+    info = db.pop_password_reset(token)
     if not info:
         return 'Invalid or expired token.', 400
     email, new_password = info
     db.reset_password(email, new_password)
-    send_email(email, 'Your New Password', f'Your new password is: {new_password}')
+    username = db.get_username_by_email(email) or ''
+    send_email(email, 'Your New Password', f'Hello {username},\n\nYour new password is: {new_password}')
     return 'Password reset. Check your email for the new password.'
 
 
@@ -606,6 +614,7 @@ def admin_user_action():
 @app.route('/api/store_items')
 def store_items():
     """Return available premium currency packages."""
+    refresh_store_prices()
     return jsonify({'success': True, 'items': STORE_PACKAGES})
 
 
@@ -720,6 +729,23 @@ def admin_paypal_config():
         'client_id': conf.get('client_id'),
         'client_secret': conf.get('client_secret')
     })
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/store_prices', methods=['GET', 'POST'])
+def admin_store_prices():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    if request.method == 'GET':
+        return jsonify({'success': True, 'prices': db.get_store_prices()})
+    data = request.json or {}
+    for pkg_id, price in data.items():
+        try:
+            price_val = float(price)
+        except (TypeError, ValueError):
+            continue
+        db.update_store_price(pkg_id, price_val)
+    refresh_store_prices()
     return jsonify({'success': True})
 
 
