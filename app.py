@@ -367,6 +367,11 @@ def get_motd():
     return jsonify({'success': True, 'motd': db.get_motd()})
 
 
+@app.route('/api/bug_link')
+def get_bug_link():
+    return jsonify({'success': True, 'url': db.get_bug_link()})
+
+
 
 @app.route('/tos')
 def terms_of_service():
@@ -777,6 +782,15 @@ def admin_update_motd():
         return jsonify({'success': False}), 403
     data = request.json or {}
     db.set_motd(data.get('motd', ''))
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/bug_link', methods=['POST'])
+def admin_update_bug_link():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    data = request.json or {}
+    db.set_bug_link(data.get('url', ''))
     return jsonify({'success': True})
 
 

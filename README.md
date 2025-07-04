@@ -7,7 +7,7 @@ This repository contains a Flask-based gacha game.
 - **Profile Management** allows players to update their email, change passwords
   and select a profile image.
 - **Admin Panel** lets administrators grant resources, manage PayPal settings,
-  ban or unban users and edit the Message of the Day or event text.
+  ban or unban users and edit the Message of the Day, event text, or bug report link.
 - **Batch Grants** allow admins to distribute gems, gold or energy to every player at once.
 - **Energy System** introduces separate energy for the campaign and dungeons
   which regenerates over time.
@@ -18,7 +18,7 @@ This repository contains a Flask-based gacha game.
 - **Improved Registration** includes email validation and a password reset flow.
 - **Security Update** now stores passwords hashed and requires acceptance of a Terms of Service during registration.
 - **UI Updates** provide refreshed hero modals and combat log readability.
-- **Static Translations** load pre-generated Spanish and Japanese dictionaries so pages are translated without calling `/api/translate`.
+- **Static Translations** use only the bundled Spanish and Japanese dictionaries and never contact external services.
 
 ## PayPal Integration
 

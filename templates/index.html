@@ -19,13 +19,11 @@
     <!-- This screen shows before the user logs in -->
     <div id="login-screen" class="screen active">
         <div id="language-flags">
-            <button data-lang="en" class="language-flag">🇺🇸</button>
             <button data-lang="es" class="language-flag">🇪🇸</button>
             <button data-lang="ja" class="language-flag">🇯🇵</button>
         </div>
         <div id="login-wrapper">
             <select id="language-select">
-                <option value="en">🇺🇸 English</option>
                 <option value="es">🇪🇸 Español</option>
                 <option value="ja">🇯🇵 日本語</option>
             </select>
@@ -102,7 +100,6 @@
                 <span id="dungeon-timer"></span>
             </div>
             <div id="top-language-flags" class="language-flags">
-                <button data-lang="en" class="language-flag">🇺🇸</button>
                 <button data-lang="es" class="language-flag">🇪🇸</button>
                 <button data-lang="ja" class="language-flag">🇯🇵</button>
             </div>
@@ -130,7 +127,7 @@
             Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.
         </p>
         <ul>
-            <li>Found a bug? <a href="https://github.com/your_username/your_repo/issues" target="_blank">Report it here!</a></li>
+            <li>Found a bug? <a id="bug-report-link" href="https://github.com/your_username/your_repo/issues" target="_blank">Report it here!</a></li>
             <li>Top Summoner: <span id="top-player-name">Loading...</span> (Floor <span id="top-player-stage">?</span>)</li>
         </ul>
         <p id="dungeon-run-info">Dungeon Runs: <span id="dungeon-run-count">0</span></p>
@@ -330,6 +327,8 @@
                 <button id="admin-motd-save-btn">Save MOTD</button>
                 <textarea id="admin-events-text" placeholder="Events text" rows="6"></textarea>
                 <button id="admin-events-save-btn">Save Events</button>
+                <input type="text" id="admin-bug-link" placeholder="Bug Report URL">
+                <button id="admin-bug-link-save-btn">Save Bug Link</button>
                 <hr>
                 <h3>New Expedition</h3>
                 <p class="expedition-help">Use enemy <strong>codes</strong> separated by commas (e.g. EN001, EN008).<br>
@@ -551,12 +550,10 @@
         <select id="profile-image-select"></select>
         <label for="profile-language-select" class="profile-image-label">Language</label>
         <div id="profile-language-flags" class="language-flags">
-            <button data-lang="en" class="language-flag">🇺🇸</button>
             <button data-lang="es" class="language-flag">🇪🇸</button>
             <button data-lang="ja" class="language-flag">🇯🇵</button>
         </div>
         <select id="profile-language-select" style="display:none">
-            <option value="en">en</option>
             <option value="es">es</option>
             <option value="ja">ja</option>
         </select>

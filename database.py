@@ -162,7 +162,8 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY CHECK (id = 1),
-            motd TEXT
+            motd TEXT,
+            bug_link TEXT
         )
     ''')
     cursor.execute('''
@@ -226,9 +227,11 @@ def init_db():
     add_column_if_missing(conn, 'expeditions', 'description', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'drops', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'image_res', 'TEXT')
+    add_column_if_missing(conn, 'messages', 'bug_link', 'TEXT')
     cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
     cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
-    cursor.execute('INSERT OR IGNORE INTO messages (id, motd) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.")')
+    cursor.execute('INSERT OR IGNORE INTO messages (id, motd, bug_link) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.", "https://github.com/your_username/your_repo/issues")')
+    cursor.execute('UPDATE messages SET bug_link = COALESCE(bug_link, "https://github.com/your_username/your_repo/issues") WHERE id = 1')
     cursor.execute('INSERT OR IGNORE INTO game_settings (id, energy_cap, dungeon_cap, energy_regen, dungeon_regen) VALUES (1, 10, 5, 300, 900)')
     # Commit before opening a new connection in create_admin_if_missing
     conn.commit()
@@ -753,6 +756,18 @@ def get_motd():
 def set_motd(text):
     conn = get_db_connection()
     conn.execute('UPDATE messages SET motd = ? WHERE id = 1', (text,))
+    conn.commit()
+    conn.close()
+
+def get_bug_link():
+    conn = get_db_connection()
+    row = conn.execute('SELECT bug_link FROM messages WHERE id = 1').fetchone()
+    conn.close()
+    return row['bug_link'] if row and row['bug_link'] else 'https://github.com/your_username/your_repo/issues'
+
+def set_bug_link(url):
+    conn = get_db_connection()
+    conn.execute('UPDATE messages SET bug_link = ? WHERE id = 1', (url,))
     conn.commit()
     conn.close()
 
