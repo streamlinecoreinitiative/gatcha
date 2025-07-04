@@ -19,11 +19,13 @@
     <!-- This screen shows before the user logs in -->
     <div id="login-screen" class="screen active">
         <div id="language-flags">
+            <button data-lang="en" class="language-flag">🇺🇸</button>
             <button data-lang="es" class="language-flag">🇪🇸</button>
             <button data-lang="ja" class="language-flag">🇯🇵</button>
         </div>
         <div id="login-wrapper">
             <select id="language-select">
+                <option value="en">🇺🇸 English</option>
                 <option value="es">🇪🇸 Español</option>
                 <option value="ja">🇯🇵 日本語</option>
             </select>
@@ -41,6 +43,8 @@
                     climb the tower and compare your progress with other players.
                 </p>
                 <p data-i18n>Thank you for playing and sharing this journey with us!</p>
+                <p data-i18n>You can contact the team at <a href="mailto:contact@towerchronicles.xyz">contact@towerchronicles.xyz</a>.</p>
+                <p data-i18n>While the game works on mobile devices, the screens are optimized for computer usage.</p>
             </div>
             <div class="login-container">
                 <img src="{{ url_for('static', filename='images/ui/game_logo.png') }}" alt="Game Logo" class="game-logo">
@@ -100,6 +104,7 @@
                 <span id="dungeon-timer"></span>
             </div>
             <div id="top-language-flags" class="language-flags">
+                <button data-lang="en" class="language-flag">🇺🇸</button>
                 <button data-lang="es" class="language-flag">🇪🇸</button>
                 <button data-lang="ja" class="language-flag">🇯🇵</button>
             </div>
@@ -550,10 +555,12 @@
         <select id="profile-image-select"></select>
         <label for="profile-language-select" class="profile-image-label">Language</label>
         <div id="profile-language-flags" class="language-flags">
+            <button data-lang="en" class="language-flag">🇺🇸</button>
             <button data-lang="es" class="language-flag">🇪🇸</button>
             <button data-lang="ja" class="language-flag">🇯🇵</button>
         </div>
         <select id="profile-language-select" style="display:none">
+            <option value="en">en</option>
             <option value="es">es</option>
             <option value="ja">ja</option>
         </select>

@@ -21,6 +21,7 @@ function markTranslatable() {
 const translationsCache = {};
 
 async function loadTranslations(lang) {
+    if (lang === 'en') return null;
     if (translationsCache[lang]) return translationsCache[lang];
     try {
         const resp = await fetch(`/static/i18n/${lang}.json`);
