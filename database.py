@@ -64,6 +64,12 @@ class _PGConnectionWrapper:
     def commit(self):
         self._conn.commit()
 
+    def rollback(self):
+        self._conn.rollback()
+
+    def __getattr__(self, attr):
+        return getattr(self._conn, attr)
+
     def close(self):
         self._conn.close()
 
