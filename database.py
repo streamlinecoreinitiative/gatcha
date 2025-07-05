@@ -62,11 +62,15 @@ def get_db_connection():
     global USING_POSTGRES
     db_url = os.getenv("DATABASE_URL")
     if db_url and psycopg2:
+        if db_url.startswith("postgres://"):
+            db_url = "postgresql://" + db_url[len("postgres://"):]
+        print("Using PostgreSQL database")
         conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
         conn.autocommit = True
         USING_POSTGRES = True
         return _PGConnectionWrapper(conn)
 
+    print("Using SQLite database")
     conn = sqlite3.connect(DATABASE_NAME)
     conn.row_factory = sqlite3.Row
     return conn
