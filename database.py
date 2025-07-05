@@ -291,7 +291,7 @@ def init_db():
                     'https://github.com/your_username/your_repo/issues')
             ON CONFLICT(id) DO NOTHING
         """)
-        cursor.execute('UPDATE messages SET bug_link = COALESCE(bug_link, "https://github.com/your_username/your_repo/issues") WHERE id = 1')
+        cursor.execute("UPDATE messages SET bug_link = COALESCE(bug_link, 'https://github.com/your_username/your_repo/issues') WHERE id = 1")
         cursor.execute("""
             INSERT INTO game_settings (id, energy_cap, dungeon_cap, energy_regen, dungeon_regen)
             VALUES (1, 10, 5, 300, 900)
@@ -305,8 +305,8 @@ def init_db():
         ''')
         cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
         cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
-        cursor.execute('INSERT OR IGNORE INTO messages (id, motd, bug_link) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.", "https://github.com/your_username/your_repo/issues")')
-        cursor.execute('UPDATE messages SET bug_link = COALESCE(bug_link, "https://github.com/your_username/your_repo/issues") WHERE id = 1')
+        cursor.execute("INSERT OR IGNORE INTO messages (id, motd, bug_link) VALUES (1, 'Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.', 'https://github.com/your_username/your_repo/issues')")
+        cursor.execute("UPDATE messages SET bug_link = COALESCE(bug_link, 'https://github.com/your_username/your_repo/issues') WHERE id = 1")
         cursor.execute('INSERT OR IGNORE INTO game_settings (id, energy_cap, dungeon_cap, energy_regen, dungeon_regen) VALUES (1, 10, 5, 300, 900)')
     # Commit before opening a new connection in create_admin_if_missing
     conn.commit()
