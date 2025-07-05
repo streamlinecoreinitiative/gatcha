@@ -1,4 +1,7 @@
 # app.py (V5.4 - Hardened Stat Calculation)
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, jsonify, render_template, request, session
 from flask_socketio import SocketIO, emit
 import os
