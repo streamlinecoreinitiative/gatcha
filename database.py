@@ -101,8 +101,11 @@ def add_column_if_missing(conn, table, column, definition):
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
         conn.commit()
     except Exception:
-        # Column already exists or cannot be added; ignore errors
-        pass
+        # Column already exists or cannot be added; rollback to clear error
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
 def init_db():
     conn = get_db_connection()
