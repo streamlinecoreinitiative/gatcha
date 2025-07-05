@@ -94,6 +94,8 @@ button:disabled, .fantasy-button:disabled {
     font-size: 24px;
     margin-left: 5px;
     cursor: pointer;
+    /* Use emoji-capable fonts so the flag icons display correctly */
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
 }
 .language-flags .language-flag.selected {
     outline: 2px solid #f1c40f;
