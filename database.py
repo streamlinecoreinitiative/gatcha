@@ -21,7 +21,10 @@ except ImportError:
     dict_row = None
 
 DATABASE_NAME = "database.db"
-USING_POSTGRES = False
+# Detect whether we're using PostgreSQL based on the DATABASE_URL env var
+USING_POSTGRES = "DATABASE_URL" in os.environ
+# Column definition for auto-incrementing primary keys
+AUTO_ID = "SERIAL PRIMARY KEY" if USING_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
 
 
 class _PGCursorWrapper:
@@ -66,15 +69,21 @@ class _PGConnectionWrapper:
 
 
 def get_db_connection():
-    if "DATABASE_URL" in os.environ:
+    """Return a database connection with a consistent interface."""
+    global USING_POSTGRES
+    if USING_POSTGRES:
         print("Connecting to PostgreSQL...")
         if psycopg2 is not None:
-            return psycopg2.connect(os.environ["DATABASE_URL"], cursor_factory=RealDictCursor)
-        if psycopg is not None:
-            return psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row)
-        raise RuntimeError("No PostgreSQL driver available.")
+            conn = psycopg2.connect(os.environ["DATABASE_URL"], cursor_factory=RealDictCursor)
+        elif psycopg is not None:
+            conn = psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row)
+        else:
+            raise RuntimeError("No PostgreSQL driver available.")
+        return _PGConnectionWrapper(conn)
     else:
-        raise RuntimeError("\u274c DATABASE_URL is not set. Cannot fall back to SQLite in production.")
+        conn = sqlite3.connect(DATABASE_NAME)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 
 def hash_password(password: str) -> str:
@@ -98,9 +107,9 @@ def add_column_if_missing(conn, table, column, definition):
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {AUTO_ID},
             username TEXT UNIQUE NOT NULL,
             email TEXT,
             password TEXT NOT NULL,
@@ -121,9 +130,9 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS player_characters (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {AUTO_ID},
             user_id INTEGER NOT NULL,
             character_name TEXT NOT NULL,
             rarity TEXT NOT NULL,
@@ -140,9 +149,9 @@ def init_db():
             FOREIGN KEY (character_db_id) REFERENCES player_characters (id)
         )
     ''')
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS player_equipment (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {AUTO_ID},
             user_id INTEGER NOT NULL,
             equipment_name TEXT NOT NULL,
             rarity TEXT NOT NULL,
@@ -188,16 +197,16 @@ def init_db():
             bug_link TEXT
         )
     ''')
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS expeditions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {AUTO_ID},
             name TEXT UNIQUE NOT NULL,
             image_file TEXT
         )
     ''')
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS expedition_levels (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {AUTO_ID},
             expedition_id INTEGER NOT NULL,
             level_num INTEGER NOT NULL,
             enemy_name TEXT NOT NULL,
@@ -250,16 +259,46 @@ def init_db():
     add_column_if_missing(conn, 'expeditions', 'drops', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'image_res', 'TEXT')
     add_column_if_missing(conn, 'messages', 'bug_link', 'TEXT')
-    cursor.execute('''
-        INSERT OR IGNORE INTO store_prices (package_id, price) VALUES
-            ('pack_small', 0.99),
-            ('pack_medium', 4.99)
-    ''')
-    cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
-    cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
-    cursor.execute('INSERT OR IGNORE INTO messages (id, motd, bug_link) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.", "https://github.com/your_username/your_repo/issues")')
-    cursor.execute('UPDATE messages SET bug_link = COALESCE(bug_link, "https://github.com/your_username/your_repo/issues") WHERE id = 1')
-    cursor.execute('INSERT OR IGNORE INTO game_settings (id, energy_cap, dungeon_cap, energy_regen, dungeon_regen) VALUES (1, 10, 5, 300, 900)')
+    if USING_POSTGRES:
+        cursor.execute('''
+            INSERT INTO store_prices (package_id, price) VALUES
+                ('pack_small', 0.99),
+                ('pack_medium', 4.99)
+            ON CONFLICT(package_id) DO NOTHING
+        ''')
+        cursor.execute("""
+            INSERT INTO paypal_config (id, client_id, client_secret, mode)
+            VALUES (1, '', '', 'sandbox')
+            ON CONFLICT(id) DO NOTHING
+        """)
+        cursor.execute("""
+            INSERT INTO email_config (id, host, port, username, password)
+            VALUES (1, '', 587, '', '')
+            ON CONFLICT(id) DO NOTHING
+        """)
+        cursor.execute("""
+            INSERT INTO messages (id, motd, bug_link)
+            VALUES (1, 'Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.',
+                    'https://github.com/your_username/your_repo/issues')
+            ON CONFLICT(id) DO NOTHING
+        """)
+        cursor.execute('UPDATE messages SET bug_link = COALESCE(bug_link, "https://github.com/your_username/your_repo/issues") WHERE id = 1')
+        cursor.execute("""
+            INSERT INTO game_settings (id, energy_cap, dungeon_cap, energy_regen, dungeon_regen)
+            VALUES (1, 10, 5, 300, 900)
+            ON CONFLICT(id) DO NOTHING
+        """)
+    else:
+        cursor.execute('''
+            INSERT OR IGNORE INTO store_prices (package_id, price) VALUES
+                ('pack_small', 0.99),
+                ('pack_medium', 4.99)
+        ''')
+        cursor.execute('INSERT OR IGNORE INTO paypal_config (id, client_id, client_secret, mode) VALUES (1, "", "", "sandbox")')
+        cursor.execute('INSERT OR IGNORE INTO email_config (id, host, port, username, password) VALUES (1, "", 587, "", "")')
+        cursor.execute('INSERT OR IGNORE INTO messages (id, motd, bug_link) VALUES (1, "Welcome, Rift-Mender! The Spire is particularly volatile today. Good luck on your ascent.", "https://github.com/your_username/your_repo/issues")')
+        cursor.execute('UPDATE messages SET bug_link = COALESCE(bug_link, "https://github.com/your_username/your_repo/issues") WHERE id = 1')
+        cursor.execute('INSERT OR IGNORE INTO game_settings (id, energy_cap, dungeon_cap, energy_regen, dungeon_regen) VALUES (1, 10, 5, 300, 900)')
     # Commit before opening a new connection in create_admin_if_missing
     conn.commit()
     create_admin_if_missing()
