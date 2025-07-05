@@ -9,9 +9,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 try:
     import psycopg2
     from psycopg2.extras import RealDictCursor
-except ImportError:  # psycopg2 not installed for local SQLite usage
+except ImportError:
     psycopg2 = None
     RealDictCursor = None
+
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+except ImportError:
+    psycopg = None
+    dict_row = None
 
 DATABASE_NAME = "database.db"
 USING_POSTGRES = False
@@ -61,9 +68,11 @@ class _PGConnectionWrapper:
 def get_db_connection():
     if "DATABASE_URL" in os.environ:
         print("Connecting to PostgreSQL...")
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
-        return psycopg2.connect(os.environ["DATABASE_URL"], cursor_factory=RealDictCursor)
+        if psycopg2 is not None:
+            return psycopg2.connect(os.environ["DATABASE_URL"], cursor_factory=RealDictCursor)
+        if psycopg is not None:
+            return psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row)
+        raise RuntimeError("No PostgreSQL driver available.")
     else:
         raise RuntimeError("\u274c DATABASE_URL is not set. Cannot fall back to SQLite in production.")
 
