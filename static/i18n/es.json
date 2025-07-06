@@ -68,6 +68,7 @@
   "Equipment": "Equipo",
   "The Tower": "La Torre",
   "Store": "Tienda",
+  "Battle Log": "Registro de combate",
   "Your Team": "Tu equipo",
   "Enemy Team": "Equipo enemigo",
   "Next Floor": "Siguiente piso",
@@ -152,5 +153,10 @@
   "Last updated: June 27, 2025": "Última actualización: 27 de junio de 2025",
   "Loading...": "Cargando...",
   "(Floor": "(Piso",
-  "150 to summon a new hero! Odds: 50% Common, 30% Rare, 15% SSR, 3.5% UR, 1.5% LR. Guaranteed SSR every 90 summons.": "Usa 150 para invocar un nuevo héroe. Probabilidades: 50% Común, 30% Raro, 15% SSR, 3.5% UR, 1.5% LR. SSR garantizado cada 90 invocaciones."
+  "150 to summon a new hero! Odds: 50% Common, 30% Rare, 15% SSR, 3.5% UR, 1.5% LR. Guaranteed SSR every 90 summons.": "Usa 150 para invocar un nuevo héroe. Probabilidades: 50% Común, 30% Raro, 15% SSR, 3.5% UR, 1.5% LR. SSR garantizado cada 90 invocaciones.",
+  "Buy": "Comprar",
+  "PayPal unavailable": "PayPal no disponible",
+  "Purchase successful!": "Compra exitosa",
+  "Purchase failed": "Compra fallida",
+  "Failed to load store.": "No se pudo cargar la tienda"
 }

@@ -6,8 +6,8 @@
 }
 
 body {
-    /* Use Consolas font across the game */
-    font-family: 'Consolas', monospace;
+/* Use Cinzel for a JRPG look */
+    font-family: 'Cinzel', serif;
 
     /* A darker, more thematic background color */
     background-color: #1a1a2e;
@@ -34,15 +34,14 @@ body {
 
 /* --- UNIVERSAL FANTASY BUTTON STYLE --- */
 button, .fantasy-button {
-    font-family: 'Consolas', monospace;
+    font-family: 'Cinzel', serif;
     font-size: 16px;
     color: #e0e0e0; /* Off-white text */
 
-    background-color: #4a4a58; /* A dark, stony grey-blue */
-    background-image: url('https://www.transparenttextures.com/patterns/rocky-wall.png'); /* Subtle rock texture */
+    background: linear-gradient(#6a5acd, #483d8b);
 
-    border: 2px solid #a0a0b0; /* A lighter grey for a metallic look */
-    border-radius: 5px;
+    border: 2px solid #d9b365; /* Gold trim for JRPG vibe */
+    border-radius: 8px;
     padding: 10px 20px;
     cursor: pointer;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
@@ -51,14 +50,13 @@ button, .fantasy-button {
 }
 
 button:hover, .fantasy-button:hover {
-    background-color: #5a5a68; /* Slightly lighter on hover */
-    border-color: #ffffff; /* Brighter border on hover */
+    background: linear-gradient(#7e6fe5, #5242aa);
+    border-color: #f1e7b4;
     color: #ffffff;
 }
 
 button:disabled, .fantasy-button:disabled {
-    background-color: #333;
-    background-image: none; /* No texture on disabled buttons */
+    background: #333;
     border-color: #555;
     color: #777;
     cursor: not-allowed;
@@ -212,14 +210,9 @@ button:disabled, .fantasy-button:disabled {
     padding: 0 20px;
     height: 60px;
 
-    /* --- THE FIX --- */
-    /* Use the same dark color and texture as our buttons */
-    background-color: #383844; /* A slightly different shade of dark grey-blue */
-    background-image: url('https://www.transparenttextures.com/patterns/rocky-wall.png');
-
-    /* A more prominent, inset border to give it depth */
-    border-bottom: 3px solid #1a1a2e;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Add a drop shadow for depth */
+    background: linear-gradient(#2f2660, #1d153f);
+    border-bottom: 3px solid #d9b365;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 #player-info, #currency-info {
     display: flex;
@@ -286,8 +279,8 @@ button:disabled, .fantasy-button:disabled {
 #nav-bar {
     display: flex;
     height: 80px;
-    background-color: #111;
-    border-top: 2px solid #444;
+    background: linear-gradient(#1d153f, #0e0a1f);
+    border-top: 2px solid #d9b365;
 }
 .nav-button {
     flex-grow: 1;
@@ -299,16 +292,16 @@ button:disabled, .fantasy-button:disabled {
     position: relative;
 
     /* --- THE FIX --- */
-    font-family: 'Consolas', monospace;
+    font-family: 'Cinzel', serif;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Add the text shadow for consistency */
 
     transition: all 0.2s ease-in-out; /* Add smooth transitions */
 }
 .nav-button:hover {
-    background-color: #333;
+    background: rgba(255, 255, 255, 0.1);
 }
 .nav-button.active {
-    background-color: #444;
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .red-dot {
@@ -553,7 +546,7 @@ button:disabled, .fantasy-button:disabled {
     margin: 20px;
     border-radius: 10px;
     white-space: pre-wrap; /* This respects newlines in the text */
-    font-family: 'Consolas', monospace;
+    font-family: 'Cinzel', serif;
     font-size: 18px;
     line-height: 1.6;
     height: calc(100vh - 200px);
@@ -655,7 +648,7 @@ button:disabled, .fantasy-button:disabled {
     background-color: #111;
     padding: 15px;
     border-radius: 5px;
-    font-family: 'Consolas', monospace;
+    font-family: 'Cinzel', serif;
     color: #fff;
     line-height: 1.6;
 }
@@ -874,7 +867,7 @@ button:disabled, .fantasy-button:disabled {
 #battle-log-entries {
     height: 100%;
     overflow-y: auto;
-    font-family: 'Consolas', monospace;
+    font-family: 'Cinzel', serif;
     font-size: 14px;
     color: #fff;
     display: flex;
@@ -975,10 +968,11 @@ button:disabled, .fantasy-button:disabled {
 }
 
 .modal-content {
-    background: #2c3e50;
+    background: linear-gradient(#30285c, #1b1437);
     padding: 20px;
     border-radius: 10px;
-    border: 2px solid #34495e;
+    border: 2px solid #d9b365;
+    color: #f0f0f0;
     text-align: center;
     min-width: 350px;
     max-width: 500px;

@@ -38,6 +38,28 @@ paypalrestsdk.configure({
     'client_secret': paypal_conf.get('client_secret')
 })
 
+import threading
+
+def cleanup_online_users():
+    while True:
+        now = time.time()
+        removed = False
+        for sid, info in list(online_users.items()):
+            last = info.get('last_active', now)
+            if now - last > ONLINE_TIMEOUT:
+                online_users.pop(sid, None)
+                removed = True
+        if removed:
+            emit_online_list()
+        time.sleep(60)
+
+
+if hasattr(app, 'before_request'):
+    @app.before_request
+    def before_request_update_activity():
+        if session.get('logged_in'):
+            update_last_active(session.get('user_id'))
+
 # Base URL for links in emails
 BASE_URL = os.getenv('BASE_URL', 'https://towerchronicles.xyz')
 
@@ -57,6 +79,63 @@ gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity
 PULL_COST = 150
 SSR_PITY_THRESHOLD = 90
 online_users = {}
+ONLINE_TIMEOUT = 300  # seconds
+
+CHAT_LOG_FILE = os.path.join(BASE_DIR, 'chat_history.json')
+CHAT_HISTORY_LIMIT = 50
+chat_history = []
+
+BAD_WORDS_FILE = os.path.join(BASE_DIR, 'bad_words.txt')
+BAD_WORDS = set()
+
+def load_bad_words():
+    global BAD_WORDS
+    if os.path.exists(BAD_WORDS_FILE):
+        try:
+            with open(BAD_WORDS_FILE, 'r', encoding='utf-8') as f:
+                BAD_WORDS = {w.strip().lower() for w in f if w.strip()}
+        except Exception as e:
+            print(f'Failed to load bad words: {e}')
+    if not BAD_WORDS:
+        BAD_WORDS = {'badword', 'curse'}
+
+def filter_bad_words(message: str) -> str:
+    words = re.split(r'(\W+)', message)
+    filtered = [('*' * len(w)) if w.lower() in BAD_WORDS else w for w in words]
+    return ''.join(filtered)
+
+def load_chat_history():
+    global chat_history
+    if os.path.exists(CHAT_LOG_FILE):
+        try:
+            with open(CHAT_LOG_FILE, 'r', encoding='utf-8') as f:
+                chat_history = json.load(f)
+        except Exception:
+            chat_history = []
+
+def save_chat_history():
+    try:
+        with open(CHAT_LOG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(chat_history[-CHAT_HISTORY_LIMIT:], f)
+    except Exception as e:
+        print(f'Failed to save chat history: {e}')
+
+def add_chat_message(username: str, message: str):
+    chat_history.append({'username': username, 'message': message})
+    if len(chat_history) > CHAT_HISTORY_LIMIT:
+        chat_history.pop(0)
+    save_chat_history()
+
+load_bad_words()
+load_chat_history()
+
+def update_last_active(user_id):
+    sid = next((sid for sid, info in online_users.items() if info.get('user_id') == user_id), None)
+    if sid:
+        online_users[sid]['last_active'] = time.time()
+
+threading.Thread(target=cleanup_online_users, daemon=True).start()
+
 
 def refresh_gacha_pool():
     global available_rarities, gacha_pool
@@ -1583,15 +1662,18 @@ def handle_connect():
             'username': username,
             'user_id': session.get('user_id'),
             'current_stage': progress.get('current_stage', 1),
-            'dungeon_runs': progress.get('dungeon_runs', 0)
+            'dungeon_runs': progress.get('dungeon_runs', 0),
+            'last_active': time.time()
         }
         emit_online_list()
+        socketio.emit('chat_history', chat_history, room=request.sid)
 
 
 @socketio.on('send_message')
 def handle_send_message(data):
     if session.get('logged_in'):
         message = data.get('message', '').strip()
+        update_last_active(session.get('user_id'))
         if message.lower() == '!profile':
             user_id = session.get('user_id')
             player_data = db.get_player_data(user_id)
@@ -1604,8 +1686,10 @@ def handle_send_message(data):
                               room=request.sid)
             return
         if 0 < len(message) <= 200:
+            clean = filter_bad_words(message)
+            add_chat_message(session.get('username'), clean)
             socketio.emit('receive_message',
-                          {'username': session.get('username'), 'message': message})
+                          {'username': session.get('username'), 'message': clean})
 
 
 @socketio.on('disconnect')

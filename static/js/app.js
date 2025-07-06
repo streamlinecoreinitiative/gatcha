@@ -1317,6 +1317,15 @@ function connectSocket() {
     if (socket) socket.disconnect();
     socket = io();
     socket.on('connect', () => console.log('Socket connected successfully.'));
+    socket.on('chat_history', (messages) => {
+        chatMessages.innerHTML = '';
+        messages.forEach(m => {
+            const el = document.createElement('div');
+            el.innerHTML = `<strong>${m.username}:</strong> ${m.message}`;
+            chatMessages.appendChild(el);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
     socket.on('receive_message', (data) => {
         const messageElement = document.createElement('div');
         messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
@@ -1658,10 +1667,16 @@ async function updateBugLink() {
 
 async function updateStoreDisplay() {
     if (!storePackagesContainer) return;
-    storePackagesContainer.innerHTML = 'Loading...';
+    storePackagesContainer.textContent = 'Loading...';
+    storePackagesContainer.setAttribute('data-i18n', '');
+    storePackagesContainer.dataset.orig = 'Loading...';
     const response = await fetch('/api/store_items');
     const result = await response.json();
-    if (!result.success) { storePackagesContainer.innerHTML = 'Failed to load store.'; return; }
+    if (!result.success) { 
+        storePackagesContainer.textContent = 'Failed to load store.'; 
+        storePackagesContainer.dataset.orig = 'Failed to load store.';
+        return; 
+    }
     const paypalResp = await fetch('/api/paypal_client_id');
     const paypalData = await paypalResp.json();
     const clientId = paypalData.client_id;
@@ -1690,6 +1705,8 @@ async function updateStoreDisplay() {
         const textSpan = document.createElement('span');
         textSpan.className = 'package-text';
         textSpan.innerHTML = text;
+        textSpan.setAttribute('data-i18n', '');
+        textSpan.dataset.orig = text;
         div.appendChild(textSpan);
         // Append the container before rendering PayPal buttons so the element
         // exists in the DOM when PayPal queries for it.
@@ -1722,12 +1739,24 @@ async function updateStoreDisplay() {
                     }
                 }).render(`#paypal-${pkg.id}`);
             } else {
-                div.innerHTML += '<span class="unavailable">PayPal unavailable</span>';
+                const span = document.createElement('span');
+                span.className = 'unavailable';
+                span.textContent = 'PayPal unavailable';
+                span.setAttribute('data-i18n', '');
+                span.dataset.orig = 'PayPal unavailable';
+                div.appendChild(span);
             }
         } else {
-            div.innerHTML += `<button class="purchase-btn" data-package-id="${pkg.id}">Buy</button>`;
+            const btn = document.createElement('button');
+            btn.className = 'purchase-btn';
+            btn.dataset.packageId = pkg.id;
+            btn.textContent = 'Buy';
+            btn.setAttribute('data-i18n', '');
+            btn.dataset.orig = 'Buy';
+            div.appendChild(btn);
         }
     });
+    translatePage(localStorage.getItem('language') || 'en');
 }
 
 async function loadEntityLists() {
