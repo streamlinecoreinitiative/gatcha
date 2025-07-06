@@ -72,6 +72,14 @@ const userIcon = document.getElementById('user-icon');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 // Use local icon so it always loads even without an internet connection
 const currencyIconHtml = '<i class="fa-solid fa-diamond currency-icon"></i>';
+// Base gold values for selling heroes by rarity
+const SELL_BASE_VALUES = {
+    'Common': 50,
+    'Rare': 150,
+    'SSR': 400,
+    'UR': 800,
+    'LR': 1500
+};
 let profileModal;
 let profileEmailInput;
 let profileCurrentPasswordInput;
@@ -1507,12 +1515,13 @@ async function updateEquipmentDisplay() {
     if (!equipmentDefsResponse.ok) return;
     const equipmentDefs = await equipmentDefsResponse.json();
     const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
+    const imageMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.image_file; return map; }, {});
     if (result.equipment.length === 0) {
         equipmentContainer.style.display = 'flex';
         equipmentContainer.style.justifyContent = 'center';
         equipmentContainer.style.alignItems = 'center';
         equipmentContainer.style.minHeight = '40vh';
-        equipmentContainer.innerHTML = '<p class="empty-armory-message">Your armory is empty. Farm the Armory to find loot, it is an end game mechanic.</p>';
+        equipmentContainer.innerHTML = '<p class="empty-armory-message">Your armory is empty. Items can be obtained in the dungeon.</p>';
         return;
     }
     equipmentContainer.removeAttribute('style');
@@ -1522,7 +1531,9 @@ async function updateEquipmentDisplay() {
         const stats = statsMap[item.equipment_name] || {};
         const statsText = Object.entries(stats).map(([key, value]) => `${key.toUpperCase()}: +${value}`).join(' | ');
         const rarityClass = item.rarity.toLowerCase();
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${rarityClass}">[${item.rarity}]</div></div><h4>${item.equipment_name}</h4><p class="card-stats">${statsText}</p><div class="item-status">${item.is_equipped_on ? `Equipped` : 'Unequipped'}</div>`;
+        const imgFile = imageMap[item.equipment_name];
+        const imgTag = imgFile ? `<img src="/static/images/items/${imgFile}" alt="${item.equipment_name}">` : '';
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${rarityClass}">[${item.rarity}]</div></div>${imgTag}<h4>${item.equipment_name}</h4><p class="card-stats">${statsText}</p><div class="item-status">${item.is_equipped_on ? `Equipped` : 'Unequipped'}</div>`;
         equipmentContainer.appendChild(card);
     });
 }
@@ -1936,7 +1947,8 @@ function updateCollectionDisplay() {
         const canMerge = heroCounts[hero.character_name] >= mergeCost;
         const isInTeam = teamDBIds.includes(hero.id);
         const stats = getScaledStats(hero);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level}g)</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
+        const sellPrice = (SELL_BASE_VALUES[hero.rarity] || 50) * hero.level;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level}g)</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell (${sellPrice}g)</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
