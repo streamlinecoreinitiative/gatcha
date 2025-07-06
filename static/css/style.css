@@ -1155,6 +1155,13 @@ button:disabled, .fantasy-button:disabled {
     align-items: center; /* Vertically align the content */
 }
 
+/* Ensure expedition entries stack vertically */
+#expedition-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 /* Column 1: Image */
 .dungeon-image-container {
     flex-basis: 40%; /* The image column takes up 40% of the space */
