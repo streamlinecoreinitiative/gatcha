@@ -311,6 +311,7 @@ def init_db():
     # Commit before opening a new connection in create_admin_if_missing
     conn.commit()
     create_admin_if_missing()
+    create_default_expeditions()
     conn.close()
 
 def register_user(username, email, password, profile_image=None):
@@ -758,6 +759,68 @@ def create_admin_if_missing():
             cursor.execute("INSERT INTO player_team (user_id, slot_num, character_db_id) VALUES (?, ?, NULL)", (admin_id, i))
         conn.commit()
     conn.close()
+
+
+def create_default_expeditions():
+    """Seed the database with a handful of starter expeditions."""
+    conn = get_db_connection()
+    count = conn.execute('SELECT COUNT(*) AS c FROM expeditions').fetchone()['c']
+    conn.close()
+    if count:
+        return
+
+    defaults = [
+        {
+            'name': 'Goblin Raid',
+            'levels': ['EN001', 'EN002', 'EN003'],
+            'description': 'A nuisance band of goblins threatens the village.',
+            'drops': 'IT001:100',
+            'image_file': None,
+            'image_res': None,
+        },
+        {
+            'name': 'Bandit Incursion',
+            'levels': ['EN016', 'EN017', 'EN018'],
+            'description': 'Bandits and lizardmen prowl the roads.',
+            'drops': 'IT007:50,IT008:50',
+            'image_file': None,
+            'image_res': None,
+        },
+        {
+            'name': 'Shadow Uprising',
+            'levels': ['EN007', 'EN020', 'EN008'],
+            'description': 'Dark creatures gather in the old ruins.',
+            'drops': 'IT009:40,IT010:40',
+            'image_file': None,
+            'image_res': None,
+        },
+        {
+            'name': "Dragon's Den",
+            'levels': ['EN010', 'EN012', 'EN022'],
+            'description': 'Only the brave dare face these dragons.',
+            'drops': 'IT011:25,IT012:25',
+            'image_file': None,
+            'image_res': None,
+        },
+        {
+            'name': 'Abyssal Rift',
+            'levels': ['EN015', 'EN024', 'EN025'],
+            'description': 'An ancient rift spews legendary foes.',
+            'drops': 'IT005:10,IT006:10',
+            'image_file': None,
+            'image_res': None,
+        },
+    ]
+
+    for exp in defaults:
+        create_expedition(
+            exp['name'],
+            exp['levels'],
+            exp['image_file'],
+            exp['description'],
+            exp['drops'],
+            exp['image_res'],
+        )
 
 def get_user_profile(user_id):
     conn = get_db_connection()

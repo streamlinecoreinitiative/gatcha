@@ -1288,83 +1288,111 @@ def fight_dungeon():
             expedition = db.get_expedition(int(exp_id))
             if not expedition or not expedition['levels']:
                 return jsonify({'success': False, 'message': 'Invalid expedition'}), 400
-            enemy_id = expedition['levels'][0]['enemy']
-            concept = next((e for e in enemy_definitions if e.get('code') == enemy_id or e.get('name') == enemy_id), None)
-            if not concept:
-                return jsonify({'success': False, 'message': 'Enemy not found'}), 404
-            enemy = {
-                'name': concept['name'],
-                'image': f"enemies/{concept.get('image_file', 'placeholder_enemy.png')}",
-                'level': 1,
-                'element': concept.get('element', 'None'),
-                'stats': {'hp': concept.get('base_hp', 100), 'atk': concept.get('base_atk', 10)},
-                'crit_chance': concept.get('crit_chance', 0),
-                'crit_damage': concept.get('crit_damage', 1.5),
-            }
-            enemy_level = 1
+            level_list = expedition['levels']
         else:
             ARMORY_FIXED_LEVEL = 40
             concept = random.choice(enemy_definitions)
             dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
             enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
-            enemy_level = enemy['level']
+            level_list = [{'enemy_obj': enemy, 'level': enemy['level']}]
 
         if player_data is None:
             session.clear()
             return jsonify({'success': False, 'message': 'Player data not found. Please log in again.'}), 500
 
-        stats = calculate_fight_stats(team, enemy)
-        team_hp, enemy_hp = stats['team_hp'], stats['enemy_hp']
+        combat_log = []
+        looted_item = None
+        gold_won = 0
+        victory = True
 
-        enemy_image = enemy['image']
-        start_msg = ("Expedition:" if exp_id else "Dungeon:") + \
-            f" Your team faces a {stats['enemy_element']} {enemy['name']}!"
-        combat_log = [
-            {
-                'type': 'start',
-                'message': start_msg,
-                'enemy_image': enemy_image,
-                'element': stats['enemy_element']
-            }
-        ]
+        team_stats = None
+        team_hp = None
+        cleared_levels = 0
 
         available_attackers = [get_scaled_character_stats(c) for c in team if c]
         available_attackers = [a for a in available_attackers if a]
         available_attackers.sort(key=lambda h: h['atk'], reverse=True)
         attacker_index = 0
-        while team_hp > 0 and enemy_hp > 0:
-            attacker = available_attackers[attacker_index % len(available_attackers)]
-            attacker_index += 1
-            player_damage = attacker['atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
-            is_player_crit = random.random() * 100 < attacker['crit_chance']
-            if is_player_crit:
-                player_damage *= attacker['crit_damage']
-            enemy_hp -= player_damage
+
+        for idx, lvl in enumerate(level_list):
+            if exp_id:
+                enemy_id = lvl['enemy']
+                concept = next((e for e in enemy_definitions if e.get('code') == enemy_id or e.get('name') == enemy_id), None)
+                if not concept:
+                    return jsonify({'success': False, 'message': 'Enemy not found'}), 404
+                enemy = {
+                    'name': concept['name'],
+                    'image': f"enemies/{concept.get('image_file', 'placeholder_enemy.png')}",
+                    'level': 1,
+                    'element': concept.get('element', 'None'),
+                    'stats': {'hp': concept.get('base_hp', 100), 'atk': concept.get('base_atk', 10)},
+                    'crit_chance': concept.get('crit_chance', 0),
+                    'crit_damage': concept.get('crit_damage', 1.5),
+                }
+                enemy_level = 1
+            else:
+                enemy = lvl['enemy_obj']
+                enemy_level = enemy['level']
+
+            stats = calculate_fight_stats(team, enemy)
+            if team_stats is None:
+                team_stats = stats
+                team_hp = stats['team_hp']
+            else:
+                stats['team_hp'] = team_hp
+                stats['team_atk'] = team_stats['team_atk']
+                stats['team_crit_chance'] = team_stats['team_crit_chance']
+                stats['team_crit_damage'] = team_stats['team_crit_damage']
+                stats['team_elemental_multiplier'] = team_stats['team_elemental_multiplier']
+
+            enemy_hp = stats['enemy_hp']
+            enemy_image = enemy['image']
+            start_msg = ("Expedition:" if exp_id else "Dungeon:") + f" Level {idx+1}: Your team faces a {stats['enemy_element']} {enemy['name']}!"
             combat_log.append({
-                'type': 'player_attack',
-                'crit': is_player_crit,
-                'damage': int(player_damage),
-                'enemy_hp': int(max(0, enemy_hp)),
-                'element': attacker.get('element', 'None'),
-                'attacker': attacker.get('name', 'Hero')
+                'type': 'start',
+                'message': start_msg,
+                'enemy_image': enemy_image,
+                'element': stats['enemy_element']
             })
-            if enemy_hp <= 0:
+
+            while team_hp > 0 and enemy_hp > 0:
+                attacker = available_attackers[attacker_index % len(available_attackers)]
+                attacker_index += 1
+                player_damage = attacker['atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
+                is_player_crit = random.random() * 100 < attacker['crit_chance']
+                if is_player_crit:
+                    player_damage *= attacker['crit_damage']
+                enemy_hp -= player_damage
+                combat_log.append({
+                    'type': 'player_attack',
+                    'crit': is_player_crit,
+                    'damage': int(player_damage),
+                    'enemy_hp': int(max(0, enemy_hp)),
+                    'element': attacker.get('element', 'None'),
+                    'attacker': attacker.get('name', 'Hero')
+                })
+                if enemy_hp <= 0:
+                    break
+
+                enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
+                is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
+                if is_enemy_crit:
+                    enemy_damage *= stats['enemy_crit_damage']
+                team_hp -= enemy_damage
+                combat_log.append({'type': 'enemy_attack',
+                                   'crit': is_enemy_crit,
+                                   'damage': int(enemy_damage),
+                                   'team_hp': int(max(0, team_hp)),
+                                   'element': stats['enemy_element']})
+
+            if team_hp <= 0:
+                victory = False
+                combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
                 break
+            else:
+                cleared_levels += 1
+                combat_log.append({'type': 'level_complete', 'message': f"--- Cleared Level {idx+1} ---"})
 
-            enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
-            is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
-            if is_enemy_crit:
-                enemy_damage *= stats['enemy_crit_damage']
-            team_hp -= enemy_damage
-            combat_log.append({'type': 'enemy_attack',
-                               'crit': is_enemy_crit,
-                               'damage': int(enemy_damage),
-                               'team_hp': int(max(0, team_hp)),
-                               'element': stats['enemy_element']})
-
-        victory = team_hp > 0
-        looted_item = None
-        gold_won = 0
         if victory:
             combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
             drop_handled = False
@@ -1411,14 +1439,14 @@ def fight_dungeon():
                 )
                 conn.commit()
                 conn.close()
-        else:
-            combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
 
         if victory:
             db.increment_dungeon_runs(user_id)
             player_data = db.get_player_data(user_id)
             gold_won = 200
             db.save_player_data(user_id, gold=player_data['gold'] + gold_won)
+
+        combat_log.append({'type': 'summary', 'message': f"Cleared {cleared_levels}/{len(level_list)} levels."})
         refresh_online_progress(user_id)
         return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'gold_won': gold_won, 'looted_item': looted_item})
     except Exception as e:
