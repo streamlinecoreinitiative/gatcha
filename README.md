@@ -49,3 +49,7 @@ Admins may configure SMTP credentials from the **Admin Panel**. Enter the host, 
 ## Database Configuration
 
 The application can use either the bundled SQLite file or a PostgreSQL database. To connect to PostgreSQL set the `DATABASE_URL` environment variable to your connection string before starting the app. When `DATABASE_URL` is present the code connects using `psycopg2`; otherwise it falls back to `database.db`.
+
+## Image Optimization
+
+A helper script at `scripts/optimize_images.py` reduces PNG file size using Pillow. Run `python scripts/optimize_images.py` to compress the images under `static/images`. This helps keep memory usage low in production.
