@@ -14,6 +14,7 @@ let gameState = {};
 let masterCharacterList = [];
 let socket;
 let currentStageForFight = 0;
+let currentViewId = 'home-view';
 
 // --- DOM ELEMENT REFERENCES ---
 const loginScreen = document.getElementById('login-screen');
@@ -967,6 +968,8 @@ function attachEventListeners() {
     navButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetViewId = button.dataset.view;
+            if (currentViewId === targetViewId) return;
+            currentViewId = targetViewId;
             mainContent.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
             document.getElementById(targetViewId)?.classList.add('active');
             applyBodyBackground(targetViewId);

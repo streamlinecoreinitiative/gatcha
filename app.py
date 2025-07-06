@@ -1320,6 +1320,7 @@ def fight():
             if is_player_crit:
                 player_damage *= attacker['crit_damage']
             enemy_hp -= player_damage
+            enemy_hp = round(enemy_hp, 2)
             combat_log.append({
                 'type': 'player_attack',
                 'crit': is_player_crit,
@@ -1336,6 +1337,7 @@ def fight():
             if is_enemy_crit:
                 enemy_damage *= stats['enemy_crit_damage']
             team_hp -= enemy_damage
+            team_hp = round(team_hp, 2)
             combat_log.append({'type': 'enemy_attack',
                                'crit': is_enemy_crit,
                                'damage': int(enemy_damage),
@@ -1469,6 +1471,7 @@ def fight_dungeon():
                 if is_player_crit:
                     player_damage *= attacker['crit_damage']
                 enemy_hp -= player_damage
+                enemy_hp = round(enemy_hp, 2)
                 combat_log.append({
                     'type': 'player_attack',
                     'crit': is_player_crit,
@@ -1485,6 +1488,7 @@ def fight_dungeon():
                 if is_enemy_crit:
                     enemy_damage *= stats['enemy_crit_damage']
                 team_hp -= enemy_damage
+                team_hp = round(team_hp, 2)
                 combat_log.append({'type': 'enemy_attack',
                                    'crit': is_enemy_crit,
                                    'damage': int(enemy_damage),
