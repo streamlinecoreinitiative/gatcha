@@ -1910,15 +1910,6 @@ async function loadBackgrounds() {
     const data = await resp.json();
     if (data.success) {
         backgroundMap = data.backgrounds;
-        for (const [section, file] of Object.entries(data.backgrounds)) {
-            const el = document.getElementById(section);
-            if (el) {
-                el.style.backgroundImage = `url('/static/images/backgrounds/${file}')`;
-                el.style.backgroundSize = 'cover';
-                el.style.backgroundPosition = 'center';
-                el.style.backgroundRepeat = 'no-repeat';
-            }
-        }
         const active = document.querySelector('#main-content .view.active');
         applyBodyBackground(active ? active.id : 'login-screen');
     }
