@@ -46,7 +46,7 @@
                 <p data-i18n>While the game works on mobile devices, the screens are optimized for computer usage.</p>
             </div>
             <div class="login-container">
-                <img loading="lazy" src="{{ url_for('static', filename='images/ui/game_logo.png') }}" alt="Game Logo" class="game-logo">
+                <img src="{{ url_for('static', filename='images/ui/game_logo.png') }}" alt="Game Logo" class="game-logo">
                 <div class="form-box">
                 <input type="text" id="username-input" placeholder="Username">
                 <input type="password" id="password-input" placeholder="Password">
@@ -84,7 +84,7 @@
         <!-- TOP BAR: Player Info -->
         <div id="top-bar">
             <div id="player-info">
-                <img id="user-icon" loading="lazy" src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon clickable">
+                <img id="user-icon" src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon clickable">
                 <span id="player-name" class="clickable"></span>
                 <button id="logout-button">Logout</button>
             </div>
@@ -118,7 +118,7 @@
                     <button class="tutorial-btn" data-tutorial="This home screen shows your active team and important progress information.">?</button>
                 </div>
                 <div class="daily-gift" id="gem-gift">
-                    <img loading="lazy" src="{{ url_for('static', filename='images/ui/chest.png') }}" alt="Chest" />
+                    <img src="{{ url_for('static', filename='images/ui/chest.png') }}" alt="Chest" />
                     <button id="gem-gift-button" class="gift-btn" data-i18n>Claim 50 Gems<span class="red-dot"></span></button>
                     <span id="gem-gift-timer"></span>
                 </div>
@@ -211,7 +211,7 @@
                     <button class="tutorial-btn" data-tutorial="Purchase Platinum or energy here. Transactions are verified server-side.">?</button>
                 </div>
                 <div class="daily-gift" id="platinum-gift">
-                    <img loading="lazy" src="{{ url_for('static', filename='images/ui/chest.png') }}" alt="Chest" />
+                    <img src="{{ url_for('static', filename='images/ui/chest.png') }}" alt="Chest" />
                     <button id="platinum-gift-button" class="gift-btn" data-i18n>Daily Platinum Chest<span class="red-dot"></span></button>
                     <span id="platinum-gift-timer"></span>
                 </div>
@@ -255,7 +255,7 @@
         <!-- Column 2: The Tower Image -->
         <!-- We give it the 'dungeon-image-container' class to inherit its styling -->
         <div class="dungeon-image-container" id="tower-art-wrapper">
-            <img loading="lazy" src="{{ url_for('static', filename='images/ui/tower_art.png') }}" alt="The Spire">
+            <img src="{{ url_for('static', filename='images/ui/tower_art.png') }}" alt="The Spire">
         </div>
 
     </div>
@@ -539,7 +539,7 @@
 
 <div id="hero-image-overlay" class="modal-overlay">
     <div class="modal-content">
-        <img id="hero-image-large" loading="lazy" src="" alt="Hero" style="max-width:300px; height:auto;">
+        <img id="hero-image-large" src="" alt="Hero" style="max-width:300px; height:auto;">
         <button id="close-hero-image-btn">Close</button>
     </div>
 </div>
