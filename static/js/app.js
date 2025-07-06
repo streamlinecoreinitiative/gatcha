@@ -138,6 +138,7 @@ let loadedCharacters = [];
 let loadedEnemies = [];
 let loadedExpeditions = [];
 let editingEntity = null;
+let equipmentMap = {};
 let loadedItems = [];
 let editingItem = null;
 let loadedTowerLevels = [];
@@ -212,6 +213,15 @@ function formatDuration(sec) {
     return `${s}s`;
 }
 
+async function loadEquipmentMap() {
+    if (Object.keys(equipmentMap).length) return;
+    const resp = await fetch('/static/equipment.json');
+    if (!resp.ok) return;
+    const items = await resp.json();
+    equipmentMap = {};
+    items.forEach(it => { if (it.code) equipmentMap[it.code] = it.name; });
+}
+
 function setRedDot(element, show) {
     if (!element) return;
     const dot = element.querySelector('.red-dot');
@@ -219,6 +229,8 @@ function setRedDot(element, show) {
 }
 
 function setLanguage(lang, opts = {reload: true}) {
+    lang = (lang || '').toLowerCase();
+    if (lang === 'jp' || lang === 'ja-jp') lang = 'ja';
     localStorage.setItem('language', lang);
     if (languageSelect) languageSelect.value = lang;
     languageFlagButtons.forEach(btn => {
@@ -1057,6 +1069,13 @@ function attachEventListeners() {
             displayMessage(result.success ? 'Expedition removed' : result.message || 'Update failed');
             if (result.success) loadExpeditionAdminList();
         }
+        else if (target.classList.contains('exp-up') || target.classList.contains('exp-down')) {
+            const id = parseInt(target.dataset.id);
+            const direction = target.classList.contains('exp-up') ? 'up' : 'down';
+            const resp = await fetch('/api/admin/expedition/reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, direction }) });
+            const result = await resp.json();
+            if (result.success) loadExpeditionAdminList();
+        }
         else if (target.classList.contains('edit-item')) {
             const code = target.dataset.code;
             const item = loadedItems.find(i => i.code === code);
@@ -1515,15 +1534,24 @@ async function updateExpeditionDisplay() {
     const resp = await fetch('/api/expeditions');
     const data = await resp.json();
     if (!data.success) { list.innerHTML = 'Failed to load'; return; }
+    await loadEquipmentMap();
     list.innerHTML = '';
     data.expeditions.forEach(exp => {
         const wrapper = document.createElement('div');
         wrapper.className = 'dungeon-container';
         const img = exp.image_file ? `/static/images/ui/${exp.image_file}` : '/static/images/ui/dungeon_armory.png';
-        const drops = exp.drops ? `<p>Drops: ${exp.drops}</p>` : '';
+        let drops = '';
+        if (exp.drops) {
+            const parts = exp.drops.split(',').map(p => p.trim()).filter(Boolean);
+            const nice = parts.map(p => {
+                const [code, chance] = p.split(':');
+                const name = equipmentMap[code.trim()] || code.trim();
+                return `${name}: ${chance}%`;
+            });
+            drops = `<p>Drops: ${nice.join(', ')}</p>`;
+        }
         const desc = exp.description ? `<p>${exp.description}</p>` : '';
-        const res = exp.image_res ? `<p>Res: ${exp.image_res}</p>` : '';
-        wrapper.innerHTML = `<div class="dungeon-image-container"><img src="${img}" alt="${exp.name}"></div><div class="dungeon-details-container"><h3>${exp.name}</h3>${desc}${drops}${res}<button class="dungeon-fight-button" data-expedition-id="${exp.id}">Enter</button></div>`;
+        wrapper.innerHTML = `<div class="dungeon-image-container"><img src="${img}" alt="${exp.name}"></div><div class="dungeon-details-container"><h3>${exp.name}</h3>${desc}${drops}<button class="dungeon-fight-button" data-expedition-id="${exp.id}">Enter</button></div>`;
         list.appendChild(wrapper);
     });
 }
@@ -1799,7 +1827,7 @@ async function loadExpeditionAdminList() {
         data.expeditions.forEach(exp => {
             const div = document.createElement('div');
             div.className = 'admin-entity-item';
-            div.innerHTML = `<span>${exp.name}</span> <button class="edit-expedition" data-id="${exp.id}">Edit</button> <button class="delete-expedition" data-id="${exp.id}">Delete</button>`;
+            div.innerHTML = `<span>${exp.name}</span> <button class="exp-up" data-id="${exp.id}">↑</button> <button class="exp-down" data-id="${exp.id}">↓</button> <button class="edit-expedition" data-id="${exp.id}">Edit</button> <button class="delete-expedition" data-id="${exp.id}">Delete</button>`;
             adminExpeditionList.appendChild(div);
         });
     }

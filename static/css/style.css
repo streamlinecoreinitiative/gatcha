@@ -341,7 +341,7 @@ button:disabled, .fantasy-button:disabled {
 /* Chat Container */
 #chat-container {
     position: fixed;
-    bottom: 90px; /* Above the nav bar */
+    bottom: 120px; /* Above the nav bar */
     right: 20px;
     width: 350px;
     height: 400px;

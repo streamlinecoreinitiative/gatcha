@@ -942,14 +942,31 @@ def admin_manage_expedition():
     if file:
         file.save(os.path.join(image_dir, filename))
 
+    sort_order = data.get('sort_order')
+    sort_order = int(sort_order) if sort_order is not None and str(sort_order).isdigit() else None
+
     if request.method == 'POST':
         if not name or not enemies:
             return jsonify({'success': False, 'message': 'Name and enemies required'}), 400
-        db.create_expedition(name, enemies, filename, description or None, drops or None, image_res or None)
+        db.create_expedition(name, enemies, filename, description or None, drops or None, image_res or None, sort_order)
     else:
         exp_id = int(data.get('id', 0))
         db.update_expedition(exp_id, name=name or None, enemies=enemies or None, image_file=filename,
-                             description=description or None, drops=drops or None, image_res=image_res or None)
+                             description=description or None, drops=drops or None, image_res=image_res or None,
+                             sort_order=sort_order)
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/expedition/reorder', methods=['POST'])
+def admin_reorder_expedition():
+    if not session.get('logged_in') or not db.is_user_admin(session['user_id']):
+        return jsonify({'success': False}), 403
+    data = request.json or {}
+    exp_id = int(data.get('id', 0))
+    direction = data.get('direction')
+    if direction not in ('up', 'down'):
+        return jsonify({'success': False, 'message': 'Invalid direction'}), 400
+    db.move_expedition(exp_id, direction)
     return jsonify({'success': True})
 
 

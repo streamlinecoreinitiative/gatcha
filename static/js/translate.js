@@ -21,6 +21,8 @@ function markTranslatable() {
 const translationsCache = {};
 
 async function loadTranslations(lang) {
+    lang = (lang || '').toLowerCase();
+    if (lang === 'jp' || lang === 'ja-jp') lang = 'ja';
     if (lang === 'en') return null;
     if (translationsCache[lang]) return translationsCache[lang];
     try {

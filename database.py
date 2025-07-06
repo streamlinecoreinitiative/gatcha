@@ -210,7 +210,11 @@ def init_db():
         CREATE TABLE IF NOT EXISTS expeditions (
             id {AUTO_ID},
             name TEXT UNIQUE NOT NULL,
-            image_file TEXT
+            image_file TEXT,
+            description TEXT,
+            drops TEXT,
+            image_res TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0
         )
     ''')
     cursor.execute(f'''
@@ -267,6 +271,7 @@ def init_db():
     add_column_if_missing(conn, 'expeditions', 'description', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'drops', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'image_res', 'TEXT')
+    add_column_if_missing(conn, 'expeditions', 'sort_order', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'messages', 'bug_link', 'TEXT')
     if USING_POSTGRES:
         cursor.execute('''
@@ -812,7 +817,7 @@ def create_default_expeditions():
         },
     ]
 
-    for exp in defaults:
+    for idx, exp in enumerate(defaults, start=1):
         create_expedition(
             exp['name'],
             exp['levels'],
@@ -820,6 +825,7 @@ def create_default_expeditions():
             exp['description'],
             exp['drops'],
             exp['image_res'],
+            idx
         )
 
 def get_user_profile(user_id):
@@ -957,14 +963,17 @@ def set_bug_link(url):
     conn.close()
 
 
-def create_expedition(name, enemies, image_file=None, description=None, drops=None, image_res=None):
+def create_expedition(name, enemies, image_file=None, description=None, drops=None, image_res=None, sort_order=None):
     """Create a new expedition with a list of enemy names."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    sql = 'INSERT INTO expeditions (name, image_file, description, drops, image_res) VALUES (?, ?, ?, ?, ?)'
+    sql = 'INSERT INTO expeditions (name, image_file, description, drops, image_res, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
     if USING_POSTGRES:
         sql += ' RETURNING id'
-    cursor.execute(sql, (name, image_file, description, drops, image_res))
+    if sort_order is None:
+        cur2 = conn.execute('SELECT COALESCE(MAX(sort_order),0)+1 AS n FROM expeditions')
+        sort_order = cur2.fetchone()['n']
+    cursor.execute(sql, (name, image_file, description, drops, image_res, sort_order))
     if USING_POSTGRES:
         expedition_id = cursor.fetchone()['id']
     else:
@@ -978,7 +987,7 @@ def create_expedition(name, enemies, image_file=None, description=None, drops=No
     conn.close()
     return expedition_id
 
-def update_expedition(expedition_id, name=None, enemies=None, image_file=None, description=None, drops=None, image_res=None):
+def update_expedition(expedition_id, name=None, enemies=None, image_file=None, description=None, drops=None, image_res=None, sort_order=None):
     """Update an existing expedition."""
     conn = get_db_connection()
     cur = conn.cursor()
@@ -992,6 +1001,8 @@ def update_expedition(expedition_id, name=None, enemies=None, image_file=None, d
         cur.execute('UPDATE expeditions SET drops = ? WHERE id = ?', (drops, expedition_id))
     if image_res is not None:
         cur.execute('UPDATE expeditions SET image_res = ? WHERE id = ?', (image_res, expedition_id))
+    if sort_order is not None:
+        cur.execute('UPDATE expeditions SET sort_order = ? WHERE id = ?', (sort_order, expedition_id))
     if enemies is not None:
         cur.execute('DELETE FROM expedition_levels WHERE expedition_id = ?', (expedition_id,))
         for idx, enemy in enumerate(enemies, start=1):
@@ -1009,12 +1020,32 @@ def delete_expedition(expedition_id):
     conn.commit()
     conn.close()
 
+def move_expedition(expedition_id, direction):
+    """Move expedition order up or down."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT sort_order FROM expeditions WHERE id = ?', (expedition_id,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        return
+    current = row['sort_order']
+    if direction == 'up':
+        target = cur.execute('SELECT id, sort_order FROM expeditions WHERE sort_order < ? ORDER BY sort_order DESC LIMIT 1', (current,)).fetchone()
+    else:
+        target = cur.execute('SELECT id, sort_order FROM expeditions WHERE sort_order > ? ORDER BY sort_order ASC LIMIT 1', (current,)).fetchone()
+    if target:
+        cur.execute('UPDATE expeditions SET sort_order = ? WHERE id = ?', (target['sort_order'], expedition_id))
+        cur.execute('UPDATE expeditions SET sort_order = ? WHERE id = ?', (current, target['id']))
+        conn.commit()
+    conn.close()
+
 
 def get_all_expeditions():
     """Return all expeditions with their level data."""
     conn = get_db_connection()
     cur = conn.cursor()
-    exps = cur.execute('SELECT id, name, image_file, description, drops, image_res FROM expeditions').fetchall()
+    exps = cur.execute('SELECT id, name, image_file, description, drops, image_res, sort_order FROM expeditions ORDER BY sort_order, id').fetchall()
     result = []
     for exp in exps:
         levels = cur.execute(
@@ -1028,6 +1059,7 @@ def get_all_expeditions():
             'description': exp['description'],
             'drops': exp['drops'],
             'image_res': exp['image_res'],
+            'sort_order': exp['sort_order'],
             'levels': [{'level': row['level_num'], 'enemy': row['enemy_name']} for row in levels]
         })
     conn.close()
@@ -1038,7 +1070,7 @@ def get_expedition(expedition_id):
     conn = get_db_connection()
     cur = conn.cursor()
     exp = cur.execute(
-        'SELECT id, name, image_file, description, drops, image_res FROM expeditions WHERE id = ?',
+        'SELECT id, name, image_file, description, drops, image_res, sort_order FROM expeditions WHERE id = ?',
         (expedition_id,)
     ).fetchone()
     if not exp:
@@ -1055,6 +1087,7 @@ def get_expedition(expedition_id):
         'description': exp['description'],
         'drops': exp['drops'],
         'image_res': exp['image_res'],
+        'sort_order': exp['sort_order'],
         'levels': [{'level': row['level_num'], 'enemy': row['enemy_name']} for row in levels]
     }
     conn.close()
