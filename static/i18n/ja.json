@@ -68,6 +68,7 @@
   "Equipment": "装備",
   "The Tower": "塔",
   "Store": "ストア",
+  "Battle Log": "戦闘ログ",
   "Your Team": "自分のチーム",
   "Enemy Team": "敵チーム",
   "Next Floor": "次の階",
@@ -153,4 +154,9 @@
   "Loading...": "読み込み中...",
   "(Floor": "(階",
   "150 to summon a new hero! Odds: 50% Common, 30% Rare, 15% SSR, 3.5% UR, 1.5% LR. Guaranteed SSR every 90 summons.": "150個で新しいヒーローを召喚! 確率: コモン50%, レア30%, SSR15%, UR3.5%, LR1.5%。90回でSSR確定。"
+  "Buy": "購入",
+  "PayPal unavailable": "PayPal利用不可",
+  "Purchase successful!": "購入成功",
+  "Purchase failed": "購入失敗",
+  "Failed to load store.": "ストア読み込み失敗"
 }
