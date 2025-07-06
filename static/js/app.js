@@ -918,7 +918,7 @@ function attachEventListeners() {
             summonResultContainer.innerHTML = '';
             characters.forEach(character => {
                 const element = character.element || 'None';
-                summonResultContainer.innerHTML += `<div class="team-slot"><div class="card-header"><div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img loading="lazy" src="/static/images/characters/${character.image_file}" alt="${character.name}"><h4>${character.name}</h4><p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p><p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p></div>`;
+                summonResultContainer.innerHTML += `<div class="team-slot"><div class="card-header"><div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${character.image_file}" alt="${character.name}"><h4>${character.name}</h4><p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p><p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p></div>`;
             });
             summonResultContainer.classList.add('show');
             await fetchPlayerDataAndUpdate();
@@ -1125,7 +1125,7 @@ function attachEventListeners() {
                 const element = enemy.element || 'None';
                 const cost = result.energy_cost;
                 const gold = result.gold_reward;
-                document.getElementById('intel-enemy-info').innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity">Enemy</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img loading="lazy" src="/static/images/${enemy.image_file}" alt="${enemy.name}"><h4>${enemy.name}</h4><div class="card-stats">HP: ~${enemy.hp} | ATK: ~${enemy.atk}</div><p>Energy Cost: ${cost} | Gold: ${gold}</p></div>`;
+                document.getElementById('intel-enemy-info').innerHTML = `<div class="team-slot"><div class="card-header"><div class="card-rarity">Enemy</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/${enemy.image_file}" alt="${enemy.name}"><h4>${enemy.name}</h4><div class="card-stats">HP: ~${enemy.hp} | ATK: ~${enemy.atk}</div><p>Energy Cost: ${cost} | Gold: ${gold}</p></div>`;
                 document.getElementById('intel-modal-overlay').classList.add('active');
             } else { displayMessage(`Error: ${result.message}`); }
         }
@@ -1376,14 +1376,11 @@ async function openHeroDetailModal(hero) {
     const charDef = masterCharacterList.find(c => c.name === fullHeroData.character_name) || {};
     const equippedItems = allPlayerItems.filter(item => item.is_equipped_on === fullHeroData.id);
     const stats = getScaledStats(fullHeroData);
-    const sellBase = { 'Common': 50, 'Rare': 150, 'SSR': 400, 'UR': 800, 'LR': 1500 };
-    const sellPrice = (sellBase[fullHeroData.rarity] || 50) * fullHeroData.level;
     let html = `
-        <img class="hero-detail-portrait" loading="lazy" src="/static/images/characters/${charDef.image_file || 'placeholder_char.png'}" alt="${fullHeroData.character_name}">
+        <img class="hero-detail-portrait" src="/static/images/characters/${charDef.image_file || 'placeholder_char.png'}" alt="${fullHeroData.character_name}">
         <h3>${fullHeroData.character_name}</h3>
         <p>Level: ${fullHeroData.level}</p>
         <p>ATK: ${stats.atk} | HP: ${stats.hp}</p>
-        <p>Sell Price: ${sellPrice}g</p>
         <h4>Equipped Items</h4>
         <div class="equipped-slots">
             <p>Weapon: ${equippedItems[0]?.equipment_name || 'Empty'}</p>
@@ -1509,15 +1506,13 @@ async function updateEquipmentDisplay() {
     const equipmentDefsResponse = await fetch('/static/equipment.json');
     if (!equipmentDefsResponse.ok) return;
     const equipmentDefs = await equipmentDefsResponse.json();
-    const statsMap = {};
-    const imageMap = {};
-    equipmentDefs.forEach(item => { statsMap[item.name] = item.stat_bonuses; imageMap[item.name] = item.image_file; });
+    const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
     if (result.equipment.length === 0) {
         equipmentContainer.style.display = 'flex';
         equipmentContainer.style.justifyContent = 'center';
         equipmentContainer.style.alignItems = 'center';
         equipmentContainer.style.minHeight = '40vh';
-        equipmentContainer.innerHTML = '<p class="empty-armory-message">Your armory is empty. Items can be obtained in the dungeon.</p>';
+        equipmentContainer.innerHTML = '<p class="empty-armory-message">Your armory is empty. Farm the Armory to find loot, it is an end game mechanic.</p>';
         return;
     }
     equipmentContainer.removeAttribute('style');
@@ -1525,11 +1520,9 @@ async function updateEquipmentDisplay() {
         const card = document.createElement('div');
         card.className = 'collection-card';
         const stats = statsMap[item.equipment_name] || {};
-        const imgFile = imageMap[item.equipment_name];
-        const imgHtml = imgFile ? `<img loading="lazy" src="/static/images/items/${imgFile}" alt="${item.equipment_name}">` : '';
         const statsText = Object.entries(stats).map(([key, value]) => `${key.toUpperCase()}: +${value}`).join(' | ');
         const rarityClass = item.rarity.toLowerCase();
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${rarityClass}">[${item.rarity}]</div></div>${imgHtml}<h4>${item.equipment_name}</h4><p class="card-stats">${statsText}</p><div class="item-status">${item.is_equipped_on ? `Equipped` : 'Unequipped'}</div>`;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${rarityClass}">[${item.rarity}]</div></div><h4>${item.equipment_name}</h4><p class="card-stats">${statsText}</p><div class="item-status">${item.is_equipped_on ? `Equipped` : 'Unequipped'}</div>`;
         equipmentContainer.appendChild(card);
     });
 }
@@ -1558,7 +1551,7 @@ async function updateExpeditionDisplay() {
             drops = `<p>Drops: ${nice.join(', ')}</p>`;
         }
         const desc = exp.description ? `<p>${exp.description}</p>` : '';
-        wrapper.innerHTML = `<div class="dungeon-image-container">${img ? `<img loading="lazy" src="${img}" alt="${exp.name}">` : ''}</div><div class="dungeon-details-container"><h3>${exp.name}</h3>${desc}${drops}<button class="dungeon-fight-button" data-expedition-id="${exp.id}">Enter</button></div>`;
+        wrapper.innerHTML = `<div class="dungeon-image-container"><img src="${img}" alt="${exp.name}"></div><div class="dungeon-details-container"><h3>${exp.name}</h3>${desc}${drops}<button class="dungeon-fight-button" data-expedition-id="${exp.id}">Enter</button></div>`;
         list.appendChild(wrapper);
     });
 }
@@ -1582,14 +1575,14 @@ async function updateAllUsers() {
     towerSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        const img = `<img class="score-profile" loading="lazy" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
+        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
         div.innerHTML = `${img}${idx + 1}. ${u.username} - Floor ${u.current_stage}`;
         towerScoresContainer.appendChild(div);
     });
     dungeonSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        const img = `<img class="score-profile" loading="lazy" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
+        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
         div.innerHTML = `${img}${idx + 1}. ${u.username} - Runs ${u.dungeon_runs}`;
         dungeonScoresContainer.appendChild(div);
     });
@@ -1913,9 +1906,9 @@ function updateTeamDisplay() {
         if (member) {
             const element = member.element || 'None';
             const stats = getScaledStats(member);
-            slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" loading="lazy" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name}</h4><p>ATK: ${stats.atk} | HP: ${stats.hp}</p><p>Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</p>`;
+            slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name}</h4><p>ATK: ${stats.atk} | HP: ${stats.hp}</p><p>Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</p>`;
         } else {
-            slot.innerHTML = `<img loading="lazy" src="/static/images/ui/placeholder_char.png" alt="Empty"><h4>Empty Slot</h4>`;
+            slot.innerHTML = `<img src="/static/images/ui/placeholder_char.png" alt="Empty"><h4>Empty Slot</h4>`;
         }
         teamDisplayContainer.appendChild(slot);
     }
@@ -1943,9 +1936,7 @@ function updateCollectionDisplay() {
         const canMerge = heroCounts[hero.character_name] >= mergeCost;
         const isInTeam = teamDBIds.includes(hero.id);
         const stats = getScaledStats(hero);
-        const sellBase = { 'Common': 50, 'Rare': 150, 'SSR': 400, 'UR': 800, 'LR': 1500 };
-        const sellPrice = (sellBase[hero.rarity] || 50) * hero.level;
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" loading="lazy" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level}g)</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell (${sellPrice}g)</button></div>`;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level}g)</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
@@ -2002,7 +1993,7 @@ function updateCampaignDisplay() {
         // This new HTML structure matches the Armory layout
         stageItem.innerHTML = `
             <div class="stage-icon">
-                <img loading="lazy" src="${iconPath}" alt="Status">
+                <img src="${iconPath}" alt="Status">
             </div>
             <div class="stage-content">
                 ${titleHTML}
@@ -2064,11 +2055,11 @@ async function startBattle(fightResult) {
         const slot = document.createElement('div');
         slot.className = 'team-slot';
         const element = member.element || 'None';
-        slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" loading="lazy" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name.split(',')[0]}</h4>`;
+        slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name.split(',')[0]}</h4>`;
         playerTeamContainer.appendChild(slot);
     });
 
-    enemyDisplayContainer.innerHTML = `<div class="team-slot"><img loading="lazy" src="/static/images/${enemyImage}" alt="${enemyName}"><h4>${enemyName}</h4></div>`;
+    enemyDisplayContainer.innerHTML = `<div class="team-slot"><img src="/static/images/${enemyImage}" alt="${enemyName}"><h4>${enemyName}</h4></div>`;
 
     const updateHealthBar = (bar, text, current, max) => {
         const percentage = Math.max(0, (current / max) * 100);
