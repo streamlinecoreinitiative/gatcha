@@ -727,6 +727,18 @@ def reset_password(email, new_password):
 def adjust_resources(user_id, gems=None, premium_gems=None, energy=None, gold=None):
     save_player_data(user_id, gems=gems, premium_gems=premium_gems, energy=energy, gold=gold)
 
+def delete_user(user_id):
+    """Completely remove a user and related data."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM player_characters WHERE user_id = ?', (user_id,))
+    cur.execute('DELETE FROM player_equipment WHERE user_id = ?', (user_id,))
+    cur.execute('DELETE FROM player_team WHERE user_id = ?', (user_id,))
+    cur.execute('DELETE FROM player_data WHERE user_id = ?', (user_id,))
+    cur.execute('DELETE FROM users WHERE id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+
 def remove_character(user_id, char_id):
     conn = get_db_connection()
     conn.execute("DELETE FROM player_characters WHERE id = ? AND user_id = ?", (char_id, user_id))

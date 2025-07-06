@@ -158,5 +158,12 @@
   "PayPal unavailable": "PayPal no disponible",
   "Purchase successful!": "Compra exitosa",
   "Purchase failed": "Compra fallida",
-  "Failed to load store.": "No se pudo cargar la tienda"
+  "Failed to load store.": "No se pudo cargar la tienda",
+  "Delete Account": "Eliminar cuenta",
+  "Are you sure you want to delete your account?": "¿Está seguro de que desea eliminar su cuenta?",
+  "Gems - Earned from events and dungeons. Spend them at the Summoning Altar or purchase more in the Store.": "Gemas - Se obtienen en eventos y mazmorras. Gástalas en el Altar de Invocación o compra más en la Tienda.",
+  "Platinum - Purchased with real money. Use it for energy refills and special packs.": "Platino - Se compra con dinero real. Úsalo para recargas de energía y paquetes especiales.",
+  "Gold - Earned from battles and selling heroes. Spend it to level up heroes and equipment.": "Oro - Se obtiene en batallas y vendiendo héroes. Gástalo para subir de nivel héroes y equipo.",
+  "Energy - Regenerates every 5 minutes or with Platinum. Required for Tower battles.": "Energía - Se regenera cada 5 minutos o con Platino. Necesaria para las batallas de la Torre.",
+  "Dungeon Energy - Regenerates every 15 minutes or with Platinum. Required for Armory expeditions.": "Energía de Mazmorra - Se regenera cada 15 minutos o con Platino. Necesaria para expediciones del Arsenal."
 }

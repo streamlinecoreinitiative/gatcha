@@ -158,5 +158,12 @@
   "PayPal unavailable": "PayPal利用不可",
   "Purchase successful!": "購入成功",
   "Purchase failed": "購入失敗",
-  "Failed to load store.": "ストア読み込み失敗"
+  "Failed to load store.": "ストア読み込み失敗",
+  "Delete Account": "アカウント削除",
+  "Are you sure you want to delete your account?": "本当にアカウントを削除しますか？",
+  "Gems - Earned from events and dungeons. Spend them at the Summoning Altar or purchase more in the Store.": "ジェム - イベントやダンジョンで獲得。召喚祭壇で使用するか、ストアで購入できます。",
+  "Platinum - Purchased with real money. Use it for energy refills and special packs.": "プラチナ - 実際のお金で購入。エネルギー回復や特別なパックに使用します。",
+  "Gold - Earned from battles and selling heroes. Spend it to level up heroes and equipment.": "ゴールド - 戦闘やヒーロー売却で獲得。ヒーローや装備の強化に使用します。",
+  "Energy - Regenerates every 5 minutes or with Platinum. Required for Tower battles.": "エネルギー - 5分ごとまたはプラチナで回復。塔の戦闘に必要です。",
+  "Dungeon Energy - Regenerates every 15 minutes or with Platinum. Required for Armory expeditions.": "ダンジョンエネルギー - 15分ごとまたはプラチナで回復。遠征に必要です。"
 }

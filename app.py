@@ -592,6 +592,16 @@ def change_password():
     return jsonify({'success': True})
 
 
+@app.route('/api/delete_account', methods=['POST'])
+def delete_account():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    user_id = session['user_id']
+    db.delete_user(user_id)
+    session.clear()
+    return jsonify({'success': True})
+
+
 @app.route('/api/player_data', methods=['GET'])
 def get_player_data():
     if not session.get('logged_in'): return jsonify({'success': False}), 401

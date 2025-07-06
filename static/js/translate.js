@@ -20,6 +20,24 @@ function markTranslatable() {
 
 const translationsCache = {};
 
+async function getDict(lang) {
+    lang = (lang || '').toLowerCase();
+    if (lang === 'jp' || lang === 'ja-jp') lang = 'ja';
+    if (lang === 'en') return null;
+    if (!translationsCache[lang]) {
+        await loadTranslations(lang);
+    }
+    return translationsCache[lang];
+}
+
+async function translateText(text, lang) {
+    lang = lang || localStorage.getItem('language') || 'en';
+    const dict = await getDict(lang);
+    if (!dict) return text;
+    const key = text.trim().replace(/\s+/g, ' ');
+    return dict[key] || text;
+}
+
 async function loadTranslations(lang) {
     lang = (lang || '').toLowerCase();
     if (lang === 'jp' || lang === 'ja-jp') lang = 'ja';
@@ -61,3 +79,4 @@ async function translatePage(lang) {
 }
 
 window.translatePage = translatePage;
+window.translateText = translateText;

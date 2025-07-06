@@ -88,6 +88,7 @@ let profileConfirmPasswordInput;
 let profileImageSelect;
 let profileLanguageSelect;
 let profileSaveBtn;
+let profileDeleteBtn;
 let gameEnergyCapInput;
 let gameDungeonCapInput;
 let gameEnergyRegenInput;
@@ -395,6 +396,7 @@ function attachEventListeners() {
     profileImageSelect = document.getElementById('profile-image-select');
     profileLanguageSelect = document.getElementById('profile-language-select');
     profileSaveBtn = document.getElementById('profile-save-btn');
+    profileDeleteBtn = document.getElementById('profile-delete-btn');
     profileCancelBtn = document.getElementById('profile-cancel-btn');
     adminSubmitBtn = document.getElementById('admin-submit-btn');
     paypalClientIdInput = document.getElementById('admin-paypal-client-id');
@@ -603,9 +605,9 @@ function attachEventListeners() {
 
     document.querySelectorAll('#currency-info .currency-icon').forEach(icon => {
         icon.classList.add('clickable');
-        icon.addEventListener('click', () => {
+        icon.addEventListener('click', async () => {
             const msg = iconMessages[icon.id] || '';
-            if (infoText) infoText.textContent = msg;
+            if (infoText) infoText.textContent = await translateText(msg);
             if (infoModal) infoModal.classList.add('active');
         });
     });
@@ -651,6 +653,17 @@ function attachEventListeners() {
             profileCurrentPasswordInput.value = '';
             profileNewPasswordInput.value = '';
             profileConfirmPasswordInput.value = '';
+        }
+    });
+    if (profileDeleteBtn) profileDeleteBtn.addEventListener('click', async () => {
+        const confirmMsg = await translateText('Are you sure you want to delete your account?');
+        if (!confirm(confirmMsg)) return;
+        const resp = await fetch('/api/delete_account', { method: 'POST' });
+        const result = await resp.json();
+        if (result.success) {
+            await handleLogout();
+        } else {
+            displayMessage(result.message || 'Deletion failed');
         }
     });
     if (adminSubmitBtn) adminSubmitBtn.addEventListener('click', async () => {
