@@ -356,7 +356,6 @@ button:disabled, .fantasy-button:disabled {
     justify-content: space-between;
     align-items: center;
     padding: 5px 10px;
-    border-bottom: 1px solid #444;
 }
 #chat-toggle-btn {
     background: none;
@@ -375,12 +374,14 @@ button:disabled, .fantasy-button:disabled {
 #chat-container h3 {
     text-align: center;
     padding: 10px;
-    border-bottom: 1px solid #444;
+    /* Removed border-bottom to avoid double lines under header */
 }
 #chat-messages {
     flex-grow: 1;
     padding: 10px;
     overflow-y: auto;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 #chat-messages div {
     margin-bottom: 5px;
@@ -1463,6 +1464,11 @@ button:disabled, .fantasy-button:disabled {
     border-radius: 5px;
     display: none;
     z-index: 1000;
+    max-width: 90%;
+    max-height: 60vh;
+    overflow-y: auto;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 /* Store styles */
@@ -1583,11 +1589,34 @@ button:disabled, .fantasy-button:disabled {
         height: auto;
         min-height: 100vh;
     }
+    /* Login screen stacks vertically on small screens */
+    #login-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+    .login-lore-box {
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+    #login-screen input {
+        width: 80%;
+        max-width: 250px;
+    }
     #nav-bar {
         height: 60px;
+        flex-wrap: wrap;
     }
     .nav-button {
-        font-size: 16px;
+        font-size: 14px;
+        flex: 1 0 33%;
+    }
+    #top-bar {
+        flex-direction: column;
+        height: auto;
+    }
+    #player-info, #currency-info {
+        flex-wrap: wrap;
+        justify-content: center;
     }
     .team-container {
         flex-wrap: wrap;
@@ -1604,5 +1633,6 @@ button:disabled, .fantasy-button:disabled {
         bottom: 110px;
         font-size: 14px;
         max-width: 90%;
+        max-height: 70vh;
     }
 }
