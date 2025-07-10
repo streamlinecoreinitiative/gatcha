@@ -23,12 +23,13 @@ def load_all_definitions(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        print(f"FATAL ERROR: {os.path.basename(file_path)} is missing or corrupted!")
-        return None
+        raise FileNotFoundError(f"FATAL ERROR: {os.path.basename(file_path)} is missing or corrupted!")
 
+
+import config
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)
+app.config.from_object(config)
 socketio = SocketIO(app)
 db.init_db()
 paypal_conf = db.get_paypal_config()
@@ -46,7 +47,7 @@ def cleanup_online_users():
         removed = False
         for sid, info in list(online_users.items()):
             last = info.get('last_active', now)
-            if now - last > ONLINE_TIMEOUT:
+            if now - last > app.config['ONLINE_TIMEOUT']:
                 online_users.pop(sid, None)
                 removed = True
         if removed:
@@ -69,20 +70,20 @@ character_definitions = load_all_definitions(os.path.join(BASE_DIR, "characters.
 enemy_definitions = load_all_definitions(os.path.join(BASE_DIR, "enemies.json"))
 equipment_definitions = load_all_definitions(os.path.join(BASE_DIR, "static", "equipment.json"))  # Corrected path
 LORE_FILE = os.path.join(BASE_DIR, "lore.txt")
-if not character_definitions or not enemy_definitions or not equipment_definitions: exit("Could not load game data.")
+if not character_definitions or not enemy_definitions or not equipment_definitions: raise FileNotFoundError("Could not load game data.")
 
 # Order of rarities for heroes. Defined before it is referenced below.
-RARITY_ORDER = ["Common", "Rare", "SSR", "UR", "LR"]
+app.config['RARITY_ORDER'] = ["Common", "Rare", "SSR", "UR", "LR"]
 equipment_stats_map = {item['name']: item['stat_bonuses'] for item in equipment_definitions}
-available_rarities = sorted({c['rarity'] for c in character_definitions}, key=lambda r: RARITY_ORDER.index(r))
+available_rarities = sorted({c['rarity'] for c in character_definitions}, key=lambda r: app.config['RARITY_ORDER'].index(r))
 gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity] for rarity in available_rarities}
-PULL_COST = 150
-SSR_PITY_THRESHOLD = 90
+app.config['PULL_COST'] = 150
+app.config['SSR_PITY_THRESHOLD'] = 90
 online_users = {}
-ONLINE_TIMEOUT = 300  # seconds
+app.config['ONLINE_TIMEOUT'] = 300  # seconds
 
 CHAT_LOG_FILE = os.path.join(BASE_DIR, 'chat_history.json')
-CHAT_HISTORY_LIMIT = 50
+app.config['CHAT_HISTORY_LIMIT'] = 50
 chat_history = []
 
 BAD_WORDS_FILE = os.path.join(BASE_DIR, 'bad_words.txt')
@@ -116,13 +117,13 @@ def load_chat_history():
 def save_chat_history():
     try:
         with open(CHAT_LOG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(chat_history[-CHAT_HISTORY_LIMIT:], f)
+            json.dump(chat_history[-app.config['CHAT_HISTORY_LIMIT']:], f)
     except Exception as e:
         print(f'Failed to save chat history: {e}')
 
 def add_chat_message(username: str, message: str):
     chat_history.append({'username': username, 'message': message})
-    if len(chat_history) > CHAT_HISTORY_LIMIT:
+    if len(chat_history) > app.config['CHAT_HISTORY_LIMIT']:
         chat_history.pop(0)
     save_chat_history()
 
@@ -139,28 +140,23 @@ threading.Thread(target=cleanup_online_users, daemon=True).start()
 
 def refresh_gacha_pool():
     global available_rarities, gacha_pool
-    available_rarities = sorted({c['rarity'] for c in character_definitions}, key=lambda r: RARITY_ORDER.index(r))
+    available_rarities = sorted({c['rarity'] for c in character_definitions}, key=lambda r: app.config['RARITY_ORDER'].index(r))
     gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity] for rarity in available_rarities}
 
 def emit_online_list():
     visible = [u for u in online_users.values() if not db.is_user_admin(u.get('user_id'))]
     socketio.emit('update_online_list', visible)
 # Enemy rarities include lower tiers not used for heroes
-ENEMY_RARITY_ORDER = ["Common", "Uncommon", "Rare", "Epic", "SSR", "UR", "LR"]
-MERGE_COST = {"Common": 3, "Rare": 3, "SSR": 4, "UR": 5}
-STAT_MULTIPLIER = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5}
+app.config['ENEMY_RARITY_ORDER'] = ["Common", "Uncommon", "Rare", "Epic", "SSR", "UR", "LR"]
+app.config['MERGE_COST'] = {"Common": 3, "Rare": 3, "SSR": 4, "UR": 5}
+app.config['STAT_MULTIPLIER'] = {"Common": 1.0, "Rare": 1.3, "SSR": 1.8, "UR": 2.5, "LR": 3.5}
 
 # --- Premium Currency Store Packages ---
-STORE_PACKAGES = [
-    {"id": "pack_small", "amount": 100, "price": 0.99},
-    {"id": "pack_medium", "amount": 550, "price": 4.99, "label": "Best Value"},
-    {"id": "energy_tower", "energy": 5, "platinum_cost": 50},
-    {"id": "energy_dungeon", "dungeon_energy": 5, "platinum_cost": 50}
-]
+
 
 def refresh_store_prices():
     prices = db.get_store_prices()
-    for pkg in STORE_PACKAGES:
+    for pkg in app.config['STORE_PACKAGES']:
         if 'amount' in pkg and pkg['id'] in prices:
             pkg['price'] = prices[pkg['id']]
 
@@ -192,7 +188,7 @@ def send_email(to_addr, subject, body):
 
 # Password reset tokens stored in DB
 # In-memory store for pending email confirmations {token: user_id}
-EMAIL_CONFIRMATIONS = {}
+
 
 def refresh_online_progress(user_id):
     sid = next((sid for sid, info in online_users.items() if info.get('user_id') == user_id), None)
@@ -301,8 +297,8 @@ def get_enemy_for_stage(stage_num):
             archetype = "boss" if stage_num % 10 == 0 else "standard"
             return generate_enemy(stage_num, archetype, concept)
     random.seed(stage_num)
-    tier_index = min(stage_num // 10, len(ENEMY_RARITY_ORDER) - 1)
-    target_rarity = ENEMY_RARITY_ORDER[tier_index]
+    tier_index = min(stage_num // 10, len(app.config['ENEMY_RARITY_ORDER']) - 1)
+    target_rarity = app.config['ENEMY_RARITY_ORDER'][tier_index]
     possible = [e for e in enemy_definitions if e.get("rarity") == target_rarity]
     concept = random.choice(possible) if possible else random.choice(enemy_definitions)
     if stage_num % 10 == 0:
@@ -343,8 +339,8 @@ def calculate_fight_stats(team, enemy):
             # Start with base stats
             level = character.get('level', 1)
             level_mult = 1 + 0.10 * (level - 1)
-            char_hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
-            char_atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
+            char_hp = character['base_hp'] * app.config['STAT_MULTIPLIER'].get(character['rarity'], 1.0) * level_mult
+            char_atk = character['base_atk'] * app.config['STAT_MULTIPLIER'].get(character['rarity'], 1.0) * level_mult
             char_crit_chance = character.get('crit_chance', 0)
             char_crit_damage = character.get('crit_damage', 1.5)
 
@@ -407,8 +403,8 @@ def get_scaled_character_stats(character):
     try:
         level = character.get('level', 1)
         level_mult = 1 + 0.10 * (level - 1)
-        hp = character['base_hp'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
-        atk = character['base_atk'] * STAT_MULTIPLIER.get(character['rarity'], 1.0) * level_mult
+        hp = character['base_hp'] * app.config['STAT_MULTIPLIER'].get(character['rarity'], 1.0) * level_mult
+        atk = character['base_atk'] * app.config['STAT_MULTIPLIER'].get(character['rarity'], 1.0) * level_mult
         crit_chance = character.get('crit_chance', 0)
         crit_damage = character.get('crit_damage', 1.5)
         for item in character.get('equipped', []):
@@ -434,6 +430,14 @@ def get_scaled_character_stats(character):
 
 
 # --- CORE ROUTES ---
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({'success': False, 'message': 'Resource not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'success': False, 'message': 'Internal server error'}), 500
+
 @app.route('/')
 def index(): return render_template('index.html')
 
@@ -554,7 +558,10 @@ def confirm_reset(token):
 
 @app.route('/confirm_email/<token>')
 def confirm_email(token):
-    user_id = EMAIL_CONFIRMATIONS.pop(token, None)
+    info = db.pop_email_confirmation(token)
+    if not info:
+        return 'Invalid or expired token.', 400
+    user_id = info['user_id']
     if not user_id:
         return 'Invalid or expired token.', 400
     db.update_user_profile(user_id, email_confirmed=True)
@@ -659,45 +666,64 @@ def admin_user_action():
     username = data.get('username')
     action = data.get('action')
     target_id = db.get_user_id(username) if username else None
-    if action != 'grant_all' and not target_id:
-        return jsonify({'success': False, 'message': 'User not found'}), 404
-    if action == 'ban':
-        db.ban_user(target_id, True)
-    elif action == 'unban':
-        db.ban_user(target_id, False)
+    if action == 'ban' or action == 'unban':
+        if not username:
+            return jsonify({'success': False, 'message': 'Username is required for ban/unban'}), 400
+        db.ban_user(target_id, True if action == 'ban' else False)
     elif action == 'grant':
+        if not username:
+            return jsonify({'success': False, 'message': 'Username is required for grant'}), 400
         gems = data.get('gems')
         energy = data.get('energy')
         premium_gems = data.get('platinum')
         gold = data.get('gold')
+        if not any([gems, energy, premium_gems, gold]):
+            return jsonify({'success': False, 'message': 'At least one resource (gems, energy, platinum, gold) must be provided for grant'}), 400
         db.adjust_resources(target_id, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
     elif action == 'grant_all':
         gems = data.get('gems')
         energy = data.get('energy')
         premium_gems = data.get('platinum')
         gold = data.get('gold')
+        if not any([gems, energy, premium_gems, gold]):
+            return jsonify({'success': False, 'message': 'At least one resource (gems, energy, platinum, gold) must be provided for grant_all'}), 400
         for uid in db.get_all_user_ids():
             db.adjust_resources(uid, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
     elif action == 'give_item':
+        if not username:
+            return jsonify({'success': False, 'message': 'Username is required for give_item'}), 400
         item_code = data.get('item_code')
+        if not item_code:
+            return jsonify({'success': False, 'message': 'Item code is required for give_item'}), 400
         item_def = next((i for i in equipment_definitions if i.get('code') == item_code or i['name'] == item_code), None)
         if not item_def:
             return jsonify({'success': False, 'message': 'Item not found'}), 404
         db.give_equipment_to_player(target_id, item_def)
     elif action == 'give_item_all':
         item_code = data.get('item_code')
+        if not item_code:
+            return jsonify({'success': False, 'message': 'Item code is required for give_item_all'}), 400
         item_def = next((i for i in equipment_definitions if i.get('code') == item_code or i['name'] == item_code), None)
         if not item_def:
             return jsonify({'success': False, 'message': 'Item not found'}), 404
         for uid in db.get_all_user_ids():
             db.give_equipment_to_player(uid, item_def)
     elif action == 'add_hero':
+        if not username:
+            return jsonify({'success': False, 'message': 'Username is required for add_hero'}), 400
         char_name = data.get('character_name')
+        if not char_name:
+            return jsonify({'success': False, 'message': 'Character name is required for add_hero'}), 400
         char_def = next((c for c in character_definitions if c['name'] == char_name), None)
-        if char_def:
-            db.add_character_to_player(target_id, char_def)
+        if not char_def:
+            return jsonify({'success': False, 'message': 'Character not found'}), 404
+        db.add_character_to_player(target_id, char_def)
     elif action == 'remove_hero':
+        if not username:
+            return jsonify({'success': False, 'message': 'Username is required for remove_hero'}), 400
         char_id = data.get('character_id')
+        if not char_id:
+            return jsonify({'success': False, 'message': 'Character ID is required for remove_hero'}), 400
         db.remove_character(target_id, char_id)
     else:
         return jsonify({'success': False, 'message': 'Invalid action'}), 400
@@ -708,7 +734,7 @@ def admin_user_action():
 def store_items():
     """Return available premium currency packages."""
     refresh_store_prices()
-    return jsonify({'success': True, 'items': STORE_PACKAGES})
+    return jsonify({'success': True, 'items': app.config['STORE_PACKAGES']})
 
 
 @app.route('/api/purchase_item', methods=['POST'])
@@ -719,7 +745,7 @@ def purchase_item():
     package_id = data.get('package_id')
     receipt = data.get('receipt')
     platform = data.get('platform')
-    package = next((p for p in STORE_PACKAGES if p['id'] == package_id), None)
+    package = next((p for p in app.config['STORE_PACKAGES'] if p['id'] == package_id), None)
     if not package:
         return jsonify({'success': False, 'message': 'Invalid package'}), 400
     user_id = session['user_id']
@@ -761,7 +787,7 @@ def paypal_complete():
     data = request.json or {}
     package_id = data.get('package_id')
     order_id = data.get('order_id')
-    package = next((p for p in STORE_PACKAGES if p['id'] == package_id), None)
+    package = next((p for p in app.config['STORE_PACKAGES'] if p['id'] == package_id), None)
     if not package:
         return jsonify({'success': False, 'message': 'Invalid package'}), 400
     if not order_id:
@@ -796,7 +822,7 @@ def paypal_webhook():
     except Exception:
         return jsonify({'success': False}), 400
 
-    package = next((p for p in STORE_PACKAGES if p['id'] == pkg_id and p.get('amount')), None)
+    package = next((p for p in app.config['STORE_PACKAGES'] if p['id'] == pkg_id and p.get('amount')), None)
     if not package:
         return jsonify({'success': False}), 400
 
@@ -1190,7 +1216,7 @@ def summon():
             return jsonify({'success': False, 'message': 'Free summon not ready'})
         total_cost = 0
     else:
-        total_cost = PULL_COST * count
+        total_cost = app.config['PULL_COST'] * count
         if player_data['gems'] < total_cost:
             return jsonify({'success': False, 'message': 'Not enough gems!'})
 
@@ -1198,7 +1224,7 @@ def summon():
     characters = []
     for _ in range(count):
         pity += 1
-        if pity >= SSR_PITY_THRESHOLD:
+        if pity >= app.config['SSR_PITY_THRESHOLD']:
             chosen_rarity = 'SSR'
             pity = 0
         else:
@@ -1430,7 +1456,7 @@ def fight_dungeon():
                     return jsonify({'success': False, 'message': 'Enemy not found'}), 404
                 enemy = {
                     'name': concept['name'],
-                    'image': f"enemies/{concept.get('image_file', 'placeholder_enemy.png')}",
+                    'image': f"enemies/{concept.get('image_file', 'placeholder_enemy.webp')}",
                     'level': 1,
                     'element': concept.get('element', 'None'),
                     'stats': {'hp': concept.get('base_hp', 100), 'atk': concept.get('base_atk', 10)},
@@ -1661,12 +1687,12 @@ def merge_heroes():
     heroes_of_type = [h for h in collection if h['character_name'] == char_name]
     if not heroes_of_type: return jsonify({'success': False, 'message': 'You do not own this hero.'})
     current_rarity = heroes_of_type[0]['rarity']
-    if current_rarity not in MERGE_COST: return jsonify({'success': False, 'message': 'This hero is at max rarity!'})
-    cost = MERGE_COST[current_rarity]
+    if current_rarity not in app.config['MERGE_COST']: return jsonify({'success': False, 'message': 'This hero is at max rarity!'})
+    cost = app.config['MERGE_COST'][current_rarity]
     if len(heroes_of_type) < cost: return jsonify(
         {'success': False, 'message': f'Not enough copies. Need {cost}, have {len(heroes_of_type)}.'})
-    next_rarity_index = RARITY_ORDER.index(current_rarity) + 1
-    new_rarity = RARITY_ORDER[next_rarity_index]
+    next_rarity_index = app.config['RARITY_ORDER'].index(current_rarity) + 1
+    new_rarity = app.config['RARITY_ORDER'][next_rarity_index]
     heroes_to_consume = heroes_of_type[1:cost]
     hero_to_upgrade = heroes_of_type[0]
     conn = db.get_db_connection()
