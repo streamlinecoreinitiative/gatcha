@@ -1401,7 +1401,7 @@ async function openHeroDetailModal(hero) {
     const equippedItems = allPlayerItems.filter(item => item.is_equipped_on === fullHeroData.id);
     const stats = getScaledStats(fullHeroData);
     let html = `
-        <img class="hero-detail-portrait" src="/static/images/characters/${charDef.image_file || 'placeholder_char.png'}" alt="${fullHeroData.character_name}">
+        <img class="hero-detail-portrait" src="/static/images/characters/${charDef.image_file || 'placeholder_char.webp'}" alt="${fullHeroData.character_name}">
         <h3>${fullHeroData.character_name}</h3>
         <p>Level: ${fullHeroData.level}</p>
         <p>ATK: ${stats.atk} | HP: ${stats.hp}</p>
@@ -1566,7 +1566,7 @@ async function updateExpeditionDisplay() {
     data.expeditions.forEach(exp => {
         const wrapper = document.createElement('div');
         wrapper.className = 'dungeon-container';
-        const img = exp.image_file ? `/static/images/ui/${exp.image_file}` : '/static/images/ui/dungeon_armory.png';
+        const img = exp.image_file ? `/static/images/ui/${exp.image_file}` : '/static/images/ui/dungeon_armory.webp';
         let drops = '';
         if (exp.drops) {
             const parts = exp.drops.split(',').map(p => p.trim()).filter(Boolean);
@@ -1602,14 +1602,14 @@ async function updateAllUsers() {
     towerSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
+        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.webp'}" alt="${u.username}">`;
         div.innerHTML = `${img}${idx + 1}. ${u.username} - Floor ${u.current_stage}`;
         towerScoresContainer.appendChild(div);
     });
     dungeonSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.png'}" alt="${u.username}">`;
+        const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.webp'}" alt="${u.username}">`;
         div.innerHTML = `${img}${idx + 1}. ${u.username} - Runs ${u.dungeon_runs}`;
         dungeonScoresContainer.appendChild(div);
     });
@@ -1926,7 +1926,7 @@ function updateTeamDisplay() {
             const stats = getScaledStats(member);
             slot.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${member.rarity.toLowerCase()}">[${member.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${member.image_file}" alt="${member.name}"><h4>${member.name}</h4><p>ATK: ${stats.atk} | HP: ${stats.hp}</p><p>Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</p>`;
         } else {
-            slot.innerHTML = `<img src="/static/images/ui/placeholder_char.png" alt="Empty"><h4>Empty Slot</h4>`;
+            slot.innerHTML = `<img src="/static/images/ui/placeholder_char.webp" alt="Empty"><h4>Empty Slot</h4>`;
         }
         teamDisplayContainer.appendChild(slot);
     }
@@ -1992,18 +1992,18 @@ function updateCampaignDisplay() {
         const stageItem = document.createElement('div');
         stageItem.className = 'stage-item';
 
-        let iconPath = '/static/images/ui/stage_node_locked.png';
+        let iconPath = '/static/images/ui/stage_node_locked.webp';
         let titleHTML = `<h3>Tower Floor ${stageNum}</h3>`;
         let descriptionHTML = '';
         let buttonHTML = '';
 
         if (status === 'farmable') {
-            iconPath = '/static/images/ui/stage_node_cleared.png';
+            iconPath = '/static/images/ui/stage_node_cleared.webp';
             const rewards = calculateTowerRewards(stageNum, false);
             descriptionHTML = `<p class="stage-reward repeat"><i class="fa-solid fa-gem currency-icon"></i> Farm this floor for a small reward.</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Fight Again (+${rewards.gems} Gems)</button>`;
         } else if (status === 'current') {
-            iconPath = '/static/images/ui/stage_node_current.png';
+            iconPath = '/static/images/ui/stage_node_current.webp';
             const rewards = calculateTowerRewards(stageNum, true);
             descriptionHTML = `<p class="stage-reward"><i class="fa-solid fa-gem currency-icon"></i> First Clear Reward: ${rewards.gems}</p>`;
             buttonHTML = `<button class="fight-button" data-stage-num="${stageNum}">Challenge Floor</button>`;

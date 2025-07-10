@@ -55,7 +55,7 @@ def generate_enemy(level: int, archetype_key: str, concept: dict):
     stats['hp'] = round(stats['hp'] * (1 + (random.random() - 0.5) * 0.1))
     return {
         'name': f"{concept['name']} ({archetype['name']})",
-        'image': f"enemies/{concept.get('image_file', 'placeholder_enemy.png')}",
+        'image': f"enemies/{concept.get('image_file', 'placeholder_enemy.webp')}",
         'level': level,
         'element': concept.get('element', 'None'),
         'stats': stats,

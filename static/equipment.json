@@ -63,7 +63,7 @@
       "atk": 20,
       "crit_chance": 2
     },
-    "image_file": "hunters_bow.png",
+    "image_file": "hunters_bow.webp",
     "code": "IT007"
   },
   {
@@ -73,7 +73,7 @@
     "stat_bonuses": {
       "hp": 80
     },
-    "image_file": "reinforced_buckler.png",
+    "image_file": "reinforced_buckler.webp",
     "code": "IT008"
   },
   {
@@ -84,7 +84,7 @@
       "atk": 45,
       "crit_damage": 0.1
     },
-    "image_file": "dwarven_battleaxe.png",
+    "image_file": "dwarven_battleaxe.webp",
     "code": "IT009"
   },
   {
@@ -95,7 +95,7 @@
       "hp": 150,
       "crit_chance": 3
     },
-    "image_file": "arcane_robe.png",
+    "image_file": "arcane_robe.webp",
     "code": "IT010"
   },
   {
@@ -107,7 +107,7 @@
       "crit_chance": 10,
       "crit_damage": 0.3
     },
-    "image_file": "phoenix_blade.png",
+    "image_file": "phoenix_blade.webp",
     "code": "IT011"
   },
   {
@@ -118,7 +118,7 @@
       "hp": 300,
       "crit_damage": 0.2
     },
-    "image_file": "dragon_scale_armor.png",
+    "image_file": "dragon_scale_armor.webp",
     "code": "IT012"
   }
 ]

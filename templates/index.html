@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Aethelgard Chronicles - Web Edition</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/ui/game_icon.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/ui/game_icon.webp') }}">
 
 
     <!-- Load JRPG styled font -->
@@ -46,7 +46,7 @@
                 <p data-i18n>The interface adapts to portrait mobile screens but works best on a larger display.</p>
             </div>
             <div class="login-container">
-                <img src="{{ url_for('static', filename='images/ui/game_logo.png') }}" alt="Game Logo" class="game-logo">
+                <img src="{{ url_for('static', filename='images/ui/game_logo.webp') }}" alt="Game Logo" class="game-logo">
                 <div class="form-box">
                 <input type="text" id="username-input" placeholder="Username">
                 <input type="password" id="password-input" placeholder="Password">
@@ -80,7 +80,7 @@
         <!-- TOP BAR: Player Info -->
         <div id="top-bar">
             <div id="player-info">
-                <img id="user-icon" src="{{ url_for('static', filename='images/ui/placeholder_char.png') }}" alt="User Icon" class="user-icon clickable">
+                <img id="user-icon" src="{{ url_for('static', filename='images/ui/placeholder_char.webp') }}" alt="User Icon" class="user-icon clickable">
                 <span id="player-name" class="clickable"></span>
                 <button id="logout-button">Logout</button>
             </div>
@@ -114,7 +114,7 @@
                     <button class="tutorial-btn" data-tutorial="This home screen shows your active team and important progress information.">?</button>
                 </div>
                 <div class="daily-gift" id="gem-gift">
-                    <img src="{{ url_for('static', filename='images/ui/chest.png') }}" alt="Chest" />
+                    <img src="{{ url_for('static', filename='images/ui/chest.webp') }}" alt="Chest" />
                     <button id="gem-gift-button" class="gift-btn" data-i18n>Claim 50 Gems<span class="red-dot"></span></button>
                     <span id="gem-gift-timer"></span>
                 </div>
@@ -207,7 +207,7 @@
                     <button class="tutorial-btn" data-tutorial="Purchase Platinum or energy here. Transactions are verified server-side.">?</button>
                 </div>
                 <div class="daily-gift" id="platinum-gift">
-                    <img src="{{ url_for('static', filename='images/ui/chest.png') }}" alt="Chest" />
+                    <img src="{{ url_for('static', filename='images/ui/chest.webp') }}" alt="Chest" />
                     <button id="platinum-gift-button" class="gift-btn" data-i18n>Daily Platinum Chest<span class="red-dot"></span></button>
                     <span id="platinum-gift-timer"></span>
                 </div>
@@ -251,7 +251,7 @@
         <!-- Column 2: The Tower Image -->
         <!-- We give it the 'dungeon-image-container' class to inherit its styling -->
         <div class="dungeon-image-container" id="tower-art-wrapper">
-            <img src="{{ url_for('static', filename='images/ui/tower_art.png') }}" alt="The Spire">
+            <img src="{{ url_for('static', filename='images/ui/tower_art.webp') }}" alt="The Spire">
         </div>
 
     </div>

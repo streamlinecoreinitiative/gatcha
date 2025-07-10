@@ -199,6 +199,14 @@ def init_db():
             expires INTEGER NOT NULL
         )
     ''')
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS email_confirmations (
+            token TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            expires INTEGER NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -895,15 +903,9 @@ def update_store_price(package_id, price):
 
 def create_password_reset(email, new_password):
     token = secrets.token_urlsafe(16)
-    expires = int(time.time()) + 3600
-    conn = get_db_connection()
-    conn.execute(
-        'INSERT INTO password_resets (token, email, new_password, expires) VALUES (?, ?, ?, ?)',
-        (token, email, new_password, expires)
-    )
-    conn.commit()
-    conn.close()
-    return token
+        expires = int(time.time()) + 86400  # Token valid for 24 hours
+        cursor.execute("INSERT INTO email_confirmations (token, user_id, expires) VALUES (?, ?, ?)",
+                       (token, user_id, expires))
 
 def pop_password_reset(token):
     conn = get_db_connection()
@@ -914,6 +916,19 @@ def pop_password_reset(token):
         conn.close()
         if row['expires'] >= int(time.time()):
             return row['email'], row['new_password']
+    else:
+        conn.close()
+    return None
+
+def pop_email_confirmation(token):
+    conn = get_db_connection()
+    row = conn.execute('SELECT user_id, expires FROM email_confirmations WHERE token = ?', (token,)).fetchone()
+    if row:
+        conn.execute('DELETE FROM email_confirmations WHERE token = ?', (token,))
+        conn.commit()
+        conn.close()
+        if row['expires'] >= int(time.time()):
+            return dict(row)
     else:
         conn.close()
     return None

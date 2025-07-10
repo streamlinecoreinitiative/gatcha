@@ -7,7 +7,7 @@
     "base_atk": 8,
     "crit_chance": 5,
     "crit_damage": 1.5,
-    "image_file": "goblin_scout.png",
+    "image_file": "goblin_scout.webp",
     "code": "EN001",
     "tier": 1
   },
@@ -19,7 +19,7 @@
     "base_atk": 12,
     "crit_chance": 10,
     "crit_damage": 1.6,
-    "image_file": "dire_wolf.png",
+    "image_file": "dire_wolf.webp",
     "code": "EN002",
     "tier": 1
   },
@@ -31,7 +31,7 @@
     "base_atk": 15,
     "crit_chance": 3,
     "crit_damage": 1.5,
-    "image_file": "orc_grunt.png",
+    "image_file": "orc_grunt.webp",
     "code": "EN003",
     "tier": 1
   },
@@ -43,7 +43,7 @@
     "base_atk": 18,
     "crit_chance": 12,
     "crit_damage": 1.7,
-    "image_file": "harpy.png",
+    "image_file": "harpy.webp",
     "code": "EN004",
     "tier": 1
   },
@@ -55,7 +55,7 @@
     "base_atk": 25,
     "crit_chance": 8,
     "crit_damage": 1.6,
-    "image_file": "ogre_brute.png",
+    "image_file": "ogre_brute.webp",
     "code": "EN005",
     "tier": 2
   },
@@ -67,7 +67,7 @@
     "base_atk": 30,
     "crit_chance": 5,
     "crit_damage": 2.0,
-    "image_file": "enemy_wisp.png",
+    "image_file": "enemy_wisp.webp",
     "code": "EN006",
     "tier": 2
   },
@@ -79,7 +79,7 @@
     "base_atk": 28,
     "crit_chance": 15,
     "crit_damage": 1.8,
-    "image_file": "enemy_creeper.png",
+    "image_file": "enemy_creeper.webp",
     "code": "EN007",
     "tier": 2
   },
@@ -91,7 +91,7 @@
     "base_atk": 40,
     "crit_chance": 10,
     "crit_damage": 1.7,
-    "image_file": "enemy_golem.png",
+    "image_file": "enemy_golem.webp",
     "code": "EN008",
     "tier": 3
   },
@@ -103,7 +103,7 @@
     "base_atk": 50,
     "crit_chance": 12,
     "crit_damage": 2.0,
-    "image_file": "enemy_behemoth.png",
+    "image_file": "enemy_behemoth.webp",
     "code": "EN009",
     "tier": 3
   },
@@ -115,7 +115,7 @@
     "base_atk": 80,
     "crit_chance": 20,
     "crit_damage": 2.5,
-    "image_file": "void_dragon.png",
+    "image_file": "void_dragon.webp",
     "code": "EN010",
     "tier": 4
   },
@@ -127,7 +127,7 @@
     "base_atk": 100,
     "crit_chance": 22,
     "crit_damage": 2.8,
-    "image_file": "frost_revenant.png",
+    "image_file": "frost_revenant.webp",
     "code": "EN011",
     "tier": 5
   },
@@ -139,7 +139,7 @@
     "base_atk": 110,
     "crit_chance": 18,
     "crit_damage": 2.6,
-    "image_file": "infernal_minotaur.png",
+    "image_file": "infernal_minotaur.webp",
     "code": "EN012",
     "tier": 5
   },
@@ -151,7 +151,7 @@
     "base_atk": 130,
     "crit_chance": 20,
     "crit_damage": 3.0,
-    "image_file": "ancient_treant.png",
+    "image_file": "ancient_treant.webp",
     "code": "EN013",
     "tier": 6
   },
@@ -163,7 +163,7 @@
     "base_atk": 150,
     "crit_chance": 25,
     "crit_damage": 3.2,
-    "image_file": "storm_leviathan.png",
+    "image_file": "storm_leviathan.webp",
     "code": "EN014",
     "tier": 6
   },
@@ -175,7 +175,7 @@
     "base_atk": 180,
     "crit_chance": 30,
     "crit_damage": 3.5,
-    "image_file": "abyssal_overlord.png",
+    "image_file": "abyssal_overlord.webp",
     "code": "EN015",
     "tier": 7
   },
@@ -187,7 +187,7 @@
     "base_atk": 10,
     "crit_chance": 6,
     "crit_damage": 1.4,
-    "image_file": "skeleton_archer.png",
+    "image_file": "skeleton_archer.webp",
     "code": "EN016",
     "tier": 1
   },
@@ -199,7 +199,7 @@
     "base_atk": 14,
     "crit_chance": 12,
     "crit_damage": 1.7,
-    "image_file": "bandit_rogue.png",
+    "image_file": "bandit_rogue.webp",
     "code": "EN017",
     "tier": 1
   },
@@ -211,7 +211,7 @@
     "base_atk": 22,
     "crit_chance": 8,
     "crit_damage": 1.6,
-    "image_file": "lizardman_spear.png",
+    "image_file": "lizardman_spear.webp",
     "code": "EN018",
     "tier": 2
   },
@@ -223,7 +223,7 @@
     "base_atk": 26,
     "crit_chance": 10,
     "crit_damage": 1.5,
-    "image_file": "stone_guardian.png",
+    "image_file": "stone_guardian.webp",
     "code": "EN019",
     "tier": 2
   },
@@ -235,7 +235,7 @@
     "base_atk": 38,
     "crit_chance": 10,
     "crit_damage": 1.9,
-    "image_file": "blood_elemental.png",
+    "image_file": "blood_elemental.webp",
     "code": "EN020",
     "tier": 3
   },
@@ -247,7 +247,7 @@
     "base_atk": 70,
     "crit_chance": 18,
     "crit_damage": 2.4,
-    "image_file": "bone_hydra.png",
+    "image_file": "bone_hydra.webp",
     "code": "EN021",
     "tier": 4
   },
@@ -259,7 +259,7 @@
     "base_atk": 105,
     "crit_chance": 20,
     "crit_damage": 2.7,
-    "image_file": "ice_kraken.png",
+    "image_file": "ice_kraken.webp",
     "code": "EN022",
     "tier": 5
   },
@@ -271,7 +271,7 @@
     "base_atk": 140,
     "crit_chance": 24,
     "crit_damage": 3.1,
-    "image_file": "sand_wyrm.png",
+    "image_file": "sand_wyrm.webp",
     "code": "EN023",
     "tier": 6
   },
@@ -283,7 +283,7 @@
     "base_atk": 160,
     "crit_chance": 26,
     "crit_damage": 3.3,
-    "image_file": "phoenix_lord.png",
+    "image_file": "phoenix_lord.webp",
     "code": "EN024",
     "tier": 6
   },
@@ -295,7 +295,7 @@
     "base_atk": 200,
     "crit_chance": 35,
     "crit_damage": 3.8,
-    "image_file": "celestial_colossus.png",
+    "image_file": "celestial_colossus.webp",
     "code": "EN025",
     "tier": 7
   }
