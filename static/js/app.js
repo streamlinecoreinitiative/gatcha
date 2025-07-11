@@ -2056,9 +2056,10 @@ async function startBattle(fightResult) {
     retryButton.style.display = 'none';
 
     const startEntry = fightResult.log[0];
+    const isDungeonBattle = startEntry.message.startsWith('Dungeon:') || startEntry.message.startsWith('Expedition:');
     // This parsing is fine for getting the name for the enemy card title.
-    const enemyName = startEntry.message.split('faces a ')[1]?.split('!')[0].trim().split(' ').slice(1).join(' ') || 'Unknown Enemy';
-    const enemyImage = startEntry.enemy_image;
+    let enemyName = startEntry.message.split('faces a ')[1]?.split('!')[0].trim().split(' ').slice(1).join(' ') || 'Unknown Enemy';
+    let enemyImage = startEntry.enemy_image;
 
     const maxTeamHP = gameState.team.reduce((total, member) => {
         if (!member) return total;
@@ -2067,7 +2068,7 @@ async function startBattle(fightResult) {
         return total + stats.hp;
     }, 0);
     const firstPlayerAttack = fightResult.log.find(e => e.type === 'player_attack');
-    const maxEnemyHP = firstPlayerAttack ? firstPlayerAttack.enemy_hp + firstPlayerAttack.damage : 100;
+    let maxEnemyHP = firstPlayerAttack ? firstPlayerAttack.enemy_hp + firstPlayerAttack.damage : 100;
 
     gameState.team.forEach(member => {
         if (!member) return;
@@ -2110,8 +2111,19 @@ async function startBattle(fightResult) {
     await delay(1000);
 
     // Loop through the rest of the log entries
-    for (const entry of fightResult.log.slice(1)) {
+    for (let i = 1; i < fightResult.log.length; i++) {
+        const entry = fightResult.log[i];
         switch (entry.type) {
+            case 'start':
+                enemyName = entry.message.split('faces a ')[1]?.split('!')[0].trim().split(' ').slice(1).join(' ') || 'Unknown Enemy';
+                enemyImage = entry.enemy_image;
+                const nextAtk = fightResult.log.slice(i + 1).find(e => e.type === 'player_attack');
+                maxEnemyHP = nextAtk ? nextAtk.enemy_hp + nextAtk.damage : maxEnemyHP;
+                enemyDisplayContainer.innerHTML = `<div class="team-slot"><img src="/static/images/${enemyImage}" alt="${enemyName}"><h4>${enemyName}</h4></div>`;
+                updateHealthBar(enemyHpBar, enemyHpText, maxEnemyHP, maxEnemyHP);
+                addLogMessage(entry.message, 'info', entry.element);
+                await delay(1000);
+                break;
             case 'player_attack':
                 // --- THIS IS THE FIX ---
                 // We create a new message that combines the server data for clarity.
@@ -2131,6 +2143,9 @@ async function startBattle(fightResult) {
                 await delay(750);
                 document.getElementById('battle-player-side').classList.remove('attack-effect');
                 break;
+            case 'level_complete':
+                addLogMessage(entry.message, 'info');
+                break;
             case 'end':
                 // The 'end' entry from the server already has a good message.
                 addLogMessage(entry.message, fightResult.victory ? 'victory' : 'defeat');
@@ -2143,7 +2158,9 @@ async function startBattle(fightResult) {
                 }
                 returnButton.style.display = 'block';
                 if (fightResult.victory) {
-                    nextButton.style.display = 'block';
+                    if (!isDungeonBattle) {
+                        nextButton.style.display = 'block';
+                    }
                 } else {
                     retryButton.style.display = 'block';
                 }
