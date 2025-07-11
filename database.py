@@ -902,10 +902,18 @@ def update_store_price(package_id, price):
     conn.close()
 
 def create_password_reset(email, new_password):
+    """Create a password reset token and store the pending password."""
     token = secrets.token_urlsafe(16)
-        expires = int(time.time()) + 86400  # Token valid for 24 hours
-        cursor.execute("INSERT INTO email_confirmations (token, user_id, expires) VALUES (?, ?, ?)",
-                       (token, user_id, expires))
+    expires = int(time.time()) + 86400  # Token valid for 24 hours
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO password_resets (token, email, new_password, expires) VALUES (?, ?, ?, ?)",
+        (token, email, new_password, expires),
+    )
+    conn.commit()
+    conn.close()
+    return token
 
 def pop_password_reset(token):
     conn = get_db_connection()
