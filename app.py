@@ -29,7 +29,15 @@ def load_all_definitions(file_path):
 import config
 
 app = Flask(__name__)
-app.config.from_object(config)
+if hasattr(app.config, "from_object"):
+    app.config.from_object(config)
+else:
+    # When running in a minimal test environment the config object may be
+    # a simple dict without `from_object`. In that case update the dict
+    # directly with uppercase attributes from the config module.
+    for key in dir(config):
+        if key.isupper():
+            app.config[key] = getattr(config, key)
 socketio = SocketIO(app)
 db.init_db()
 paypal_conf = db.get_paypal_config()
@@ -430,13 +438,22 @@ def get_scaled_character_stats(character):
 
 
 # --- CORE ROUTES ---
-@app.errorhandler(404)
-def not_found_error(error):
-    return jsonify({'success': False, 'message': 'Resource not found'}), 404
+if hasattr(app, "errorhandler"):
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return jsonify({'success': False, 'message': 'Resource not found'}), 404
 
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({'success': False, 'message': 'Internal server error'}), 500
+    @app.errorhandler(500)
+    def internal_error(error):
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+else:
+    # In the stripped down test environment DummyFlask won't implement error handlers.
+    # Define no-op versions so imports succeed.
+    def not_found_error(error):
+        return {'success': False, 'message': 'Resource not found'}, 404
+
+    def internal_error(error):
+        return {'success': False, 'message': 'Internal server error'}, 500
 
 @app.route('/')
 def index(): return render_template('index.html')
