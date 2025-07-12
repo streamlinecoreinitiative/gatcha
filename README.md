@@ -49,3 +49,40 @@ Admins may configure SMTP credentials from the **Admin Panel**. Enter the host, 
 ## Database Configuration
 
 The application can use either the bundled SQLite file or a PostgreSQL database. To connect to PostgreSQL set the `DATABASE_URL` environment variable to your connection string before starting the app. When `DATABASE_URL` is present the code connects using `psycopg2`; otherwise it falls back to `database.db`.
+
+## Installation
+
+1. Create and activate a Python 3 virtual environment:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+2. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Running the Game
+
+Run the development server locally with:
+```bash
+python local_run.py
+```
+The app listens on port `5000` by default. For production deployments you can run
+`gunicorn --worker-class eventlet -w 1 app:app` or any WSGI server of your choice.
+
+### Environment Variables
+
+- `SECRET_KEY` – used for Flask session security. A random key is generated if not set.
+- `DATABASE_URL` – PostgreSQL connection string. Omit to use the bundled SQLite database.
+
+## Tests
+
+Run `pytest` to execute the unit tests:
+```bash
+pytest
+```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
