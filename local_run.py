@@ -12,7 +12,7 @@ if __name__ == '__main__':
     print("==============================================")
 
     # The 'host="0.0.0.0"' part makes the server accessible
-    # from other devices on your local network (e.g., your phone).
+# from other devices on your local network (e.g., your phone).
     # Use 'localhost' or '127.0.0.1' to keep it just on your computer.
     # The 'allow_unsafe_werkzeug=True' is sometimes needed for newer SocketIO versions
     # to work with Flask's debug reloader.
