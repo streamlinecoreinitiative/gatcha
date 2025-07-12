@@ -15,17 +15,8 @@ import database as db
 import string
 import secrets
 from balance import generate_enemy, calculate_item_power
+from helpers import load_all_definitions, send_email
 from werkzeug.utils import secure_filename
-
-
-def load_all_definitions(file_path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        raise FileNotFoundError(f"FATAL ERROR: {os.path.basename(file_path)} is missing or corrupted!")
-
-
 import config
 
 app = Flask(__name__)
@@ -46,6 +37,14 @@ paypalrestsdk.configure({
     'client_id': paypal_conf.get('client_id'),
     'client_secret': paypal_conf.get('client_secret')
 })
+from blueprints.auth import auth_bp
+from blueprints.admin import admin_bp
+from blueprints.game import game_bp, fight_dungeon as dungeon_fight
+if hasattr(app, 'register_blueprint'):
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(game_bp)
+fight_dungeon = dungeon_fight
 
 import threading
 
@@ -71,6 +70,8 @@ if hasattr(app, 'before_request'):
 
 # Base URL for links in emails
 BASE_URL = os.getenv('BASE_URL', 'https://towerchronicles.xyz')
+app.config['BASE_URL'] = BASE_URL
+EMAIL_CONFIRMATIONS = {}
 
 # --- DATA LOADING & CONFIG ---
 BASE_DIR = os.path.dirname(__file__)
@@ -87,6 +88,10 @@ available_rarities = sorted({c['rarity'] for c in character_definitions}, key=la
 gacha_pool = {rarity: [c for c in character_definitions if c['rarity'] == rarity] for rarity in available_rarities}
 app.config['PULL_COST'] = 150
 app.config['SSR_PITY_THRESHOLD'] = 90
+app.config['CHARACTER_DEFINITIONS'] = character_definitions
+app.config['ENEMY_DEFINITIONS'] = enemy_definitions
+app.config['EQUIPMENT_DEFINITIONS'] = equipment_definitions
+app.config['GACHA_POOL'] = gacha_pool
 online_users = {}
 app.config['ONLINE_TIMEOUT'] = 300  # seconds
 
@@ -169,30 +174,6 @@ def refresh_store_prices():
             pkg['price'] = prices[pkg['id']]
 
 refresh_store_prices()
-
-# Simple email helper - attempts SMTP then falls back to logging
-def send_email(to_addr, subject, body):
-    """Send an email using SMTP credentials stored in the database."""
-    conf = db.get_email_config()
-    smtp_host = conf.get('host') or os.getenv('SMTP_HOST')
-    smtp_port = int(conf.get('port') or os.getenv('SMTP_PORT') or 587)
-    smtp_user = conf.get('username') or os.getenv('SMTP_USER')
-    smtp_pass = conf.get('password') or os.getenv('SMTP_PASSWORD')
-    from_addr = smtp_user or 'no-reply@towerchronicles.xyz'
-    try:
-        if smtp_host:
-            import smtplib
-            with smtplib.SMTP(smtp_host, smtp_port) as server:
-                server.starttls()
-                if smtp_user and smtp_pass:
-                    server.login(smtp_user, smtp_pass)
-                msg = f"From: {from_addr}\r\nTo: {to_addr}\r\nSubject: {subject}\r\n\r\n{body}"
-                server.sendmail(from_addr, [to_addr], msg)
-    except Exception as e:
-        print(f"Failed to send email: {e}")
-    finally:
-        with open('sent_emails.log', 'a', encoding='utf-8') as f:
-            f.write(f"TO: {to_addr}\nSUBJECT: {subject}\n{body}\n---\n")
 
 # Password reset tokens stored in DB
 # In-memory store for pending email confirmations {token: user_id}
@@ -483,268 +464,8 @@ def get_bug_link():
 
 
 
-@app.route('/tos')
-def terms_of_service():
-    """Display the Terms of Service page."""
-    return render_template('tos.html')
 
 
-@app.route('/api/register', methods=['POST'])
-def register():
-    data = request.json
-    email = data.get('email', '')
-    password = data.get('password', '')
-    if not data.get('accepted_tos'):
-        return jsonify({'success': False, 'message': 'Terms must be accepted'})
-    if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
-        return jsonify({'success': False, 'message': 'Invalid email format'})
-    if db.email_exists(email):
-        return jsonify({'success': False, 'message': 'Email already registered'})
-    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,}$', password):
-        return jsonify({'success': False, 'message': 'Password must be at least 10 characters with letters and numbers'})
-    # Choose a random character portrait as the default profile image
-    available_images = [c.get('image_file') for c in character_definitions if c.get('image_file')]
-    default_image = random.choice(available_images) if available_images else None
-    result = db.register_user(data.get('username'), email, password, profile_image=default_image)
-    if result == "Success":
-        user_id = db.get_user_id(data.get('username'))
-        token = secrets.token_urlsafe(16)
-        EMAIL_CONFIRMATIONS[token] = user_id
-        confirm_link = BASE_URL.rstrip('/') + '/confirm_email/' + token
-        username = data.get('username')
-        send_email(
-            email,
-            "Confirm Your Registration",
-            f"Hello {username},\n\nPlease confirm your account by visiting: {confirm_link}",
-        )
-        return jsonify({'success': True, 'message': 'Registration successful. A confirmation email was sent, but you can log in now.'})
-    return jsonify({'success': False, 'message': result})
-
-
-@app.route('/api/login', methods=['POST'])
-def login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    user_id, confirmed = db.login_user(username, password)
-    if user_id:
-        session['logged_in'] = True
-        session['username'] = username
-        session['user_id'] = user_id
-        message = ''
-        if not confirmed:
-            message = 'Please confirm your email to unlock all features.'
-        return jsonify({'success': True, 'message': message})
-    else:
-        return jsonify({'success': False, 'message': 'Invalid username or password.'})
-
-
-@app.route('/api/logout', methods=['POST'])
-def logout():
-    session.clear()
-    return jsonify({'success': True})
-
-
-@app.route('/api/forgot_password', methods=['POST'])
-def forgot_password():
-    data = request.json or {}
-    email = data.get('email', '')
-    if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
-        return jsonify({'success': False, 'message': 'Invalid email format'})
-    if not db.email_exists(email):
-        return jsonify({'success': False, 'message': 'Email not found'})
-    new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-    token = db.create_password_reset(email, new_password)
-    username = db.get_username_by_email(email) or ''
-    confirm_link = BASE_URL.rstrip('/') + '/confirm_reset/' + token
-    send_email(email, 'Confirm Password Reset', f'Hello {username},\n\nPlease confirm your reset by visiting: {confirm_link}')
-    return jsonify({'success': True, 'message': 'Confirmation email sent'})
-
-
-@app.route('/confirm_reset/<token>')
-def confirm_reset(token):
-    info = db.pop_password_reset(token)
-    if not info:
-        return 'Invalid or expired token.', 400
-    email, new_password = info
-    db.reset_password(email, new_password)
-    username = db.get_username_by_email(email) or ''
-    send_email(email, 'Your New Password', f'Hello {username},\n\nYour new password is: {new_password}')
-    return 'Password reset. Check your email for the new password.'
-
-
-@app.route('/confirm_email/<token>')
-def confirm_email(token):
-    info = db.pop_email_confirmation(token)
-    if not info:
-        return 'Invalid or expired token.', 400
-    user_id = info['user_id']
-    if not user_id:
-        return 'Invalid or expired token.', 400
-    db.update_user_profile(user_id, email_confirmed=True)
-    return 'Email confirmed. You can now log in.'
-
-
-@app.route('/api/update_profile', methods=['POST'])
-def update_profile():
-    if not session.get('logged_in'):
-        return jsonify({'success': False}), 401
-    data = request.json or {}
-    email = data.get('email')
-    profile_image = data.get('profile_image')
-    db.update_user_profile(session['user_id'], email=email, profile_image=profile_image)
-    return jsonify({'success': True})
-
-
-@app.route('/api/change_password', methods=['POST'])
-def change_password():
-    if not session.get('logged_in'):
-        return jsonify({'success': False}), 401
-    data = request.json or {}
-    current_password = data.get('current_password', '')
-    new_password = data.get('new_password', '')
-    confirm_password = data.get('confirm_password', '')
-    if not current_password or not new_password or not confirm_password:
-        return jsonify({'success': False, 'message': 'All password fields required'})
-    if not db.verify_user_password(session['user_id'], current_password):
-        return jsonify({'success': False, 'message': 'Current password incorrect'})
-    if new_password != confirm_password:
-        return jsonify({'success': False, 'message': 'Passwords do not match'})
-    if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{10,}$', new_password):
-        return jsonify({'success': False, 'message': 'Password must be at least 10 characters with letters and numbers'})
-    db.update_user_profile(session['user_id'], password=new_password)
-    return jsonify({'success': True})
-
-
-@app.route('/api/delete_account', methods=['POST'])
-def delete_account():
-    if not session.get('logged_in'):
-        return jsonify({'success': False}), 401
-    user_id = session['user_id']
-    db.delete_user(user_id)
-    session.clear()
-    return jsonify({'success': True})
-
-
-@app.route('/api/player_data', methods=['GET'])
-def get_player_data():
-    if not session.get('logged_in'): return jsonify({'success': False}), 401
-    user_id = session['user_id']
-    player_data = db.get_player_data(user_id)
-    profile = db.get_user_profile(user_id)
-    player_team = db.get_player_team(user_id, character_definitions)
-    full_data = {
-        'username': session.get('username'),
-        'gems': player_data['gems'],
-        'premium_gems': player_data.get('premium_gems', 0),
-        'energy': player_data.get('energy', 0),
-        'dungeon_energy': player_data.get('dungeon_energy', 0),
-        'gold': player_data.get('gold', 0),
-        'pity_counter': player_data.get('pity_counter', 0),
-        'current_stage': player_data['current_stage'],
-        'dungeon_runs': player_data.get('dungeon_runs', 0),
-        'team': player_team,
-        'collection': player_data['collection'],
-        'is_admin': profile.get('is_admin', 0),
-        'profile_image': profile.get('profile_image'),
-        'email': profile.get('email'),
-        'user_id': user_id,
-        'energy_last': player_data.get('energy_last'),
-        'dungeon_last': player_data.get('dungeon_last'),
-        'free_last': player_data.get('free_last'),
-        'gem_gift_last': player_data.get('gem_gift_last'),
-        'platinum_last': player_data.get('platinum_last'),
-        'energy_cap': player_data.get('energy_cap', 10),
-        'dungeon_cap': player_data.get('dungeon_cap', 5),
-        'energy_regen': player_data.get('energy_regen', 300),
-        'dungeon_regen': player_data.get('dungeon_regen', 900)
-    }
-    return jsonify({'success': True, 'data': full_data})
-
-
-@app.route('/api/all_users')
-def all_users():
-    users = db.get_all_users_with_runs()
-    return jsonify({'success': True, 'users': users})
-
-@app.route('/api/top_player')
-def top_player():
-    player = db.get_top_player()
-    return jsonify({'success': True, 'player': player})
-
-
-@app.route('/api/admin/user_action', methods=['POST'])
-def admin_user_action():
-    if not session.get('logged_in'):
-        return jsonify({'success': False}), 401
-    if not db.is_user_admin(session['user_id']):
-        return jsonify({'success': False, 'message': 'Not authorized'}), 403
-    data = request.json or {}
-    username = data.get('username')
-    action = data.get('action')
-    target_id = db.get_user_id(username) if username else None
-    if action == 'ban' or action == 'unban':
-        if not username:
-            return jsonify({'success': False, 'message': 'Username is required for ban/unban'}), 400
-        db.ban_user(target_id, True if action == 'ban' else False)
-    elif action == 'grant':
-        if not username:
-            return jsonify({'success': False, 'message': 'Username is required for grant'}), 400
-        gems = data.get('gems')
-        energy = data.get('energy')
-        premium_gems = data.get('platinum')
-        gold = data.get('gold')
-        if not any([gems, energy, premium_gems, gold]):
-            return jsonify({'success': False, 'message': 'At least one resource (gems, energy, platinum, gold) must be provided for grant'}), 400
-        db.adjust_resources(target_id, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
-    elif action == 'grant_all':
-        gems = data.get('gems')
-        energy = data.get('energy')
-        premium_gems = data.get('platinum')
-        gold = data.get('gold')
-        if not any([gems, energy, premium_gems, gold]):
-            return jsonify({'success': False, 'message': 'At least one resource (gems, energy, platinum, gold) must be provided for grant_all'}), 400
-        for uid in db.get_all_user_ids():
-            db.adjust_resources(uid, gems=gems, energy=energy, premium_gems=premium_gems, gold=gold)
-    elif action == 'give_item':
-        if not username:
-            return jsonify({'success': False, 'message': 'Username is required for give_item'}), 400
-        item_code = data.get('item_code')
-        if not item_code:
-            return jsonify({'success': False, 'message': 'Item code is required for give_item'}), 400
-        item_def = next((i for i in equipment_definitions if i.get('code') == item_code or i['name'] == item_code), None)
-        if not item_def:
-            return jsonify({'success': False, 'message': 'Item not found'}), 404
-        db.give_equipment_to_player(target_id, item_def)
-    elif action == 'give_item_all':
-        item_code = data.get('item_code')
-        if not item_code:
-            return jsonify({'success': False, 'message': 'Item code is required for give_item_all'}), 400
-        item_def = next((i for i in equipment_definitions if i.get('code') == item_code or i['name'] == item_code), None)
-        if not item_def:
-            return jsonify({'success': False, 'message': 'Item not found'}), 404
-        for uid in db.get_all_user_ids():
-            db.give_equipment_to_player(uid, item_def)
-    elif action == 'add_hero':
-        if not username:
-            return jsonify({'success': False, 'message': 'Username is required for add_hero'}), 400
-        char_name = data.get('character_name')
-        if not char_name:
-            return jsonify({'success': False, 'message': 'Character name is required for add_hero'}), 400
-        char_def = next((c for c in character_definitions if c['name'] == char_name), None)
-        if not char_def:
-            return jsonify({'success': False, 'message': 'Character not found'}), 404
-        db.add_character_to_player(target_id, char_def)
-    elif action == 'remove_hero':
-        if not username:
-            return jsonify({'success': False, 'message': 'Username is required for remove_hero'}), 400
-        char_id = data.get('character_id')
-        if not char_id:
-            return jsonify({'success': False, 'message': 'Character ID is required for remove_hero'}), 400
-        db.remove_character(target_id, char_id)
-    else:
-        return jsonify({'success': False, 'message': 'Invalid action'}), 400
-    return jsonify({'success': True})
 
 
 @app.route('/api/store_items')
@@ -1412,199 +1133,6 @@ def fight():
 
 
 # --- PILLAR 2: DUNGEONS ---
-@app.route('/api/fight_dungeon', methods=['POST'])
-def fight_dungeon():
-    if not session.get('logged_in'):
-        return jsonify({'success': False, 'message': 'Not logged in'}), 401
-    user_id = session['user_id']
-    team = db.get_player_team(user_id, character_definitions)
-    if not any(team):
-        return jsonify({'success': False, 'message': 'Your team is empty!'})
-
-    try:
-        player_data = db.get_player_data(user_id)
-        if player_data['dungeon_energy'] <= 0:
-            return jsonify({'success': False, 'message': 'No dungeon energy left.'})
-        db.consume_dungeon_energy(user_id)
-
-        data = request.get_json(silent=True) or {}
-        exp_id = data.get('expedition_id') or request.form.get('expedition_id') or request.args.get('expedition_id')
-        try:
-            exp_id = int(exp_id) if exp_id is not None else None
-        except ValueError:
-            exp_id = None
-        expedition = None
-
-        if exp_id:
-            expedition = db.get_expedition(int(exp_id))
-            if not expedition or not expedition['levels']:
-                return jsonify({'success': False, 'message': 'Invalid expedition'}), 400
-            level_list = expedition['levels']
-        else:
-            ARMORY_FIXED_LEVEL = 40
-            concept = random.choice(enemy_definitions)
-            dungeon_archetype = random.choice(["standard", "tank", "glass_cannon", "swift"])
-            enemy = generate_enemy(ARMORY_FIXED_LEVEL, dungeon_archetype, concept)
-            level_list = [{'enemy_obj': enemy, 'level': enemy['level']}]
-
-        if player_data is None:
-            session.clear()
-            return jsonify({'success': False, 'message': 'Player data not found. Please log in again.'}), 500
-
-        combat_log = []
-        looted_item = None
-        gold_won = 0
-        victory = True
-
-        team_stats = None
-        team_hp = None
-        cleared_levels = 0
-
-        available_attackers = [get_scaled_character_stats(c) for c in team if c]
-        available_attackers = [a for a in available_attackers if a]
-        available_attackers.sort(key=lambda h: h['atk'], reverse=True)
-        attacker_index = 0
-
-        for idx, lvl in enumerate(level_list):
-            if exp_id:
-                enemy_id = lvl['enemy']
-                concept = next((e for e in enemy_definitions if e.get('code') == enemy_id or e.get('name') == enemy_id), None)
-                if not concept:
-                    return jsonify({'success': False, 'message': 'Enemy not found'}), 404
-                enemy = {
-                    'name': concept['name'],
-                    'image': f"enemies/{concept.get('image_file', 'placeholder_enemy.webp')}",
-                    'level': 1,
-                    'element': concept.get('element', 'None'),
-                    'stats': {'hp': concept.get('base_hp', 100), 'atk': concept.get('base_atk', 10)},
-                    'crit_chance': concept.get('crit_chance', 0),
-                    'crit_damage': concept.get('crit_damage', 1.5),
-                }
-                enemy_level = 1
-            else:
-                enemy = lvl['enemy_obj']
-                enemy_level = enemy['level']
-
-            stats = calculate_fight_stats(team, enemy)
-            if team_stats is None:
-                team_stats = stats
-                team_hp = stats['team_hp']
-            else:
-                stats['team_hp'] = team_hp
-                stats['team_atk'] = team_stats['team_atk']
-                stats['team_crit_chance'] = team_stats['team_crit_chance']
-                stats['team_crit_damage'] = team_stats['team_crit_damage']
-                stats['team_elemental_multiplier'] = team_stats['team_elemental_multiplier']
-
-            enemy_hp = stats['enemy_hp']
-            enemy_image = enemy['image']
-            start_msg = ("Expedition:" if exp_id else "Dungeon:") + f" Level {idx+1}: Your team faces a {stats['enemy_element']} {enemy['name']}!"
-            combat_log.append({
-                'type': 'start',
-                'message': start_msg,
-                'enemy_image': enemy_image,
-                'element': stats['enemy_element']
-            })
-
-            while team_hp > 0 and enemy_hp > 0:
-                attacker = available_attackers[attacker_index % len(available_attackers)]
-                attacker_index += 1
-                player_damage = attacker['atk'] * random.uniform(0.8, 1.2) * stats['team_elemental_multiplier']
-                is_player_crit = random.random() * 100 < attacker['crit_chance']
-                if is_player_crit:
-                    player_damage *= attacker['crit_damage']
-                enemy_hp -= player_damage
-                enemy_hp = round(enemy_hp, 2)
-                combat_log.append({
-                    'type': 'player_attack',
-                    'crit': is_player_crit,
-                    'damage': int(player_damage),
-                    'enemy_hp': int(max(0, enemy_hp)),
-                    'element': attacker.get('element', 'None'),
-                    'attacker': attacker.get('name', 'Hero')
-                })
-                if enemy_hp <= 0:
-                    break
-
-                enemy_damage = stats['enemy_atk'] * random.uniform(0.8, 1.2)
-                is_enemy_crit = random.random() * 100 < stats['enemy_crit_chance']
-                if is_enemy_crit:
-                    enemy_damage *= stats['enemy_crit_damage']
-                team_hp -= enemy_damage
-                team_hp = round(team_hp, 2)
-                combat_log.append({'type': 'enemy_attack',
-                                   'crit': is_enemy_crit,
-                                   'damage': int(enemy_damage),
-                                   'team_hp': int(max(0, team_hp)),
-                                   'element': stats['enemy_element']})
-
-            if team_hp <= 0:
-                victory = False
-                combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
-                break
-            else:
-                cleared_levels += 1
-                combat_log.append({'type': 'level_complete', 'message': f"--- Cleared Level {idx+1} ---"})
-
-        if victory:
-            combat_log.append({'type': 'end', 'message': "--- VICTORY! ---"})
-            drop_handled = False
-            if exp_id and expedition and expedition.get('drops'):
-                for part in expedition['drops'].split(','):
-                    part = part.strip()
-                    if ':' not in part:
-                        continue
-                    code, chance_str = part.split(':', 1)
-                    try:
-                        chance = float(chance_str)
-                    except ValueError:
-                        continue
-                    if random.random() * 100 <= chance:
-                        item_def = next((i for i in equipment_definitions if i.get('code') == code or i['name'] == code), None)
-                        if item_def:
-                            item_power = calculate_item_power(enemy_level)
-                            looted_item = {
-                                'name': item_def['name'],
-                                'rarity': item_def['rarity'],
-                                'power': item_power
-                            }
-                            conn = db.get_db_connection()
-                            conn.execute(
-                                "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
-                                (user_id, looted_item['name'], looted_item['rarity'])
-                            )
-                            conn.commit()
-                            conn.close()
-                            drop_handled = True
-                            break
-            if not drop_handled and random.random() < 0.50:
-                looted_item_def = random.choice(equipment_definitions)
-                item_power = calculate_item_power(enemy_level)
-                looted_item = {
-                    'name': looted_item_def['name'],
-                    'rarity': looted_item_def['rarity'],
-                    'power': item_power
-                }
-                conn = db.get_db_connection()
-                conn.execute(
-                    "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
-                    (user_id, looted_item['name'], looted_item['rarity'])
-                )
-                conn.commit()
-                conn.close()
-
-        if victory:
-            db.increment_dungeon_runs(user_id)
-            player_data = db.get_player_data(user_id)
-            gold_won = 200
-            db.save_player_data(user_id, gold=player_data['gold'] + gold_won)
-
-        combat_log.append({'type': 'summary', 'message': f"Cleared {cleared_levels}/{len(level_list)} levels."})
-        refresh_online_progress(user_id)
-        return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': 0, 'gold_won': gold_won, 'looted_item': looted_item})
-    except Exception as e:
-        print('Error during dungeon fight:', e)
-        return jsonify({'success': False, 'message': 'Server error during dungeon fight.'}), 500
 
 
 # --- EQUIPMENT MANAGEMENT ---
