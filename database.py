@@ -800,7 +800,7 @@ def create_default_expeditions():
             'levels': ['EN001', 'EN002', 'EN003'],
             'description': 'A nuisance band of goblins threatens the village.',
             'drops': 'IT001:100',
-            'image_file': None,
+            'image_file': 'goblin_expedition.webp',
             'image_res': None,
         },
         {
@@ -808,7 +808,7 @@ def create_default_expeditions():
             'levels': ['EN016', 'EN017', 'EN018'],
             'description': 'Bandits and lizardmen prowl the roads.',
             'drops': 'IT007:50,IT008:50',
-            'image_file': None,
+            'image_file': 'bandits.webp',
             'image_res': None,
         },
         {
@@ -816,7 +816,7 @@ def create_default_expeditions():
             'levels': ['EN007', 'EN020', 'EN008'],
             'description': 'Dark creatures gather in the old ruins.',
             'drops': 'IT009:40,IT010:40',
-            'image_file': None,
+            'image_file': 'uorising.webp',
             'image_res': None,
         },
         {
@@ -824,7 +824,7 @@ def create_default_expeditions():
             'levels': ['EN010', 'EN012', 'EN022'],
             'description': 'Only the brave dare face these dragons.',
             'drops': 'IT011:25,IT012:25',
-            'image_file': None,
+            'image_file': 'dragon.webp',
             'image_res': None,
         },
         {
@@ -832,7 +832,7 @@ def create_default_expeditions():
             'levels': ['EN015', 'EN024', 'EN025'],
             'description': 'An ancient rift spews legendary foes.',
             'drops': 'IT005:10,IT006:10',
-            'image_file': None,
+            'image_file': 'rift.webp',
             'image_res': None,
         },
     ]

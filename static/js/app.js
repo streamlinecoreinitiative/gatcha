@@ -1566,7 +1566,7 @@ async function updateExpeditionDisplay() {
     data.expeditions.forEach(exp => {
         const wrapper = document.createElement('div');
         wrapper.className = 'dungeon-container';
-        const img = exp.image_file ? `/static/images/ui/${exp.image_file}` : '/static/images/ui/dungeon_armory.webp';
+        const img = exp.image_file ? `/static/images/backgrounds/${exp.image_file}` : '/static/images/ui/dungeon_armory.webp';
         let drops = '';
         if (exp.drops) {
             const parts = exp.drops.split(',').map(p => p.trim()).filter(Boolean);
