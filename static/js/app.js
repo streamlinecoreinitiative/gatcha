@@ -2082,9 +2082,11 @@ async function startBattle(fightResult) {
     enemyDisplayContainer.innerHTML = `<div class="team-slot"><img src="/static/images/${enemyImage}" alt="${enemyName}"><h4>${enemyName}</h4></div>`;
 
     const updateHealthBar = (bar, text, current, max) => {
-        const percentage = Math.max(0, (current / max) * 100);
+        const percentage = Math.max(0, Math.min(100, (current / max) * 100));
         bar.style.width = `${percentage}%`;
-        text.textContent = `${Math.ceil(current)} / ${Math.ceil(max)}`;
+        const cur = Math.max(0, Math.round(current));
+        const maxVal = Math.round(max);
+        text.textContent = `${cur} / ${maxVal}`;
     };
     const addLogMessage = (message, type = 'info', element) => {
         const p = document.createElement('p');
