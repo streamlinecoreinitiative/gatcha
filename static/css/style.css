@@ -6,11 +6,10 @@
 }
 
 body {
-/* Use Cinzel for a JRPG look */
-    font-family: 'Cinzel', serif;
+    font-family: 'Poppins', sans-serif;
 
     /* A darker, more thematic background color */
-    background-color: #1a1a2e;
+    background-color: var(--color-bg);
 
     /* A subtle background texture makes it feel less flat */
     background-image: url('../images/ui/ui_background.webp'),
@@ -21,7 +20,7 @@ body {
     background-attachment: fixed;
 
     /* Softer text color that's easier on the eyes */
-    color: #e0e0e0;
+    color: var(--color-text);
 
     margin: 0;
     padding: 0;
@@ -33,14 +32,15 @@ body {
 }
 
 /* --- UNIVERSAL FANTASY BUTTON STYLE --- */
-button, .fantasy-button {
-    font-family: 'Cinzel', serif;
+button, .fantasy-button,
+.action-btn {
+    font-family: 'Poppins', sans-serif;
     font-size: 16px;
     color: #e0e0e0; /* Off-white text */
 
-    background: linear-gradient(#6a5acd, #483d8b);
+    background: var(--color-primary);
 
-    border: 2px solid #d9b365; /* Gold trim for JRPG vibe */
+    border: 2px solid var(--color-primary); 
     border-radius: 8px;
     padding: 10px 20px;
     cursor: pointer;
@@ -49,13 +49,13 @@ button, .fantasy-button {
     transition: all 0.2s ease-in-out; /* Smooth transition for hover effects */
 }
 
-button:hover, .fantasy-button:hover {
-    background: linear-gradient(#7e6fe5, #5242aa);
+button:hover, .fantasy-button:hover, .action-btn:hover {
+    background: #bfa357;
     border-color: #f1e7b4;
     color: #ffffff;
 }
 
-button:disabled, .fantasy-button:disabled {
+button:disabled, .fantasy-button:disabled, .action-btn:disabled {
     background: #333;
     border-color: #555;
     color: #777;
@@ -276,32 +276,39 @@ button:disabled, .fantasy-button:disabled {
 }
 
 /* Bottom Navigation Bar */
-#nav-bar {
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
     display: flex;
-    height: 80px;
-    background: linear-gradient(#1d153f, #0e0a1f);
-    border-top: 2px solid #d9b365;
+    background: var(--color-dark);
+    border-top: 2px solid var(--color-primary);
+    z-index: 999;
 }
-.nav-button {
-    flex-grow: 1;
-    cursor: pointer;
-    border: none; /* Keep borderless for a clean nav bar look */
-    background-color: transparent;
-    color: #e0e0e0; /* Use the same softer white */
-    font-size: 20px; /* Make it a bit bigger and more prominent */
-    position: relative;
-
-    /* --- THE FIX --- */
-    font-family: 'Cinzel', serif;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Add the text shadow for consistency */
-
-    transition: all 0.2s ease-in-out; /* Add smooth transitions */
+.bottom-nav .nav-button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-shadow: none;
+    transition: background 0.2s;
 }
-.nav-button:hover {
-    background: rgba(255, 255, 255, 0.1);
+.bottom-nav .nav-button i {
+    font-size: 20px;
 }
-.nav-button.active {
-    background: rgba(255, 255, 255, 0.2);
+.bottom-nav .nav-button:hover {
+    background: rgba(255,255,255,0.1);
+}
+.bottom-nav .nav-button.active {
+    background: rgba(255,255,255,0.2);
 }
 
 .red-dot {
@@ -408,22 +415,25 @@ button:disabled, .fantasy-button:disabled {
 
 /* --- Collection View --- */
 .collection-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
     gap: 15px;
     padding: 20px;
 }
 .collection-card {
-    background-color: #333;
-    border: 1px solid #555;
+    background-color: var(--color-card);
+    border: 2px solid var(--color-primary);
     border-radius: 8px;
     text-align: center;
     padding: 10px;
     position: relative;
+    flex: 0 0 180px;
+    scroll-snap-align: start;
 }
 .collection-card img {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     border-radius: 5px;
 }
 .collection-card h4 {
@@ -449,6 +459,52 @@ button:disabled, .fantasy-button:disabled {
     font-weight: bold;
     font-size: 12px;
 }
+.star-rating {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ffd700;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    border: none;
+    color: var(--color-text);
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+}
+.carousel-arrow.left { left: 5px; }
+.carousel-arrow.right { right: 5px; }
+
+#collection-view .collection-wrapper { position: relative; }
+#collection-view .parallax-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: url('../images/ui/campaign_bg.webp');
+    background-size: cover;
+    animation: scroll-bg 60s linear infinite;
+    z-index: -1;
+    opacity: 0.25;
+}
+@keyframes scroll-bg {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
 
 
 /* --- Summon View --- */
@@ -456,6 +512,23 @@ button:disabled, .fantasy-button:disabled {
     text-align: center;
     padding-top: 50px;
 }
+.summon-banner {
+    width: 100%;
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+.banner-info {
+    width: 100%;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+    text-align: left;
+}
+.banner-info .cost { font-weight: bold; }
 .summon-area p {
     margin: 20px 0;
     font-size: 18px;
@@ -471,27 +544,20 @@ button:disabled, .fantasy-button:disabled {
     justify-content: center;
     margin-bottom: 10px;
 }
-.summon-result-box {
-    margin-top: 20px;
-    padding: 20px;
-    min-height: 220px;
-    width: 200px;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    background-color: transparent;
-    border: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.summon-result-box.show {
+#summon-result-overlay .modal-content {
     display: flex;
-    opacity: 1;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+.card-flip { animation: flipIn 0.6s ease; }
+@keyframes flipIn {
+    from { transform: rotateY(90deg); opacity:0; }
+    to { transform: rotateY(0); opacity:1; }
 }
 
 /* We also style the card that appears inside it for a better look */
-.summon-result-box .team-slot {
+#summon-result-overlay .team-slot {
     background-color: rgba(44, 62, 80, 0.8); /* Semi-transparent dark blue */
     border: 1px solid #7f8c8d;
     box-shadow: 0 0 15px rgba(52, 152, 219, 0.5); /* Add a cool glow */
@@ -548,7 +614,7 @@ button:disabled, .fantasy-button:disabled {
     margin: 20px;
     border-radius: 10px;
     white-space: pre-wrap; /* This respects newlines in the text */
-    font-family: 'Cinzel', serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 18px;
     line-height: 1.6;
     height: calc(100vh - 200px);
@@ -650,7 +716,7 @@ button:disabled, .fantasy-button:disabled {
     background-color: #111;
     padding: 15px;
     border-radius: 5px;
-    font-family: 'Cinzel', serif;
+    font-family: 'Poppins', sans-serif;
     color: #fff;
     line-height: 1.6;
 }
@@ -869,7 +935,7 @@ button:disabled, .fantasy-button:disabled {
 #battle-log-entries {
     height: 100%;
     overflow-y: auto;
-    font-family: 'Cinzel', serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 14px;
     color: #fff;
     display: flex;
@@ -1674,7 +1740,7 @@ button:disabled, .fantasy-button:disabled {
     }
 
     /* Navigation Bar */
-    #nav-bar {
+    .bottom-nav {
         height: auto;
         flex-wrap: wrap;
         padding: 5px 0;
@@ -1718,13 +1784,15 @@ button:disabled, .fantasy-button:disabled {
 
     /* Collection View */
     .collection-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Smaller cards */
         gap: 10px;
         padding: 10px;
     }
+    .collection-card {
+        flex: 0 0 140px;
+    }
     .collection-card img {
-        width: 80px;
-        height: 80px;
+        width: 90px;
+        height: 90px;
     }
     .collection-card h4 {
         font-size: 0.8em;
@@ -1752,7 +1820,7 @@ button:disabled, .fantasy-button:disabled {
         padding: 15px 0; /* Increase padding */
         font-size: 1.2em; /* Larger font size */
     }
-    .summon-result-box .team-slot {
+    #summon-result-overlay .team-slot {
         width: 100%; /* Full width for summoned heroes */
     }
 
