@@ -200,7 +200,10 @@
                     <div class="summon-buttons">
                         <button id="perform-summon-button" class="action-btn" data-i18n>Summon x1</button>
                         <button id="summon-ten-button" class="action-btn" data-i18n>Summon x10</button>
+                        <button id="free-summon-button" class="gift-btn">Daily Summon<span class="red-dot"></span></button>
+                        <span id="free-summon-timer"></span>
                     </div>
+                    <p class="summon-info">Use 150 to summon a new hero! Odds: 50% Common, 30% Rare, 15% SSR, 3.5% UR, 1.5% LR. Guaranteed SSR every 90 summons.</p>
                     <div id="summon-result-overlay" class="modal-overlay">
                         <div id="summon-result" class="modal-content"></div>
                     </div>
@@ -480,7 +483,7 @@
             <button class="nav-button" data-view="online-view"><i class="fa-solid fa-users-viewfinder"></i><span data-i18n>Players</span></button>
             <button class="nav-button" data-view="friends-view"><i class="fa-solid fa-user-friends"></i><span data-i18n>Friends</span></button>
             <button class="nav-button" data-view="mail-view"><i class="fa-solid fa-envelope"></i><span data-i18n>Mail</span></button>
-            <button class="nav-button" id="chat-nav-button"><i class="fa-solid fa-comments"></i><span data-i18n>Chat</span></button>
+            <button class="nav-button" data-view="chat-view" id="chat-nav-button"><i class="fa-solid fa-comments"></i><span data-i18n>Chat</span></button>
             <button class="nav-button admin-only" data-view="admin-view"><i class="fa-solid fa-toolbox"></i><span data-i18n>Admin</span></button>
         </nav>
 
@@ -526,11 +529,10 @@
         </div>
     </div>
 
-    <!-- CHAT FEATURE -->
-    <div id="chat-container" class="hidden collapsed">
+    <!-- CHAT VIEW -->
+    <div id="chat-view" class="view">
         <div id="chat-header">
             <h3>World Chat</h3>
-            <button id="chat-toggle-btn">▴</button>
         </div>
         <div id="chat-messages"></div>
         <div id="chat-input-area">
@@ -641,6 +643,18 @@
         <div class="modal-buttons">
             <button id="forgot-submit-btn" data-i18n>Submit</button>
             <button id="forgot-cancel-btn" data-i18n>Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="send-mail-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Send Mail</h3>
+        <input type="text" id="mail-subject" placeholder="Subject">
+        <textarea id="mail-body" placeholder="Message"></textarea>
+        <div class="modal-buttons">
+            <button id="mail-send-btn">Send</button>
+            <button id="mail-cancel-btn">Cancel</button>
         </div>
     </div>
 </div>
