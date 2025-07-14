@@ -1252,14 +1252,6 @@ function attachEventListeners() {
             } else { displayMessage(`Fight Failed: ${result.message}`); }
         }
         else if (target.id === 'close-hero-detail-btn') document.getElementById('hero-detail-overlay').classList.remove('active');
-        else if (target.id === 'confirm-equip-btn') {
-            const heroId = target.dataset.heroId;
-            const equipmentId = document.getElementById('equip-select').value;
-            if (!equipmentId) { displayMessage("Please select an item to equip."); return; }
-            await fetch('/api/equip_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ character_id: parseInt(heroId), equipment_id: parseInt(equipmentId) }) });
-            document.getElementById('hero-detail-overlay').classList.remove('active');
-            await fetchPlayerDataAndUpdate();
-        }
         else if (target.classList.contains('level-up-card-btn')) {
             const heroId = target.dataset.heroId;
             const response = await fetch('/api/level_up', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ char_id: parseInt(heroId) }) });
@@ -1273,12 +1265,6 @@ function attachEventListeners() {
             const result = await response.json();
             if (result.success) displayMessage(`Sold for ${result.gold_received} gold`);
             else displayMessage(result.message);
-            await fetchPlayerDataAndUpdate();
-        }
-        else if (target.classList.contains('unequip-btn')) {
-            const equipmentId = target.dataset.itemId;
-            await fetch('/api/unequip_item', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ equipment_id: parseInt(equipmentId) }) });
-            document.getElementById('hero-detail-overlay').classList.remove('active');
             await fetchPlayerDataAndUpdate();
         }
         else if (target.classList.contains('purchase-btn')) {
@@ -1467,28 +1453,66 @@ async function openHeroDetailModal(hero) {
     const fullHeroData = gameState.collection.find(h => h.id === hero.id);
     const charDef = masterCharacterList.find(c => c.name === fullHeroData.character_name) || {};
     const equippedItems = allPlayerItems.filter(item => item.is_equipped_on === fullHeroData.id);
+    const equipmentDefsResp = await fetch('/static/equipment.json');
+    const equipmentDefs = equipmentDefsResp.ok ? await equipmentDefsResp.json() : [];
+    const imageMap = equipmentDefs.reduce((m, it) => { m[it.name] = it.image_file; return m; }, {});
     const stats = getScaledStats(fullHeroData);
+    const slotMap = {Weapon: null, Armor: null, Trinket: null};
+    equippedItems.forEach(it => { if(it.slot_type) slotMap[it.slot_type] = it; });
     let html = `
         <img class="hero-detail-portrait" src="/static/images/characters/${charDef.image_file || 'placeholder_char.webp'}" alt="${fullHeroData.character_name}">
         <h3>${fullHeroData.character_name}</h3>
         <p>Level: ${fullHeroData.level}</p>
         <p>ATK: ${stats.atk} | HP: ${stats.hp}</p>
-        <h4>Equipped Items</h4>
-        <div class="equipped-slots">
-            <p>Weapon: ${equippedItems[0]?.equipment_name || 'Empty'}</p>
-            ${equippedItems.length > 0 ? `<button class="unequip-btn" data-item-id="${equippedItems[0]?.id}">Unequip</button>` : ''}
+        <div class="equip-slots">
+            ${['Weapon','Armor','Trinket'].map(slot => {
+                const it = slotMap[slot];
+                if(it){
+                    const img = imageMap[it.equipment_name] || 'campaign_icon.webp';
+                    return `<div class="equip-slot" data-slot="${slot}" data-item-id="${it.id}"><img src="/static/images/items/${img}" alt="${it.equipment_name}"></div>`;
+                }
+                return `<div class="equip-slot" data-slot="${slot}"><span>${slot}</span></div>`;
+            }).join('')}
         </div>
-        <h4>Available to Equip</h4>
-        <select id="equip-select">
-            <option value="">-- Select an item --</option>
-            ${unequippedItems.map(item => `<option value="${item.id}">${item.equipment_name} (${item.rarity})</option>`).join('')}
-        </select>
+        <h4>Inventory</h4>
+        <div class="inventory">
+            ${unequippedItems.map(it => {
+                const img = imageMap[it.equipment_name] || 'campaign_icon.webp';
+                return `<img class="inv-item" src="/static/images/items/${img}" draggable="true" data-item-id="${it.id}" data-slot="${it.slot_type}" alt="${it.equipment_name}">`;
+            }).join('')}
+        </div>
         <div class="modal-buttons">
-            <button id="confirm-equip-btn" data-hero-id="${fullHeroData.id}">Equip Selected</button>
             <button id="close-hero-detail-btn">Close</button>
         </div>
     `;
     modalContent.innerHTML = html;
+    modalContent.querySelectorAll('.inv-item').forEach(img => {
+        img.addEventListener('dragstart', ev => {
+            ev.dataTransfer.setData('item-id', img.dataset.itemId);
+            ev.dataTransfer.setData('slot', img.dataset.slot);
+        });
+    });
+    modalContent.querySelectorAll('.equip-slot').forEach(slotEl => {
+        slotEl.addEventListener('dragover', ev => {
+            if(ev.dataTransfer.getData('slot') === slotEl.dataset.slot) ev.preventDefault();
+        });
+        slotEl.addEventListener('drop', async ev => {
+            ev.preventDefault();
+            const itemId = ev.dataTransfer.getData('item-id');
+            if(!itemId) return;
+            await fetch('/api/equip_item', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({character_id: fullHeroData.id, equipment_id: parseInt(itemId)})});
+            modalOverlay.classList.remove('active');
+            await fetchPlayerDataAndUpdate();
+        });
+        slotEl.addEventListener('click', async () => {
+            const itId = slotEl.dataset.itemId;
+            if(itId){
+                await fetch('/api/unequip_item', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({equipment_id: parseInt(itId)})});
+                modalOverlay.classList.remove('active');
+                await fetchPlayerDataAndUpdate();
+            }
+        });
+    });
 }
 
 function openProfileModal() {
@@ -1603,6 +1627,7 @@ async function updateEquipmentDisplay() {
     const equipmentDefs = await equipmentDefsResponse.json();
     const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
     const imageMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.image_file; return map; }, {});
+    const typeMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.type; return map; }, {});
     if (result.equipment.length === 0) {
         equipmentContainer.style.display = 'flex';
         equipmentContainer.style.justifyContent = 'center';
@@ -1620,7 +1645,8 @@ async function updateEquipmentDisplay() {
         const rarityClass = item.rarity.toLowerCase();
         const imgFile = imageMap[item.equipment_name];
         const imgTag = imgFile ? `<img src="/static/images/items/${imgFile}" alt="${item.equipment_name}">` : '';
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${rarityClass}">[${item.rarity}]</div></div>${imgTag}<h4>${item.equipment_name}</h4><p class="card-stats">${statsText}</p><div class="item-status">${item.is_equipped_on ? `Equipped` : 'Unequipped'}</div>`;
+        const slot = typeMap[item.equipment_name] || item.slot_type || '';
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${rarityClass}">[${item.rarity}]</div></div>${imgTag}<h4>${item.equipment_name}</h4><p class="card-stats">${statsText}</p><p class="card-stats">${slot}</p><div class="item-status">${item.is_equipped_on ? `Equipped` : 'Unequipped'}</div>`;
         equipmentContainer.appendChild(card);
     });
 }

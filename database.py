@@ -164,6 +164,7 @@ def init_db():
             user_id INTEGER NOT NULL,
             equipment_name TEXT NOT NULL,
             rarity TEXT NOT NULL,
+            slot_type TEXT,
             is_equipped_on INTEGER,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
@@ -328,6 +329,7 @@ def init_db():
     add_column_if_missing(conn, 'expeditions', 'image_res', 'TEXT')
     add_column_if_missing(conn, 'expeditions', 'sort_order', 'INTEGER NOT NULL DEFAULT 0')
     add_column_if_missing(conn, 'messages', 'bug_link', 'TEXT')
+    add_column_if_missing(conn, 'player_equipment', 'slot_type', 'TEXT')
     if USING_POSTGRES:
         cursor.execute('''
             INSERT INTO store_prices (package_id, price) VALUES
@@ -618,7 +620,7 @@ def get_player_team(user_id, character_definitions):
         char_def = next((c for c in character_definitions if c['name'] == char_data['character_name']), None)
         if not char_def: continue
         full_char_data = {**char_def, **dict(char_data), 'db_id': char_data['id']}
-        equipped_items = conn.execute('SELECT id, equipment_name, rarity FROM player_equipment WHERE is_equipped_on = ?', (char_db_id,)).fetchall()
+        equipped_items = conn.execute('SELECT id, equipment_name, rarity, slot_type FROM player_equipment WHERE is_equipped_on = ?', (char_db_id,)).fetchall()
         full_char_data['equipped'] = [dict(item) for item in equipped_items]
         team_characters.append(full_char_data)
     conn.close()
@@ -1249,8 +1251,8 @@ def give_equipment_to_player(user_id, item_def):
     """Add an equipment item to a player's inventory."""
     conn = get_db_connection()
     conn.execute(
-        "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
-        (user_id, item_def['name'], item_def['rarity'])
+        "INSERT INTO player_equipment (user_id, equipment_name, rarity, slot_type) VALUES (?, ?, ?, ?)",
+        (user_id, item_def['name'], item_def['rarity'], item_def.get('type'))
     )
     conn.commit()
     conn.close()

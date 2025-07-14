@@ -193,8 +193,8 @@ def fight_dungeon():
                             }
                             conn = db.get_db_connection()
                             conn.execute(
-                                "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
-                                (user_id, looted_item['name'], looted_item['rarity'])
+                                "INSERT INTO player_equipment (user_id, equipment_name, rarity, slot_type) VALUES (?, ?, ?, ?)",
+                                (user_id, looted_item['name'], looted_item['rarity'], item_def.get('type'))
                             )
                             conn.commit()
                             conn.close()
@@ -210,8 +210,8 @@ def fight_dungeon():
                 }
                 conn = db.get_db_connection()
                 conn.execute(
-                    "INSERT INTO player_equipment (user_id, equipment_name, rarity) VALUES (?, ?, ?)",
-                    (user_id, looted_item['name'], looted_item['rarity'])
+                    "INSERT INTO player_equipment (user_id, equipment_name, rarity, slot_type) VALUES (?, ?, ?, ?)",
+                    (user_id, looted_item['name'], looted_item['rarity'], looted_item_def.get('type'))
                 )
                 conn.commit()
                 conn.close()
