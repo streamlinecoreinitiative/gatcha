@@ -75,6 +75,7 @@
   "Retry": "再試行",
   "Return": "戻る",
   "World Chat": "ワールドチャット",
+  "Chat": "チャット",
   "Send": "送信",
   "Stage Intel": "ステージ情報",
   "Change Team": "チーム変更",
@@ -166,4 +167,6 @@
   "Gold - Earned from battles and selling heroes. Spend it to level up heroes and equipment.": "ゴールド - 戦闘やヒーロー売却で獲得。ヒーローや装備の強化に使用します。",
   "Energy - Regenerates every 5 minutes or with Platinum. Required for Tower battles.": "エネルギー - 5分ごとまたはプラチナで回復。塔の戦闘に必要です。",
   "Dungeon Energy - Regenerates every 15 minutes or with Platinum. Required for Armory expeditions.": "ダンジョンエネルギー - 15分ごとまたはプラチナで回復。遠征に必要です。"
+  ,"No friends yet. Visit the Players tab and tap a username to send a request.": "まだフレンドがいません。プレイヤーのタブで名前をタップして申請しましょう。"
+  ,"No mail yet. Messages from friends and the system will appear here. Send mail from a friend's profile.": "まだメールはありません。フレンドやシステムからのメッセージがここに表示されます。フレンドのプロフィールからメールを送信できます。"
 }
