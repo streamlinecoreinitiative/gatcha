@@ -255,6 +255,53 @@ def init_db():
             dungeon_regen INTEGER NOT NULL DEFAULT 900
         )
     ''')
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS friends (
+            id {AUTO_ID},
+            user_id INTEGER NOT NULL,
+            friend_id INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            UNIQUE(user_id, friend_id)
+        )
+    ''')
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS private_messages (
+            id {AUTO_ID},
+            sender_id INTEGER NOT NULL,
+            receiver_id INTEGER NOT NULL,
+            message TEXT NOT NULL,
+            sent_at INTEGER
+        )
+    ''')
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS mail (
+            id {AUTO_ID},
+            user_id INTEGER NOT NULL,
+            sender_id INTEGER,
+            subject TEXT,
+            body TEXT,
+            sent_at INTEGER,
+            read INTEGER NOT NULL DEFAULT 0
+        )
+    ''')
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS daily_tasks (
+            id {AUTO_ID},
+            user_id INTEGER NOT NULL,
+            task TEXT NOT NULL,
+            completed INTEGER NOT NULL DEFAULT 0,
+            expires INTEGER
+        )
+    ''')
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS weekly_missions (
+            id {AUTO_ID},
+            user_id INTEGER NOT NULL,
+            mission TEXT NOT NULL,
+            completed INTEGER NOT NULL DEFAULT 0,
+            expires INTEGER
+        )
+    ''')
     conn.commit()
     # Ensure new columns exist for existing databases
     add_column_if_missing(conn, 'users', 'email', 'TEXT')
@@ -696,6 +743,12 @@ def get_user_id(username):
     row = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
     conn.close()
     return row['id'] if row else None
+
+def get_username_by_id(user_id):
+    conn = get_db_connection()
+    row = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return row['username'] if row else None
 
 def get_all_user_ids(include_admin=False):
     """Return a list of all user IDs. Admin accounts are excluded by default."""
@@ -1250,6 +1303,135 @@ def update_game_settings(energy_cap=None, dungeon_cap=None, energy_regen=None, d
         conn.execute('UPDATE game_settings SET energy_regen = ? WHERE id = 1', (energy_regen,))
     if dungeon_regen is not None:
         conn.execute('UPDATE game_settings SET dungeon_regen = ? WHERE id = 1', (dungeon_regen,))
+    conn.commit()
+    conn.close()
+
+def add_friend_request(user_id, friend_username):
+    friend_id = get_user_id(friend_username)
+    if not friend_id or friend_id == user_id:
+        return False
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            'INSERT OR IGNORE INTO friends (user_id, friend_id, status) VALUES (?, ?, ?)',
+            (user_id, friend_id, 'pending')
+        )
+        conn.execute(
+            'INSERT OR IGNORE INTO friends (user_id, friend_id, status) VALUES (?, ?, ?)',
+            (friend_id, user_id, 'request')
+        )
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+def accept_friend(user_id, friend_id):
+    conn = get_db_connection()
+    conn.execute('UPDATE friends SET status = ? WHERE user_id = ? AND friend_id = ?', ('accepted', user_id, friend_id))
+    conn.execute('UPDATE friends SET status = ? WHERE user_id = ? AND friend_id = ?', ('accepted', friend_id, user_id))
+    conn.commit()
+    conn.close()
+
+def get_friends(user_id):
+    conn = get_db_connection()
+    rows = conn.execute('SELECT friend_id, status FROM friends WHERE user_id = ?', (user_id,)).fetchall()
+    conn.close()
+    return [
+        {
+            'user_id': r['friend_id'],
+            'username': get_username_by_id(r['friend_id']),
+            'status': r['status']
+        } for r in rows
+    ]
+
+def send_private_message(sender_id, receiver_id, message):
+    import time
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO private_messages (sender_id, receiver_id, message, sent_at) VALUES (?, ?, ?, ?)',
+        (sender_id, receiver_id, message, int(time.time()))
+    )
+    conn.commit()
+    conn.close()
+
+def get_private_messages(user_id, friend_id, limit=50):
+    conn = get_db_connection()
+    rows = conn.execute(
+        'SELECT sender_id, receiver_id, message, sent_at FROM private_messages '
+        'WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) '
+        'ORDER BY sent_at DESC LIMIT ?',
+        (user_id, friend_id, friend_id, user_id, limit)
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def send_mail(user_id, sender_id, subject, body):
+    import time
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO mail (user_id, sender_id, subject, body, sent_at, read) VALUES (?, ?, ?, ?, ?, 0)',
+        (user_id, sender_id, subject, body, int(time.time()))
+    )
+    conn.commit()
+    conn.close()
+
+def get_mail(user_id):
+    conn = get_db_connection()
+    rows = conn.execute(
+        'SELECT id, sender_id, subject, body, sent_at, read FROM mail WHERE user_id = ? ORDER BY sent_at DESC',
+        (user_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def mark_mail_read(user_id, mail_id):
+    conn = get_db_connection()
+    conn.execute('UPDATE mail SET read = 1 WHERE id = ? AND user_id = ?', (mail_id, user_id))
+    conn.commit()
+    conn.close()
+
+def get_tasks(user_id):
+    now = int(time.time())
+    conn = get_db_connection()
+    daily = conn.execute(
+        'SELECT id, task, completed, expires FROM daily_tasks WHERE user_id = ? AND expires > ?',
+        (user_id, now)
+    ).fetchall()
+    weekly = conn.execute(
+        'SELECT id, mission, completed, expires FROM weekly_missions WHERE user_id = ? AND expires > ?',
+        (user_id, now)
+    ).fetchall()
+    conn.close()
+    return {
+        'daily': [dict(row) for row in daily],
+        'weekly': [dict(row) for row in weekly]
+    }
+
+def create_default_tasks(user_id):
+    import time
+    now = int(time.time())
+    day_end = now - now % 86400 + 86400
+    week_end = now - now % (7 * 86400) + 7 * 86400
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        'INSERT INTO daily_tasks (user_id, task, completed, expires) VALUES (?, ?, 0, ?) '
+        'ON CONFLICT(user_id, task) DO NOTHING',
+        (user_id, "Win 3 battles", day_end)
+    )
+    cur.execute(
+        'INSERT INTO weekly_missions (user_id, mission, completed, expires) VALUES (?, ?, 0, ?)' ,
+        (user_id, "Clear 10 stages", week_end)
+    )
+    conn.commit()
+    conn.close()
+
+def complete_task(table, task_id, user_id):
+    conn = get_db_connection()
+    conn.execute(
+        f'UPDATE {table} SET completed = 1 WHERE id = ? AND user_id = ?',
+        (task_id, user_id)
+    )
     conn.commit()
     conn.close()
 

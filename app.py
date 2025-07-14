@@ -1255,6 +1255,87 @@ def merge_heroes():
     return jsonify({'success': True, 'message': f'{char_name} upgraded to {new_rarity}!'})
 
 
+@app.route('/api/friend_request', methods=['POST'])
+def friend_request():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    username = request.json.get('username')
+    if not username:
+        return jsonify({'success': False, 'message': 'No username'})
+    ok = db.add_friend_request(session['user_id'], username)
+    return jsonify({'success': ok})
+
+
+@app.route('/api/friends')
+def friends():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    return jsonify({'success': True, 'friends': db.get_friends(session['user_id'])})
+
+
+@app.route('/api/send_pm', methods=['POST'])
+def send_pm():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    to_username = request.json.get('to')
+    message = request.json.get('message', '')
+    friend_id = db.get_user_id(to_username)
+    if not friend_id or not message:
+        return jsonify({'success': False, 'message': 'Invalid request'})
+    db.send_private_message(session['user_id'], friend_id, message)
+    return jsonify({'success': True})
+
+
+@app.route('/api/get_pm/<username>')
+def get_pm(username):
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    friend_id = db.get_user_id(username)
+    if not friend_id:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+    messages = db.get_private_messages(session['user_id'], friend_id)
+    return jsonify({'success': True, 'messages': messages})
+
+
+@app.route('/api/send_mail', methods=['POST'])
+def send_mail_route():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    data = request.json
+    receiver = db.get_user_id(data.get('to'))
+    if not receiver:
+        return jsonify({'success': False, 'message': 'User not found'})
+    db.send_mail(receiver, session['user_id'], data.get('subject', ''), data.get('body', ''))
+    return jsonify({'success': True})
+
+
+@app.route('/api/mail')
+def mail_route():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    inbox = db.get_mail(session['user_id'])
+    return jsonify({'success': True, 'mail': inbox})
+
+
+@app.route('/api/tasks')
+def tasks_route():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    db.create_default_tasks(session['user_id'])
+    return jsonify({'success': True, 'tasks': db.get_tasks(session['user_id'])})
+
+
+@app.route('/api/complete_task', methods=['POST'])
+def complete_task_route():
+    if not session.get('logged_in'):
+        return jsonify({'success': False}), 401
+    task_id = request.json.get('id')
+    task_type = request.json.get('type')
+    table = 'daily_tasks' if task_type == 'daily' else 'weekly_missions'
+    db.complete_task(table, task_id, session['user_id'])
+    return jsonify({'success': True})
+
+
 @socketio.on('connect')
 def handle_connect():
     if session.get('logged_in'):
