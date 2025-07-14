@@ -61,6 +61,7 @@ const onlineListContainer = document.getElementById('online-list-container');
 const towerScoresContainer = document.getElementById('tower-highscores');
 const dungeonScoresContainer = document.getElementById('dungeon-highscores');
 const navButtons = document.querySelectorAll('.nav-button');
+const chatNavButton = document.getElementById('chat-nav-button');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const chatSendButton = document.getElementById('chat-send-button');
@@ -336,6 +337,12 @@ async function updateFriendList() {
     const data = await resp.json();
     if (!data.success) return;
     friendListContainer.innerHTML = '';
+    if (!data.friends.length) {
+        const p = document.createElement('p');
+        p.textContent = await translateText('No friends yet. Visit the Players tab and tap a username to send a request.');
+        friendListContainer.appendChild(p);
+        return;
+    }
     data.friends.forEach(f => {
         const div = document.createElement('div');
         div.textContent = `${f.username} - ${f.status}`;
@@ -349,6 +356,12 @@ async function updateMailList() {
     const data = await resp.json();
     if (!data.success) return;
     mailListContainer.innerHTML = '';
+    if (!data.mail.length) {
+        const p = document.createElement('p');
+        p.textContent = await translateText('No mail yet. Messages from friends and the system will appear here. Send mail from a friend\'s profile.');
+        mailListContainer.appendChild(p);
+        return;
+    }
     data.mail.forEach(m => {
         const div = document.createElement('div');
         const sender = m.sender_id ? `From ${m.sender_id}` : 'System';
@@ -1011,6 +1024,11 @@ function attachEventListeners() {
         chatToggleBtn.addEventListener('click', () => {
             chatContainer.classList.toggle('collapsed');
             chatToggleBtn.textContent = chatContainer.classList.contains('collapsed') ? '▴' : '▾';
+        });
+    }
+    if (chatNavButton) {
+        chatNavButton.addEventListener('click', () => {
+            chatContainer.classList.toggle('hidden');
         });
     }
 
