@@ -1783,7 +1783,18 @@ button:disabled, .fantasy-button:disabled {
         margin-left: 0;
         margin-top: 5px;
     }
-    .score-columns {
-        flex-direction: column; /* Stack highscore columns */
-    }
+.score-columns {
+    flex-direction: column; /* Stack highscore columns */
+}
+
+/* Friends, Mail and Missions */
+#friend-list div,
+#mail-list div,
+#daily-tasks div,
+#weekly-missions div {
+    border: 1px solid #d9b365;
+    padding: 8px;
+    margin: 4px 0;
+    background-color: rgba(0,0,0,0.4);
+}
 }

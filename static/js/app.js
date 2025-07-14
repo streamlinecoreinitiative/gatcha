@@ -71,6 +71,10 @@ const equipmentContainer = document.getElementById('equipment-container');
 const storePackagesContainer = document.getElementById('store-packages');
 const userIcon = document.getElementById('user-icon');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
+const friendListContainer = document.getElementById('friend-list');
+const mailListContainer = document.getElementById('mail-list');
+const dailyTasksContainer = document.getElementById('daily-tasks');
+const weeklyMissionsContainer = document.getElementById('weekly-missions');
 // Use local icon so it always loads even without an internet connection
 const currencyIconHtml = '<i class="fa-solid fa-diamond currency-icon"></i>';
 // Base gold values for selling heroes by rarity
@@ -324,6 +328,52 @@ function updateResourceTimers() {
             setRedDot(storeNavButton, false);
         }
     }
+}
+
+async function updateFriendList() {
+    if (!friendListContainer) return;
+    const resp = await fetch('/api/friends');
+    const data = await resp.json();
+    if (!data.success) return;
+    friendListContainer.innerHTML = '';
+    data.friends.forEach(f => {
+        const div = document.createElement('div');
+        div.textContent = `${f.username} - ${f.status}`;
+        friendListContainer.appendChild(div);
+    });
+}
+
+async function updateMailList() {
+    if (!mailListContainer) return;
+    const resp = await fetch('/api/mail');
+    const data = await resp.json();
+    if (!data.success) return;
+    mailListContainer.innerHTML = '';
+    data.mail.forEach(m => {
+        const div = document.createElement('div');
+        const sender = m.sender_id ? `From ${m.sender_id}` : 'System';
+        div.textContent = `${sender}: ${m.subject}`;
+        mailListContainer.appendChild(div);
+    });
+}
+
+async function updateTaskLists() {
+    if (!dailyTasksContainer || !weeklyMissionsContainer) return;
+    const resp = await fetch('/api/tasks');
+    const data = await resp.json();
+    if (!data.success) return;
+    dailyTasksContainer.innerHTML = '';
+    data.tasks.daily.forEach(t => {
+        const div = document.createElement('div');
+        div.textContent = `${t.task} ${t.completed ? '(Done)' : ''}`;
+        dailyTasksContainer.appendChild(div);
+    });
+    weeklyMissionsContainer.innerHTML = '';
+    data.tasks.weekly.forEach(t => {
+        const div = document.createElement('div');
+        div.textContent = `${t.mission} ${t.completed ? '(Done)' : ''}`;
+        weeklyMissionsContainer.appendChild(div);
+    });
 }
 
 function startResourceTimers() {
@@ -1512,6 +1562,9 @@ function updateUI() {
     updateCollectionDisplay();
     updateCampaignDisplay();
     updateExpeditionDisplay();
+    updateFriendList();
+    updateMailList();
+    updateTaskLists();
     updateTopPlayer();
     updateMotd();
     updateBugLink();
