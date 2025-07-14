@@ -68,7 +68,7 @@
   },
   {
     "name": "Reinforced Buckler",
-    "type": "Shield",
+    "type": "Armor",
     "rarity": "Uncommon",
     "stat_bonuses": {
       "hp": 80
@@ -120,5 +120,25 @@
     },
     "image_file": "dragon_scale_armor.webp",
     "code": "IT012"
+  },
+  {
+    "name": "Lucky Charm",
+    "type": "Trinket",
+    "rarity": "Common",
+    "stat_bonuses": {
+      "crit_chance": 2
+    },
+    "image_file": "lucky_charm.webp",
+    "code": "IT013"
+  },
+  {
+    "name": "Ancient Amulet",
+    "type": "Trinket",
+    "rarity": "Rare",
+    "stat_bonuses": {
+      "atk": 20
+    },
+    "image_file": "ancient_amulet.webp",
+    "code": "IT014"
   }
 ]
