@@ -1452,36 +1452,6 @@ button:disabled, .fantasy-button:disabled {
     margin: 10px 0;
 }
 
-#hero-detail-content .equip-slots {
-    display: flex;
-    gap: 10px;
-    margin: 10px 0;
-}
-#hero-detail-content .equip-slot {
-    width: 80px;
-    height: 80px;
-    border: 2px dashed #555;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-#hero-detail-content .equip-slot img {
-    width: 70px;
-    height: 70px;
-}
-#hero-detail-content .inventory {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-}
-#hero-detail-content .inventory img {
-    width: 60px;
-    height: 60px;
-    cursor: grab;
-}
-
 /* transient message box for alerts */
 #message-box {
     position: fixed;

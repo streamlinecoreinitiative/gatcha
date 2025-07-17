@@ -1152,12 +1152,8 @@ def equip_item():
     user_id, data = session['user_id'], request.json
     equipment_id, character_id = data.get('equipment_id'), data.get('character_id')
     conn = db.get_db_connection()
-    row = conn.execute('SELECT slot_type FROM player_equipment WHERE id = ? AND user_id = ?',
-                       (equipment_id, user_id)).fetchone()
-    slot_type = row['slot_type'] if row else None
-    if slot_type:
-        conn.execute('UPDATE player_equipment SET is_equipped_on = NULL WHERE is_equipped_on = ? AND user_id = ? AND slot_type = ?',
-                     (character_id, user_id, slot_type))
+    conn.execute('UPDATE player_equipment SET is_equipped_on = NULL WHERE is_equipped_on = ? AND user_id = ?',
+                 (character_id, user_id))
     conn.execute('UPDATE player_equipment SET is_equipped_on = ? WHERE id = ? AND user_id = ?',
                  (character_id, equipment_id, user_id))
     conn.commit()
