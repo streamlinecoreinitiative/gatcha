@@ -65,7 +65,7 @@ const chatNavButton = document.getElementById('chat-nav-button');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const chatSendButton = document.getElementById('chat-send-button');
-const chatContainer = document.getElementById('chat-view');
+const chatContainer = document.getElementById('chat-container');
 const chatToggleBtn = document.getElementById('chat-toggle-btn');
 const battleScreen = document.getElementById('battle-screen');
 const equipmentContainer = document.getElementById('equipment-container');
@@ -76,12 +76,6 @@ const friendListContainer = document.getElementById('friend-list');
 const mailListContainer = document.getElementById('mail-list');
 const dailyTasksContainer = document.getElementById('daily-tasks');
 const weeklyMissionsContainer = document.getElementById('weekly-missions');
-const mailModal = document.getElementById('send-mail-modal');
-const mailSubjectInput = document.getElementById('mail-subject');
-const mailBodyInput = document.getElementById('mail-body');
-const mailSendBtn = document.getElementById('mail-send-btn');
-const mailCancelBtn = document.getElementById('mail-cancel-btn');
-let mailTarget = '';
 // Use local icon so it always loads even without an internet connection
 const currencyIconHtml = '<i class="fa-solid fa-diamond currency-icon"></i>';
 // Base gold values for selling heroes by rarity
@@ -352,7 +346,6 @@ async function updateFriendList() {
     }
     data.friends.forEach(f => {
         const div = document.createElement('div');
-        div.dataset.username = f.username;
         div.textContent = `${f.username} - ${f.status}`;
         friendListContainer.appendChild(div);
     });
@@ -1036,8 +1029,6 @@ function attachEventListeners() {
     if (freeSummonButton) freeSummonButton.addEventListener('click', () => performSummon(freeSummonButton, 1, true));
     if (gemGiftButton) gemGiftButton.addEventListener('click', claimGemGift);
     if (platinumGiftButton) platinumGiftButton.addEventListener('click', claimPlatinumGift);
-    if (mailSendBtn) mailSendBtn.addEventListener('click', sendMail);
-    if (mailCancelBtn) mailCancelBtn.addEventListener('click', () => { if (mailModal) mailModal.classList.remove('active'); });
 
     chatSendButton.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
@@ -1045,6 +1036,11 @@ function attachEventListeners() {
         chatToggleBtn.addEventListener('click', () => {
             chatContainer.classList.toggle('collapsed');
             chatToggleBtn.textContent = chatContainer.classList.contains('collapsed') ? '▴' : '▾';
+        });
+    }
+    if (chatNavButton) {
+        chatNavButton.addEventListener('click', () => {
+            chatContainer.classList.toggle('hidden');
         });
     }
 
@@ -1345,20 +1341,6 @@ function attachEventListeners() {
         else if (target.id === 'tutorial-close-btn') {
             document.getElementById('tutorial-modal').classList.remove('active');
         }
-        else if (target.closest('.online-list-item')) {
-            const u = target.closest('.online-list-item');
-            const name = u.dataset.username;
-            if (name && confirm(`Send friend request to ${name}?`)) {
-                const resp = await fetch('/api/friend_request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: name }) });
-                const res = await resp.json();
-                displayMessage(res.success ? 'Request sent' : res.message || 'Request failed');
-            }
-        }
-        else if (target.closest('#friend-list div')) {
-            const el = target.closest('#friend-list div');
-            const name = el.dataset.username;
-            if (name) openMailModal(name);
-        }
     });
 }
 
@@ -1588,29 +1570,6 @@ function sendMessage() {
     }
 }
 
-function openMailModal(username) {
-    if (!mailModal) return;
-    mailTarget = username;
-    mailSubjectInput.value = '';
-    mailBodyInput.value = '';
-    mailModal.classList.add('active');
-}
-
-async function sendMail() {
-    if (!mailTarget) { if (mailModal) mailModal.classList.remove('active'); return; }
-    const subject = mailSubjectInput.value.trim();
-    const body = mailBodyInput.value.trim();
-    const resp = await fetch('/api/send_mail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: mailTarget, subject, body })
-    });
-    const result = await resp.json();
-    displayMessage(result.success ? 'Mail sent!' : result.message || 'Send failed');
-    if (mailModal) mailModal.classList.remove('active');
-    await updateMailList();
-}
-
 async function claimGemGift() {
     const before = gameState.gems || 0;
     const resp = await fetch('/api/claim_gem_gift', { method: 'POST' });
@@ -1757,7 +1716,6 @@ async function updateAllUsers() {
     towerSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        div.dataset.username = u.username;
         const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.webp'}" alt="${u.username}">`;
         div.innerHTML = `${img}${idx + 1}. ${u.username} - Floor ${u.current_stage}`;
         towerScoresContainer.appendChild(div);
@@ -1765,7 +1723,6 @@ async function updateAllUsers() {
     dungeonSorted.forEach((u, idx) => {
         const div = document.createElement('div');
         div.className = 'online-list-item';
-        div.dataset.username = u.username;
         const img = `<img class="score-profile" src="/static/images/characters/${u.profile_image || 'placeholder_char.webp'}" alt="${u.username}">`;
         div.innerHTML = `${img}${idx + 1}. ${u.username} - Runs ${u.dungeon_runs}`;
         dungeonScoresContainer.appendChild(div);

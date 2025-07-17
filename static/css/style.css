@@ -346,11 +346,17 @@ button:disabled, .fantasy-button:disabled, .action-btn:disabled {
 
 
 /* Chat Container */
-#chat-view {
+#chat-container {
+    position: fixed;
+    bottom: 120px; /* Above the nav bar */
+    right: 20px;
+    width: 350px;
+    height: 400px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid #555;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 180px);
-    padding: 10px;
 }
 #chat-header {
     display: flex;
@@ -364,7 +370,15 @@ button:disabled, .fantasy-button:disabled, .action-btn:disabled {
     color: #e0e0e0;
     cursor: pointer;
 }
-#chat-view h3 {
+#chat-container.collapsed {
+    height: 40px;
+    bottom: 160px;
+}
+#chat-container.collapsed #chat-messages,
+#chat-container.collapsed #chat-input-area {
+    display: none;
+}
+#chat-container h3 {
     text-align: center;
     padding: 10px;
     /* Removed border-bottom to avoid double lines under header */
@@ -446,7 +460,10 @@ button:disabled, .fantasy-button:disabled, .action-btn:disabled {
     font-size: 12px;
 }
 .star-rating {
-    margin-top: 4px;
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
     color: #ffd700;
     font-size: 14px;
     pointer-events: none;
@@ -526,9 +543,6 @@ button:disabled, .fantasy-button:disabled, .action-btn:disabled {
     gap: 10px;
     justify-content: center;
     margin-bottom: 10px;
-}
-.summon-info {
-    margin-top: 10px;
 }
 #summon-result-overlay .modal-content {
     display: flex;
@@ -1843,8 +1857,14 @@ button:disabled, .fantasy-button:disabled, .action-btn:disabled {
     }
 
     /* Chat Container */
-    #chat-view {
-        height: calc(100vh - 160px);
+    #chat-container {
+        width: 90%;
+        right: 5%;
+        bottom: 70px; /* Adjust based on new nav bar height */
+        height: 300px;
+    }
+    #chat-container.collapsed {
+        bottom: 70px;
     }
 
     /* Admin Panel */
@@ -1874,11 +1894,5 @@ button:disabled, .fantasy-button:disabled, .action-btn:disabled {
     padding: 8px;
     margin: 4px 0;
     background-color: rgba(0,0,0,0.4);
-}
-
-#send-mail-modal textarea {
-    width: 100%;
-    height: 100px;
-    margin: 8px 0;
 }
 }
