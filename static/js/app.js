@@ -176,7 +176,6 @@ let bgImageInput;
 let bgUploadBtn;
 let heroImageOverlay;
 let heroImageLarge;
-let summonResultOverlay;
 let messageBox;
 let registerModal;
 let regUsernameInput;
@@ -451,17 +450,6 @@ function attachEventListeners() {
     // Late-loaded DOM elements
     heroImageOverlay = document.getElementById('hero-image-overlay');
     heroImageLarge = document.getElementById('hero-image-large');
-    summonResultOverlay = document.getElementById('summon-result-overlay');
-    const leftArrow = document.querySelector('.carousel-arrow.left');
-    const rightArrow = document.querySelector('.carousel-arrow.right');
-    const collectionScroll = document.getElementById('collection-container');
-    if (leftArrow && rightArrow && collectionScroll) {
-        leftArrow.addEventListener('click', () => collectionScroll.scrollBy({left: -200, behavior: 'smooth'}));
-        rightArrow.addEventListener('click', () => collectionScroll.scrollBy({left: 200, behavior: 'smooth'}));
-    }
-    if (summonResultOverlay) {
-        summonResultOverlay.addEventListener('click', () => summonResultOverlay.classList.remove('active'));
-    }
     messageBox = document.getElementById('message-box');
     registerModal = document.getElementById('register-modal-overlay');
     profileModal = document.getElementById('profile-modal');
@@ -1015,9 +1003,9 @@ function attachEventListeners() {
             summonResultContainer.innerHTML = '';
             characters.forEach(character => {
                 const element = character.element || 'None';
-                summonResultContainer.innerHTML += `<div class="team-slot card-flip"><div class="card-header"><div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${character.image_file}" alt="${character.name}"><h4>${character.name}</h4><p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p><p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p></div>`;
+                summonResultContainer.innerHTML += `<div class="team-slot"><div class="card-header"><div class="card-rarity rarity-${character.rarity.toLowerCase()}">[${character.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img src="/static/images/characters/${character.image_file}" alt="${character.name}"><h4>${character.name}</h4><p>ATK: ${character.base_atk} | HP: ${character.base_hp}</p><p>Crit: ${character.crit_chance}% | Crit DMG: ${character.crit_damage}x</p></div>`;
             });
-            if (summonResultOverlay) summonResultOverlay.classList.add('active');
+            summonResultContainer.classList.add('show');
             await fetchPlayerDataAndUpdate();
         } else {
             displayMessage(`Summon Failed: ${result.message}`);
@@ -1110,12 +1098,7 @@ function attachEventListeners() {
             displayMessage(result.message);
             if(result.success) await fetchPlayerDataAndUpdate();
         }
-        else if (target.classList.contains('equip-btn')) {
-            const heroId = parseInt(target.dataset.heroId);
-            const heroInstance = gameState.collection.find(h => h.id === heroId);
-            if (heroInstance) openHeroDetailModal(heroInstance);
-        }
-        else if (target.classList.contains('detail-btn')) {
+        else if (target.classList.contains('equip-button')) {
             const heroId = parseInt(target.dataset.heroId);
             const heroInstance = gameState.collection.find(h => h.id === heroId);
             if (heroInstance) openHeroDetailModal(heroInstance);
@@ -2058,18 +2041,18 @@ function updateCollectionDisplay() {
         return acc;
     }, {});
     const teamDBIds = gameState.team.filter(m => m).map(m => m.db_id);
-    const rarityStars = { 'Common': 1, 'Rare': 3, 'SSR': 5, 'UR': 6, 'LR': 6 };
     gameState.collection.forEach(hero => {
         const charDef = masterCharacterList.find(c => c.name === hero.character_name);
         if (!charDef) return;
         const card = document.createElement('div');
         card.className = 'collection-card';
         const element = charDef.element || 'None';
+        const mergeCost = {'Common': 3, 'Rare': 3, 'SSR': 4, 'UR': 5}[hero.rarity] || 999;
+        const canMerge = heroCounts[hero.character_name] >= mergeCost;
         const isInTeam = teamDBIds.includes(hero.id);
         const stats = getScaledStats(hero);
-        const starCount = rarityStars[hero.rarity] || 1;
-        const stars = '★'.repeat(starCount);
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><div class="star-rating">${stars}</div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="button-row"><button class="action-btn equip-btn" data-hero-id="${hero.id}">Equip</button><button class="action-btn detail-btn" data-hero-id="${hero.id}">Details</button></div>`;
+        const sellPrice = (SELL_BASE_VALUES[hero.rarity] || 50) * hero.level;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${hero.rarity.toLowerCase()}">[${hero.rarity}]</div><div class="card-element element-${element.toLowerCase()}">${element}</div></div><img class="hero-portrait" src="/static/images/characters/${charDef.image_file}" alt="${hero.character_name}"><h4>${hero.character_name}</h4><div class="card-stats">Level: ${hero.level}</div><div class="card-stats">ATK: ${stats.atk} | HP: ${stats.hp}</div><div class="card-stats">Crit: ${stats.crit}% | Crit DMG: ${stats.critDmg}x</div><div class="button-row"><button class="team-manage-button" data-char-id="${hero.id}" data-action="${isInTeam ? 'remove' : 'add'}">${isInTeam ? 'Remove' : 'Add'}</button><button class="merge-button" data-char-name="${hero.character_name}" ${canMerge ? '' : 'disabled'}>Merge</button><button class="equip-button" data-hero-id="${hero.id}">Equip</button><button class="level-up-card-btn" data-hero-id="${hero.id}">Level Up (${100 * hero.level}g)</button><button class="sell-hero-btn" data-hero-id="${hero.id}">Sell (${sellPrice}g)</button></div>`;
         if (isInTeam) {
             const indicator = document.createElement('div');
             indicator.className = 'in-team-indicator';
