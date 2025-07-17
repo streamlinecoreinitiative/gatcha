@@ -6,8 +6,8 @@
     <link rel="icon" type="image/webp" href="{{ url_for('static', filename='images/ui/game_icon.webp') }}">
 
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/palette.css') }}">
+    <!-- Load JRPG styled font -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -177,33 +177,26 @@
                     <h3>Merge Rules</h3>
                     <p>Combine duplicate heroes to raise their rarity. You need 3 Commons or Rares, 4 SSR, and 5 UR copies to merge to the next tier.</p>
                 </div>
-                <div class="collection-wrapper">
-                    <div class="parallax-bg"></div>
-                    <button class="carousel-arrow left">&#8249;</button>
-                    <div id="collection-container" class="collection-grid">
-                        <!-- Heroes will be dynamically inserted here by JavaScript -->
-                    </div>
-                    <button class="carousel-arrow right">&#8250;</button>
+                <div id="collection-container" class="collection-grid">
+                    <!-- Heroes will be dynamically inserted here by JavaScript -->
                 </div>
             </div>
 
             <!-- Summon View -->
             <div id="summon-view" class="view">
                 <div class="summon-area">
-                    <div class="summon-banner" style="background-image:url('{{ url_for('static', filename='images/ui/summon_bg.webp') }}');">
-                        <div class="banner-info">
-                            <h3 data-i18n>Featured Summon</h3>
-                            <p data-i18n>Spend 300 Crystals for a chance at rare heroes!</p>
-                            <span class="cost"><i class="fa-solid fa-gem"></i>300</span>
-                        </div>
+                    <div class="section-header">
+                        <h2 data-i18n>The Summoning Altar</h2>
+                        <button class="tutorial-btn" data-tutorial="Spend gems here to summon additional heroes for your roster.">?</button>
                     </div>
+                    <p data-i18n>Use <i class="fa-solid fa-gem currency-icon" title="Gems - Spend here to summon new heroes."></i>150 to summon a new hero! Odds: 50% Common, 30% Rare, 15% SSR, 3.5% UR, 1.5% LR. Guaranteed SSR every 90 summons.</p>
                     <div class="summon-buttons">
-                        <button id="perform-summon-button" class="action-btn" data-i18n>Summon x1</button>
-                        <button id="summon-ten-button" class="action-btn" data-i18n>Summon x10</button>
+                        <button id="perform-summon-button" data-i18n>Summon</button>
+                        <button id="summon-ten-button" data-i18n>Summon x10</button>
+                        <button id="free-summon-button" data-i18n>Daily Free Summon<span class="red-dot"></span></button>
+                        <span id="free-summon-timer"></span>
                     </div>
-                    <div id="summon-result-overlay" class="modal-overlay">
-                        <div id="summon-result" class="modal-content"></div>
-                    </div>
+                    <div id="summon-result" class="summon-result-box"></div>
                 </div>
             </div>
 
@@ -468,21 +461,21 @@
         </div>
 
         <!-- BOTTOM NAVIGATION BAR -->
-        <nav id="nav-bar" class="bottom-nav">
-            <button class="nav-button" data-view="home-view"><i class="fa-solid fa-home"></i><span data-i18n>Home</span><span class="red-dot"></span></button>
-            <button class="nav-button" data-view="collection-view"><i class="fa-solid fa-users"></i><span data-i18n>Heroes</span></button>
-            <button class="nav-button" data-view="equipment-view"><i class="fa-solid fa-box-open"></i><span data-i18n>Inventory</span></button>
-            <button class="nav-button" data-view="summon-view"><i class="fa-solid fa-wand-sparkles"></i><span data-i18n>Summon</span><span class="red-dot"></span></button>
-            <button class="nav-button" data-view="tasks-view"><i class="fa-solid fa-list-check"></i><span data-i18n>Missions</span></button>
-            <button class="nav-button" data-view="store-view"><i class="fa-solid fa-store"></i><span data-i18n>Store</span><span class="red-dot"></span></button>
-            <button class="nav-button" data-view="campaign-view"><i class="fa-solid fa-tower-observation"></i><span data-i18n>Tower</span></button>
-            <button class="nav-button" data-view="dungeons-view"><i class="fa-solid fa-skull-crossbones"></i><span data-i18n>Expeditions</span></button>
-            <button class="nav-button" data-view="online-view"><i class="fa-solid fa-users-viewfinder"></i><span data-i18n>Players</span></button>
-            <button class="nav-button" data-view="friends-view"><i class="fa-solid fa-user-friends"></i><span data-i18n>Friends</span></button>
-            <button class="nav-button" data-view="mail-view"><i class="fa-solid fa-envelope"></i><span data-i18n>Mail</span></button>
-            <button class="nav-button" id="chat-nav-button"><i class="fa-solid fa-comments"></i><span data-i18n>Chat</span></button>
-            <button class="nav-button admin-only" data-view="admin-view"><i class="fa-solid fa-toolbox"></i><span data-i18n>Admin</span></button>
-        </nav>
+        <div id="nav-bar">
+            <button class="nav-button" data-view="home-view" data-i18n>Home<span class="red-dot"></span></button>
+            <button class="nav-button" data-view="collection-view" data-i18n>Heroes</button>
+            <button class="nav-button" data-view="equipment-view" data-i18n>Equipment</button>
+            <button class="nav-button" data-view="summon-view" data-i18n>Summon<span class="red-dot"></span></button>
+            <button class="nav-button" data-view="campaign-view" data-i18n>The Tower</button>
+            <button class="nav-button" data-view="dungeons-view" data-i18n>Expeditions</button>
+            <button class="nav-button" data-view="online-view" data-i18n>Players</button>
+            <button class="nav-button" data-view="friends-view" data-i18n>Friends</button>
+            <button class="nav-button" data-view="mail-view" data-i18n>Mail</button>
+            <button class="nav-button" id="chat-nav-button" data-i18n>Chat</button>
+            <button class="nav-button" data-view="tasks-view" data-i18n>Missions</button>
+            <button class="nav-button admin-only" data-view="admin-view" data-i18n>Admin</button>
+            <button class="nav-button" data-view="store-view" data-i18n>Store<span class="red-dot"></span></button>
+        </div>
 
     </div>
     <!-- ======================================================= -->
