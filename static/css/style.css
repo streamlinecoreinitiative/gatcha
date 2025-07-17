@@ -1484,9 +1484,11 @@ button:disabled, .fantasy-button:disabled {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    flex-wrap: wrap;
 }
 .store-package div[id^="paypal-"] {
-    max-width: 160px;
+    min-width: 160px;
+    max-width: 100%;
 }
 .store-package .paypal-buttons {
     width: 100%;
