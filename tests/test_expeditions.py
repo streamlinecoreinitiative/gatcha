@@ -19,6 +19,6 @@ def test_default_expeditions_created(tmp_path, monkeypatch):
     db.init_db()
     exps = db.get_all_expeditions()
     names = [e['name'] for e in exps]
-    assert len(exps) == 5
+    assert len(exps) == 15
     assert names[0] == 'Goblin Raid'
-    assert names[-1] == 'Abyssal Rift'
+    assert names[-1] == 'Astral Chaos'
