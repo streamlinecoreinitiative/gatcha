@@ -63,7 +63,6 @@
       "atk": 20,
       "crit_chance": 2
     },
-    "image_file": "hunters_bow.webp",
     "code": "IT007"
   },
   {
@@ -73,7 +72,6 @@
     "stat_bonuses": {
       "hp": 80
     },
-    "image_file": "reinforced_buckler.webp",
     "code": "IT008"
   },
   {
@@ -84,7 +82,6 @@
       "atk": 45,
       "crit_damage": 0.1
     },
-    "image_file": "dwarven_battleaxe.webp",
     "code": "IT009"
   },
   {
@@ -95,7 +92,6 @@
       "hp": 150,
       "crit_chance": 3
     },
-    "image_file": "arcane_robe.webp",
     "code": "IT010"
   },
   {
@@ -107,7 +103,6 @@
       "crit_chance": 10,
       "crit_damage": 0.3
     },
-    "image_file": "phoenix_blade.webp",
     "code": "IT011"
   },
   {
@@ -118,7 +113,60 @@
       "hp": 300,
       "crit_damage": 0.2
     },
-    "image_file": "dragon_scale_armor.webp",
     "code": "IT012"
+  }
+,
+  {
+    "name": "Shadow Dagger",
+    "type": "Weapon",
+    "rarity": "Epic",
+    "stat_bonuses": {
+      "atk": 95,
+      "crit_chance": 12,
+      "crit_damage": 0.35
+    },
+    "code": "IT013"
+  },
+  {
+    "name": "Celestial Plate",
+    "type": "Armor",
+    "rarity": "Legendary",
+    "stat_bonuses": {
+      "hp": 400,
+      "crit_damage": 0.25
+    },
+    "code": "IT014"
+  },
+  {
+    "name": "Thunder Pike",
+    "type": "Weapon",
+    "rarity": "Epic",
+    "stat_bonuses": {
+      "atk": 105,
+      "crit_chance": 15
+    },
+    "code": "IT015"
+  },
+  {
+    "name": "Guardian Shield",
+    "type": "Shield",
+    "rarity": "Legendary",
+    "stat_bonuses": {
+      "hp": 350,
+      "crit_chance": 5,
+      "crit_damage": 0.2
+    },
+    "code": "IT016"
+  },
+  {
+    "name": "Staff of Eternity",
+    "type": "Weapon",
+    "rarity": "Legendary",
+    "stat_bonuses": {
+      "atk": 120,
+      "crit_chance": 18,
+      "crit_damage": 0.4
+    },
+    "code": "IT017"
   }
 ]

@@ -1531,7 +1531,6 @@ async function updateEquipmentDisplay() {
     if (!equipmentDefsResponse.ok) return;
     const equipmentDefs = await equipmentDefsResponse.json();
     const statsMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.stat_bonuses; return map; }, {});
-    const imageMap = equipmentDefs.reduce((map, item) => { map[item.name] = item.image_file; return map; }, {});
     if (result.equipment.length === 0) {
         equipmentContainer.style.display = 'flex';
         equipmentContainer.style.justifyContent = 'center';
@@ -1547,9 +1546,7 @@ async function updateEquipmentDisplay() {
         const stats = statsMap[item.equipment_name] || {};
         const statsText = Object.entries(stats).map(([key, value]) => `${key.toUpperCase()}: +${value}`).join(' | ');
         const rarityClass = item.rarity.toLowerCase();
-        const imgFile = imageMap[item.equipment_name];
-        const imgTag = imgFile ? `<img src="/static/images/items/${imgFile}" alt="${item.equipment_name}">` : '';
-        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${rarityClass}">[${item.rarity}]</div></div>${imgTag}<h4>${item.equipment_name}</h4><p class="card-stats">${statsText}</p><div class="item-status">${item.is_equipped_on ? `Equipped` : 'Unequipped'}</div>`;
+        card.innerHTML = `<div class="card-header"><div class="card-rarity rarity-${rarityClass}">[${item.rarity}]</div></div><h4>${item.equipment_name}</h4><p class="card-stats">${statsText}</p><div class="item-status">${item.is_equipped_on ? `Equipped` : 'Unequipped'}</div>`;
         equipmentContainer.appendChild(card);
     });
 }
