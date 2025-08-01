@@ -1049,7 +1049,6 @@ def fight():
         player_data = db.get_player_data(user_id)
         if player_data['energy'] <= 0:
             return jsonify({'success': False, 'message': 'Not enough energy.'})
-        db.consume_energy(user_id)
         stage_num = int(data.get('stage', 1))
     except (TypeError, ValueError):
         return jsonify({'success': False, 'message': 'Invalid stage value.'}), 400
@@ -1125,6 +1124,8 @@ def fight():
             )
         else:
             combat_log.append({'type': 'end', 'message': "--- DEFEAT! ---"})
+
+        db.consume_energy(user_id)
         refresh_online_progress(user_id)
         return jsonify({'success': True, 'victory': victory, 'log': combat_log, 'gems_won': gems_won, 'gold_won': gold_won, 'looted_item': None})
     except Exception as e:

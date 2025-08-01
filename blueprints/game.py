@@ -61,7 +61,6 @@ def fight_dungeon():
         player_data = db.get_player_data(user_id)
         if player_data['dungeon_energy'] <= 0:
             return jsonify({'success': False, 'message': 'No dungeon energy left.'})
-        db.consume_dungeon_energy(user_id)
         data = request.get_json(silent=True) or {}
         exp_id = data.get('expedition_id') or request.form.get('expedition_id') or request.args.get('expedition_id')
         try:
@@ -220,6 +219,8 @@ def fight_dungeon():
             player_data = db.get_player_data(user_id)
             gold_won = 200
             db.save_player_data(user_id, gold=player_data['gold'] + gold_won)
+
+        db.consume_dungeon_energy(user_id)
         import sys
         if 'pytest' in sys.modules:
             victory = True
